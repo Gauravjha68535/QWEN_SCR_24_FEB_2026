@@ -1,0 +1,840 @@
+package main
+
+import (
+	"bufio"
+	"flag"
+	"fmt"
+	"os"
+	"os/signal"
+	"sort"
+	"strings"
+	"sync"
+	"sync/atomic"
+	"syscall"
+	"time"
+
+	"QWEN_SCR_24_FEB_2026/ai"
+	"QWEN_SCR_24_FEB_2026/reporter"
+	"QWEN_SCR_24_FEB_2026/scanner"
+	"QWEN_SCR_24_FEB_2026/utils"
+
+	"github.com/fatih/color"
+)
+
+// Shared state for graceful shutdown
+var (
+	currentFindings  []reporter.Finding
+	findingsMu       sync.Mutex
+	activeScanConfig *ScanConfig
+	interrupted      int32 // atomic flag: 1 = interrupted
+)
+
+// parseFlags parses CLI flags and returns a ScanConfig if -d is provided.
+// Returns nil if no flags are set (interactive mode).
+func parseFlags() *ScanConfig {
+	targetDir := flag.String("d", "", "Target directory to scan (required for CLI mode)")
+	rulesDir := flag.String("r", "rules", "Path to rules directory")
+	enableAI := flag.Bool("ai", false, "Enable AI validation via local LLM")
+	enableAIDiscovery := flag.Bool("ai-discovery", false, "Enable AI-powered vulnerability discovery")
+	enableSemgrep := flag.Bool("semgrep", false, "Enable Semgrep analysis")
+	enableDeps := flag.Bool("deps", true, "Enable dependency scanning")
+	enableSecrets := flag.Bool("secrets", true, "Enable secret detection")
+	enableSupplyChain := flag.Bool("supply-chain", false, "Enable supply chain security (SBOM)")
+	enableCompliance := flag.Bool("compliance", false, "Enable compliance checking")
+	enableThreatIntel := flag.Bool("threat-intel", false, "Enable threat intelligence enrichment")
+	enableSymbolic := flag.Bool("symbolic", false, "Enable symbolic execution")
+	enableMLFP := flag.Bool("ml-fp", false, "Enable ML false-positive reduction")
+	// AI Options
+	modelName := flag.String("model", ai.GetDefaultModel(), "AI model name for validation")
+	ollamaHost := flag.String("ollama-host", "localhost:11434", "Ollama host:port (e.g. 192.168.1.42:11434 for remote)")
+	outputCSV := flag.String("csv", "report.csv", "Output CSV report path")
+	outputHTML := flag.String("html", "report.html", "Output HTML report path")
+	outputPDF := flag.String("pdf", "report.pdf", "Output PDF report path")
+	frameworks := flag.String("frameworks", "", "Comma-separated compliance frameworks (PCI-DSS,HIPAA,SOC2,ISO27001,GDPR)")
+
+	flag.Parse()
+
+	// If no target directory provided, return nil to trigger interactive mode
+	if *targetDir == "" {
+		return nil
+	}
+
+	// Validate target directory
+	if _, err := os.Stat(*targetDir); os.IsNotExist(err) {
+		color.Red("✗ Error: Directory does not exist: %s", *targetDir)
+		os.Exit(1)
+	}
+
+	config := &ScanConfig{
+		TargetDir:             *targetDir,
+		RulesDir:              *rulesDir,
+		EnableAI:              *enableAI,
+		EnableAIDiscovery:     *enableAIDiscovery,
+		EnableSemgrep:         *enableSemgrep,
+		EnableDependencyScan:  *enableDeps,
+		EnableSecretDetection: *enableSecrets,
+		EnableSupplyChain:     *enableSupplyChain,
+		EnableCompliance:      *enableCompliance,
+		EnableThreatIntel:     *enableThreatIntel,
+		EnableSymbolicExec:    *enableSymbolic,
+		EnableMLFPReduction:   *enableMLFP,
+		ModelName:             *modelName,
+		OllamaHost:            *ollamaHost,
+		OutputCSV:             *outputCSV,
+		OutputHTML:            *outputHTML,
+		OutputPDF:             *outputPDF,
+		ComplianceFrameworks:  []string{},
+	}
+
+	// Parse compliance frameworks
+	if *frameworks != "" {
+		for _, fw := range splitAndTrim(*frameworks) {
+			if fw != "" {
+				config.ComplianceFrameworks = append(config.ComplianceFrameworks, fw)
+			}
+		}
+	}
+
+	return config
+}
+
+// splitAndTrim splits a comma-separated string and trims whitespace
+func splitAndTrim(s string) []string {
+	var result []string
+	for _, item := range strings.Split(s, ",") {
+		trimmed := strings.TrimSpace(item)
+		if trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+	return result
+}
+
+func main() {
+	utils.InitLogger()
+
+	// Try CLI flags first; fall back to interactive menu
+	config := parseFlags()
+	if config == nil {
+		config = ShowMainMenu()
+	} else {
+		utils.PrintBanner()
+	}
+
+	// Register graceful shutdown handler
+	activeScanConfig = config
+	setupGracefulShutdown()
+
+	// Configure Ollama host (for remote AI)
+	if config.OllamaHost != "" && config.OllamaHost != "localhost:11434" {
+		ai.SetOllamaHost(config.OllamaHost)
+		utils.LogInfo(fmt.Sprintf("Using remote Ollama: %s", config.OllamaHost))
+	}
+
+	// Start scanning
+	utils.LogHeader("🚀 STARTING SECURITY SCAN")
+	fmt.Println()
+
+	// Step 1: Walk directory
+	utils.LogSubHeader("🔍 Step 1: Scanning Files")
+	bar := utils.CreateProgressBar(100, "Analyzing files")
+
+	result, err := scanner.WalkDirectory(config.TargetDir)
+	if err != nil {
+		utils.LogError("Failed to scan directory", err)
+		os.Exit(1)
+	}
+	bar.Set(100)
+	bar.Finish()
+
+	result.DisplayStats()
+	fmt.Println()
+
+	var allFindings []reporter.Finding
+
+	if config.EnableStaticPlusAI {
+		// ═══ HYBRID MODE: Static scan first, then AI discovery, then validate ALL ═══
+
+		// --- Run Static Engine ---
+		utils.LogHeader("📋 STATIC SCANNING (Phase 1 of 3)")
+		staticFindings := runStaticEngine(config, result)
+		allFindings = append(allFindings, staticFindings...)
+		updateFindings(allFindings)
+		utils.LogInfo(fmt.Sprintf("Static engine found %d issues", len(staticFindings)))
+		fmt.Println()
+
+		// --- Run AI Discovery ---
+		utils.LogHeader("🧠 AI VULNERABILITY DISCOVERY (Phase 2 of 3)")
+		discoveryFindings := ai.RunAIDiscovery(config.ModelName, config.TargetDir)
+		allFindings = append(allFindings, discoveryFindings...)
+		updateFindings(allFindings)
+		utils.LogInfo(fmt.Sprintf("AI discovered %d additional vulnerabilities", len(discoveryFindings)))
+		fmt.Println()
+
+		// --- AI Validation of ALL findings ---
+		utils.LogHeader("🤖 AI VALIDATION (Phase 3 of 3)")
+		fileContents := loadFileContents(config.TargetDir)
+		allFindings = ai.ValidateFindingsBatch(config.ModelName, allFindings, fileContents, 10, config.TargetDir)
+		updateFindings(allFindings)
+
+		// Confidence Calibration
+		calibrator := ai.NewConfidenceCalibrator(config.TargetDir)
+		allFindings = calibrator.ApplyCalibrationToFindings(allFindings)
+		calibrator.SaveStats()
+
+		// ML False Positive Reduction (if enabled)
+		if config.EnableMLFPReduction {
+			utils.LogSubHeader("🧠 ML False Positive Reduction")
+			mlReducer := ai.NewMLFPReducer(".scanner-cache")
+			mlReducer.LoadHistory()
+			allFindings = mlReducer.FilterFindingsByFPProbability(allFindings, 0.7)
+			mlReducer.SaveHistory()
+			stats := mlReducer.GetFPStatistics()
+			utils.LogInfo(fmt.Sprintf("ML FP Rate: %.1f%%", stats["fp_rate"].(float64)*100))
+		}
+		fmt.Println()
+
+	} else if config.EnableAIDiscovery {
+		// ═══ AI-ONLY MODE: Skip all static engines, let AI do everything ═══
+		utils.LogHeader("🧠 AI VULNERABILITY DISCOVERY")
+		discoveryFindings := ai.RunAIDiscovery(config.ModelName, config.TargetDir)
+		allFindings = append(allFindings, discoveryFindings...)
+		updateFindings(allFindings)
+		utils.LogInfo(fmt.Sprintf("AI discovered %d vulnerabilities", len(discoveryFindings)))
+		fmt.Println()
+
+		// AI Validation of AI-discovered findings (if option 3 was selected)
+		if config.EnableAI {
+			utils.LogHeader("🤖 AI VALIDATION")
+			fileContents := loadFileContents(config.TargetDir)
+			allFindings = ai.ValidateFindingsBatch(config.ModelName, allFindings, fileContents, 10, config.TargetDir)
+			updateFindings(allFindings)
+			fmt.Println()
+		}
+	} else {
+		// ═══ STATIC ENGINE MODE: Run all traditional scan steps ═══
+
+		// Step 2: Load rules
+		utils.LogSubHeader("📋 Step 2: Loading Rules")
+		rules, err := config.LoadRules(config.RulesDir)
+		if err != nil {
+			utils.LogError("Failed to load rules", err)
+			os.Exit(1)
+		}
+		utils.LogInfo(fmt.Sprintf("Loaded %d custom rules", len(rules)))
+		fmt.Println()
+
+		// Step 3: Pattern matching
+		utils.LogSubHeader("🎯 Step 3: Pattern Matching")
+		customBar := utils.CreateProgressBar(100, "Scanning with custom rules")
+		customFindings := scanner.RunPatternScan(result, rules, config.RulesDir)
+		customBar.Set(100)
+		customBar.Finish()
+		utils.LogInfo(fmt.Sprintf("Custom rules found %d potential issues", len(customFindings)))
+		fmt.Println()
+
+		// Step 3b: AST-based deep analysis
+		var astFindings []reporter.Finding
+		utils.LogSubHeader("🌳 Step 3b: AST Deep Analysis")
+		astBar := utils.CreateProgressBar(100, "AST analysis (Python/JS/Java/Kotlin)")
+		astFindings, astErr := scanner.ScanWithAST(config.TargetDir)
+		astBar.Set(100)
+		astBar.Finish()
+		if astErr != nil {
+			utils.LogError("AST analysis failed", astErr)
+		} else {
+			utils.LogInfo(fmt.Sprintf("AST analysis found %d vulnerabilities", len(astFindings)))
+		}
+		fmt.Println()
+
+		// Step 4: Semgrep (if enabled)
+		var semgrepFindings []reporter.Finding
+		if config.EnableSemgrep {
+			utils.LogSubHeader("🔍 Step 4: Semgrep Analysis")
+			semgrepBar := utils.CreateProgressBar(100, "Running Semgrep")
+			semgrepFindings, err = scanner.RunSemgrep(config.TargetDir)
+			semgrepBar.Set(100)
+			semgrepBar.Finish()
+			if err != nil {
+				utils.LogError("Semgrep scan failed", err)
+			}
+			fmt.Println()
+		}
+
+		// Step 5: Dependency scanning (if enabled)
+		var depFindings []reporter.Finding
+		if config.EnableDependencyScan {
+			utils.LogSubHeader("📦 Step 5: Dependency Scanning")
+			depFindings, err = scanner.ScanDependencies(config.TargetDir)
+			if err != nil {
+				utils.LogError("Dependency scan failed", err)
+			} else {
+				utils.LogInfo(fmt.Sprintf("Found %d dependency vulnerabilities", len(depFindings)))
+			}
+			fmt.Println()
+		}
+
+		// Step 6: Secret detection (if enabled)
+		var secretFindings []reporter.Finding
+		if config.EnableSecretDetection {
+			utils.LogSubHeader("🔑 Step 6: Secret Detection")
+			secretDetector := scanner.NewSecretDetector()
+			secretFindings, err = secretDetector.ScanSecrets(config.TargetDir)
+			if err != nil {
+				utils.LogError("Secret scan failed", err)
+			} else {
+				utils.LogInfo(fmt.Sprintf("Found %d hardcoded secrets", len(secretFindings)))
+			}
+			fmt.Println()
+		}
+
+		// Step 7: Supply chain security (if enabled)
+		var supplyChainFindings []reporter.Finding
+		if config.EnableSupplyChain {
+			utils.LogSubHeader("⛓️ Step 7: Supply Chain Security")
+			supplyChainScanner := scanner.NewSupplyChainScanner()
+			supplyChainFindings, err = supplyChainScanner.ScanSupplyChain(config.TargetDir)
+			if err != nil {
+				utils.LogError("Supply chain scan failed", err)
+			} else {
+				utils.LogInfo(fmt.Sprintf("Found %d supply chain issues", len(supplyChainFindings)))
+				sbomPath := "sbom.json"
+				err = supplyChainScanner.GenerateSBOMFile(sbomPath)
+				if err != nil {
+					utils.LogError("Failed to generate SBOM", err)
+				} else {
+					utils.LogInfo(fmt.Sprintf("SBOM generated: %s", sbomPath))
+				}
+			}
+			fmt.Println()
+		}
+
+		// Step 8: Taint / Data Flow Analysis (if enabled)
+		var taintFindings []reporter.Finding
+		if config.EnableSymbolicExec {
+			utils.LogSubHeader("🔮 Step 8: Taint / Data Flow Analysis")
+			taintBar := utils.CreateProgressBar(100, "Tracking user input → dangerous sinks")
+			var taintErr error
+			taintFindings, taintErr = scanner.ScanTaintFlows(config.TargetDir)
+			taintBar.Set(100)
+			taintBar.Finish()
+			if taintErr != nil {
+				utils.LogError("Taint analysis failed", taintErr)
+			} else {
+				utils.LogInfo(fmt.Sprintf("Taint analysis found %d injection flows", len(taintFindings)))
+			}
+			fmt.Println()
+		}
+
+		// Step 8a: Container Image Scanning (if enabled)
+		var containerFindings []reporter.Finding
+		if config.EnableContainerScan {
+			utils.LogSubHeader("🐳 Step 8a: Container Image Scanning")
+			containerScanner := scanner.NewContainerScanner(int64(len(allFindings) + 1000))
+			var cErr error
+			containerFindings, cErr = containerScanner.ScanContainers(config.TargetDir)
+			if cErr != nil {
+				utils.LogError("Container scan failed", cErr)
+			} else {
+				utils.LogInfo(fmt.Sprintf("Found %d container configuration issues", len(containerFindings)))
+			}
+			fmt.Println()
+		}
+
+		// Step 9: Merge all findings
+		utils.LogSubHeader("🔄 Deduplication")
+		allFindings = mergeAndDeduplicate(customFindings, semgrepFindings)
+		allFindings = append(allFindings, astFindings...)
+		allFindings = append(allFindings, depFindings...)
+		allFindings = append(allFindings, secretFindings...)
+		allFindings = append(allFindings, supplyChainFindings...)
+		allFindings = append(allFindings, taintFindings...)
+		allFindings = append(allFindings, containerFindings...)
+		utils.LogInfo(fmt.Sprintf("Total unique findings: %d", len(allFindings)))
+		updateFindings(allFindings)
+		fmt.Println()
+
+		// AI Validation only (if enabled but NOT AI Discovery mode)
+		if config.EnableAI {
+			utils.LogHeader("🤖 AI VALIDATION")
+			fileContents := loadFileContents(config.TargetDir)
+			allFindings = ai.ValidateFindingsBatch(config.ModelName, allFindings, fileContents, 10, config.TargetDir)
+			updateFindings(allFindings)
+
+			if config.EnableMLFPReduction {
+				utils.LogSubHeader("🧠 ML False Positive Reduction")
+				mlReducer := ai.NewMLFPReducer(".scanner-cache")
+				mlReducer.LoadHistory()
+				allFindings = mlReducer.FilterFindingsByFPProbability(allFindings, 0.7)
+				mlReducer.SaveHistory()
+				stats := mlReducer.GetFPStatistics()
+				utils.LogInfo(fmt.Sprintf("ML FP Rate: %.1f%%", stats["fp_rate"].(float64)*100))
+			}
+
+			// Confidence Calibration
+			calibrator := ai.NewConfidenceCalibrator(config.TargetDir)
+			allFindings = calibrator.ApplyCalibrationToFindings(allFindings)
+			calibrator.SaveStats()
+
+			fmt.Println()
+		}
+	}
+
+	// Step 11: Threat Intelligence (if enabled)
+	if config.EnableThreatIntel {
+		utils.LogSubHeader("🌐 Threat Intelligence Enrichment")
+		threatIntelScanner := scanner.NewThreatIntelScanner()
+		allFindings, err = threatIntelScanner.ScanWithThreatIntel(allFindings)
+		if err != nil {
+			utils.LogError("Threat intel enrichment failed", err)
+		} else {
+			threatReport := threatIntelScanner.GenerateThreatIntelReport(allFindings)
+			utils.LogInfo(fmt.Sprintf("CVE Findings: %v", threatReport["cve_findings"]))
+			utils.LogInfo(fmt.Sprintf("MITRE ATT&CK Mappings: %v", threatReport["mitre_techniques"]))
+		}
+		fmt.Println()
+	}
+
+	// Step 12: Compliance Checking (if enabled)
+	var complianceReports []*reporter.ComplianceReport
+	if config.EnableCompliance && len(config.ComplianceFrameworks) > 0 {
+		utils.LogSubHeader("📋 Compliance Automation")
+		complianceReporter := reporter.NewComplianceReporter()
+
+		for _, framework := range config.ComplianceFrameworks {
+			err = complianceReporter.LoadFramework(framework)
+			if err != nil {
+				utils.LogError(fmt.Sprintf("Failed to load %s framework", framework), err)
+				continue
+			}
+
+			complianceReporter.MapFindingsToControls(allFindings, framework)
+			report, err := complianceReporter.GenerateComplianceReport(framework)
+			if err != nil {
+				utils.LogError(fmt.Sprintf("Failed to generate %s report", framework), err)
+				continue
+			}
+
+			complianceReports = append(complianceReports, report)
+			reportPath := fmt.Sprintf("compliance-%s.json", framework)
+			err = complianceReporter.ExportComplianceReport(report, reportPath)
+			if err != nil {
+				utils.LogError(fmt.Sprintf("Failed to export %s report", framework), err)
+			} else {
+				utils.LogInfo(fmt.Sprintf("%s Compliance Score: %.1f%%", framework, report.ComplianceScore))
+			}
+		}
+		fmt.Println()
+	}
+
+	// Step 12.1: Software Composition Analysis — OSV.dev (if supply chain enabled)
+	if config.EnableSupplyChain {
+		utils.LogSubHeader("🔎 SCA: OSV.dev Vulnerability Database")
+		scaFindings, scaErr := scanner.ScanDependenciesWithOSV(config.TargetDir)
+		if scaErr != nil {
+			utils.LogError("SCA scan failed", scaErr)
+		} else if len(scaFindings) > 0 {
+			utils.LogInfo(fmt.Sprintf("Found %d known CVEs in dependencies", len(scaFindings)))
+			allFindings = append(allFindings, scaFindings...)
+		}
+		fmt.Println()
+	}
+
+	// Step 12.2: Reachability Analysis — downgrade unreachable findings
+	utils.LogSubHeader("🔗 Reachability Analysis")
+	reachAnalyzer := scanner.NewReachabilityAnalyzer()
+	if err := reachAnalyzer.BuildCallGraph(config.TargetDir); err != nil {
+		utils.LogWarn(fmt.Sprintf("Reachability analysis failed: %v", err))
+	} else {
+		allFindings = reachAnalyzer.AnnotateFindings(allFindings)
+	}
+	fmt.Println()
+
+	// Step 12.5: Sort all findings by Severity (Critical > High > Medium > Low > Info)
+	severityOrder := map[string]int{
+		"Critical": 5, "critical": 5, "CRITICAL": 5,
+		"High": 4, "high": 4, "HIGH": 4,
+		"Medium": 3, "medium": 3, "MEDIUM": 3,
+		"Low": 2, "low": 2, "LOW": 2,
+		"Info": 1, "info": 1, "INFO": 1,
+	}
+	sort.Slice(allFindings, func(i, j int) bool {
+		return severityOrder[allFindings[i].Severity] > severityOrder[allFindings[j].Severity]
+	})
+
+	// Step 13: Assign sequential Sr. No.
+	for i := range allFindings {
+		allFindings[i].SrNo = i + 1
+	}
+
+	// Step 14: Calculate Risk Score
+	riskScore := reporter.CalculateRiskScore(allFindings)
+	priorityMatrix := reporter.GetPriorityMatrix(allFindings)
+
+	utils.LogInfo(fmt.Sprintf("Security Risk Score: %d/100 (%s)", riskScore.Score, riskScore.Level))
+	utils.LogInfo(reporter.GetPrioritySummary(priorityMatrix))
+	fmt.Println()
+
+	// Step 14b: Populate code snippets for all findings
+	populateCodeSnippets(allFindings)
+
+	// Step 15: Generate Reports
+	saveReports(config, allFindings)
+
+	// Print summary
+	summary := reporter.GenerateReportSummary(allFindings, config.TargetDir)
+	utils.PrintSummary(
+		summary.TotalFindings,
+		summary.CriticalCount,
+		summary.HighCount,
+		summary.MediumCount,
+		summary.LowCount,
+		summary.AIValidatedCount,
+	)
+
+	// Print compliance summary
+	if len(complianceReports) > 0 {
+		fmt.Println()
+		color.Cyan("═══════════════════════════════════════════════════════")
+		color.White("              📋 COMPLIANCE SUMMARY")
+		color.Cyan("═══════════════════════════════════════════════════════")
+		fmt.Println()
+
+		for _, report := range complianceReports {
+			fmt.Printf("  %s: %.1f%% Compliant (%d/%d controls)\n",
+				report.Framework,
+				report.ComplianceScore,
+				report.CompliantControls,
+				report.TotalControls)
+		}
+		fmt.Println()
+	}
+
+	utils.LogHeader("✅ SCAN COMPLETE")
+	fmt.Println()
+
+	// Step 16: Start Web Dashboard (if enabled)
+	if config.EnableWebDashboard {
+		UpdateDashboardFindings(allFindings)
+		StartWebDashboard(8080)
+	}
+}
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+func loadFileContents(targetDir string) map[string]string {
+	contents := make(map[string]string)
+	result, err := scanner.WalkDirectory(targetDir)
+	if err != nil {
+		return contents
+	}
+
+	for _, files := range result.FilePaths {
+		for _, filePath := range files {
+			content, err := os.ReadFile(filePath)
+			if err == nil {
+				contents[filePath] = string(content)
+			}
+		}
+	}
+
+	return contents
+}
+
+// populateCodeSnippets reads source files and extracts ~5 lines around each vulnerable line
+func populateCodeSnippets(findings []reporter.Finding) {
+	fileCache := make(map[string][]string) // filePath → lines
+
+	for i := range findings {
+		filePath := findings[i].FilePath
+		lineStr := findings[i].LineNumber
+
+		var lineNum int
+		fmt.Sscanf(lineStr, "%d", &lineNum)
+		if lineNum <= 0 {
+			continue
+		}
+
+		// Cache file lines
+		if _, ok := fileCache[filePath]; !ok {
+			content, err := os.ReadFile(filePath)
+			if err != nil {
+				continue
+			}
+			fileCache[filePath] = strings.Split(string(content), "\n")
+		}
+
+		lines := fileCache[filePath]
+		start := lineNum - 3 // 2 lines before
+		if start < 0 {
+			start = 0
+		}
+		end := lineNum + 2 // 2 lines after
+		if end > len(lines) {
+			end = len(lines)
+		}
+
+		var snippet strings.Builder
+		for j := start; j < end; j++ {
+			marker := "  "
+			if j+1 == lineNum {
+				marker = "→ "
+			}
+			snippet.WriteString(fmt.Sprintf("%s%4d | %s\n", marker, j+1, lines[j]))
+		}
+		findings[i].CodeSnippet = snippet.String()
+	}
+}
+
+func mergeAndDeduplicate(findingsList ...[]reporter.Finding) []reporter.Finding {
+	seen := make(map[string]bool)
+	var merged []reporter.Finding
+	srNo := 1
+
+	for _, findings := range findingsList {
+		for _, f := range findings {
+			key := fmt.Sprintf("%s:%s:%s:%s", f.FilePath, f.RuleID, f.LineNumber, f.Source)
+			if !seen[key] {
+				seen[key] = true
+				f.SrNo = srNo
+				srNo++
+				merged = append(merged, f)
+			}
+		}
+	}
+
+	return merged
+}
+
+// updateFindings safely updates the shared findings slice for graceful shutdown access
+func updateFindings(findings []reporter.Finding) {
+	findingsMu.Lock()
+	currentFindings = make([]reporter.Finding, len(findings))
+	copy(currentFindings, findings)
+	findingsMu.Unlock()
+}
+
+// saveReports generates CSV, HTML, and PDF reports
+func saveReports(config *ScanConfig, findings []reporter.Finding) {
+	utils.LogSubHeader("📄 Generating Reports")
+
+	// Assign sequential Sr numbers
+	for i := range findings {
+		findings[i].SrNo = i + 1
+	}
+
+	if err := reporter.WriteCSV(config.OutputCSV, findings); err != nil {
+		utils.LogError("Failed to write CSV report", err)
+	} else {
+		utils.LogInfo(fmt.Sprintf("CSV report saved to: %s", config.OutputCSV))
+	}
+
+	summary := reporter.GenerateReportSummary(findings, config.TargetDir)
+	if err := reporter.GenerateHTMLReport(config.OutputHTML, findings, summary); err != nil {
+		utils.LogError("Failed to write HTML report", err)
+	} else {
+		utils.LogInfo(fmt.Sprintf("HTML report saved to: %s", config.OutputHTML))
+	}
+
+	riskScore := reporter.CalculateRiskScore(findings)
+	if err := reporter.GeneratePDF(config.OutputPDF, findings, summary, riskScore); err != nil {
+		utils.LogError("Failed to write PDF report", err)
+	} else {
+		utils.LogInfo(fmt.Sprintf("PDF report saved to: %s", config.OutputPDF))
+	}
+}
+
+// setupGracefulShutdown registers a SIGINT handler for Ctrl+C
+func setupGracefulShutdown() {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		<-sigChan
+
+		// IMMEDIATELY set interrupt flag to stop all running operations
+		atomic.StoreInt32(&interrupted, 1)
+		ai.SetInterrupted(true)
+
+		// Small delay for the running operations to notice the flag and stop
+		time.Sleep(200 * time.Millisecond)
+
+		// Get current findings
+		findingsMu.Lock()
+		count := len(currentFindings)
+		findings := make([]reporter.Finding, len(currentFindings))
+		copy(findings, currentFindings)
+		findingsMu.Unlock()
+
+		fmt.Println()
+		fmt.Println()
+		color.Yellow("═══════════════════════════════════════════════════════")
+		color.Yellow("  ⚠️  SCAN INTERRUPTED (Ctrl+C)")
+		color.Yellow("═══════════════════════════════════════════════════════")
+		fmt.Println()
+
+		if count > 0 {
+			color.White("  Found %d issues so far.", count)
+			fmt.Println()
+			fmt.Print(color.HiYellowString("  Do you want to save partial reports? (y/n): "))
+
+			reader := bufio.NewReader(os.Stdin)
+			answer, _ := reader.ReadString('\n')
+			answer = strings.TrimSpace(strings.ToLower(answer))
+
+			if answer == "y" || answer == "yes" {
+				fmt.Println()
+				color.Green("  Saving partial reports...")
+				saveReports(activeScanConfig, findings)
+				fmt.Println()
+				color.Green("  ✓ Partial reports saved successfully!")
+			} else {
+				color.Yellow("  Reports not saved.")
+			}
+		} else {
+			color.White("  No issues found yet. Nothing to save.")
+		}
+
+		fmt.Println()
+		color.Yellow("  Exiting gracefully...")
+		fmt.Println()
+		os.Exit(0)
+	}()
+}
+
+// runStaticEngine runs all static scanning steps and returns merged findings
+func runStaticEngine(cfg *ScanConfig, result *scanner.ScanResult) []reporter.Finding {
+	var allFindings []reporter.Finding
+
+	// Load rules
+	utils.LogSubHeader("📋 Loading Rules")
+	rules, err := cfg.LoadRules(cfg.RulesDir)
+	if err != nil {
+		utils.LogError("Failed to load rules", err)
+	} else {
+		utils.LogInfo(fmt.Sprintf("Loaded %d custom rules", len(rules)))
+	}
+	fmt.Println()
+
+	// Pattern matching
+	utils.LogSubHeader("🎯 Pattern Matching")
+	customBar := utils.CreateProgressBar(100, "Scanning with custom rules")
+	customFindings := scanner.RunPatternScan(result, rules, cfg.RulesDir)
+	customBar.Set(100)
+	customBar.Finish()
+	utils.LogInfo(fmt.Sprintf("Custom rules found %d potential issues", len(customFindings)))
+	fmt.Println()
+
+	// AST analysis
+	utils.LogSubHeader("🌳 AST Deep Analysis")
+	astBar := utils.CreateProgressBar(100, "AST analysis (Python/JS/Java/Kotlin)")
+	astFindings, astErr := scanner.ScanWithAST(cfg.TargetDir)
+	astBar.Set(100)
+	astBar.Finish()
+	if astErr != nil {
+		utils.LogError("AST analysis failed", astErr)
+	} else {
+		utils.LogInfo(fmt.Sprintf("AST analysis found %d vulnerabilities", len(astFindings)))
+	}
+	fmt.Println()
+
+	// Semgrep
+	var semgrepFindings []reporter.Finding
+	if cfg.EnableSemgrep {
+		utils.LogSubHeader("🔍 Semgrep Analysis")
+		semgrepBar := utils.CreateProgressBar(100, "Running Semgrep")
+		semgrepFindings, err = scanner.RunSemgrep(cfg.TargetDir)
+		semgrepBar.Set(100)
+		semgrepBar.Finish()
+		if err != nil {
+			utils.LogError("Semgrep scan failed", err)
+		}
+		fmt.Println()
+	}
+
+	// Dependency scanning
+	var depFindings []reporter.Finding
+	if cfg.EnableDependencyScan {
+		utils.LogSubHeader("📦 Dependency Scanning")
+		depFindings, err = scanner.ScanDependencies(cfg.TargetDir)
+		if err != nil {
+			utils.LogError("Dependency scan failed", err)
+		} else {
+			utils.LogInfo(fmt.Sprintf("Found %d dependency vulnerabilities", len(depFindings)))
+		}
+		fmt.Println()
+	}
+
+	// Secret detection
+	var secretFindings []reporter.Finding
+	if cfg.EnableSecretDetection {
+		utils.LogSubHeader("🔑 Secret Detection")
+		secretDetector := scanner.NewSecretDetector()
+		secretFindings, err = secretDetector.ScanSecrets(cfg.TargetDir)
+		if err != nil {
+			utils.LogError("Secret scan failed", err)
+		} else {
+			utils.LogInfo(fmt.Sprintf("Found %d hardcoded secrets", len(secretFindings)))
+		}
+		fmt.Println()
+	}
+
+	// Supply chain
+	var supplyChainFindings []reporter.Finding
+	if cfg.EnableSupplyChain {
+		utils.LogSubHeader("⛓️ Supply Chain Security")
+		supplyChainScanner := scanner.NewSupplyChainScanner()
+		supplyChainFindings, err = supplyChainScanner.ScanSupplyChain(cfg.TargetDir)
+		if err != nil {
+			utils.LogError("Supply chain scan failed", err)
+		} else {
+			utils.LogInfo(fmt.Sprintf("Found %d supply chain issues", len(supplyChainFindings)))
+		}
+		fmt.Println()
+	}
+
+	// Taint analysis
+	var taintFindings []reporter.Finding
+	if cfg.EnableSymbolicExec {
+		utils.LogSubHeader("🔮 Taint / Data Flow Analysis")
+		taintBar := utils.CreateProgressBar(100, "Tracking user input → dangerous sinks")
+		var taintErr error
+		taintFindings, taintErr = scanner.ScanTaintFlows(cfg.TargetDir)
+		taintBar.Set(100)
+		taintBar.Finish()
+		if taintErr != nil {
+			utils.LogError("Taint analysis failed", taintErr)
+		} else {
+			utils.LogInfo(fmt.Sprintf("Taint analysis found %d injection flows", len(taintFindings)))
+		}
+		fmt.Println()
+	}
+
+	// Container scanning
+	if cfg.EnableContainerScan {
+		utils.LogSubHeader("🐳 Container Image Scanning")
+		containerScanner := scanner.NewContainerScanner(int64(len(allFindings) + 1000))
+		containerFindings, cErr := containerScanner.ScanContainers(cfg.TargetDir)
+		if cErr != nil {
+			utils.LogError("Container scan failed", cErr)
+		} else {
+			utils.LogInfo(fmt.Sprintf("Found %d container configuration issues", len(containerFindings)))
+			allFindings = append(allFindings, containerFindings...)
+		}
+		fmt.Println()
+	}
+
+	// Merge all
+	allFindings = append(allFindings, mergeAndDeduplicate(customFindings, semgrepFindings)...)
+	allFindings = append(allFindings, astFindings...)
+	allFindings = append(allFindings, depFindings...)
+	allFindings = append(allFindings, secretFindings...)
+	allFindings = append(allFindings, supplyChainFindings...)
+	allFindings = append(allFindings, taintFindings...)
+
+	utils.LogInfo(fmt.Sprintf("Total static findings: %d", len(allFindings)))
+
+	return allFindings
+}
