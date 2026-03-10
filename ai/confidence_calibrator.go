@@ -1,0 +1,125 @@
+package ai
+
+import (
+	"QWEN_SCR_24_FEB_2026/reporter"
+	"QWEN_SCR_24_FEB_2026/utils"
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+	"sync"
+)
+
+// VulnerabilityStats tracks how often AI is correct vs wrong for a specific severity/type
+type VulnerabilityStats struct {
+	TotalPredictions int     `json:"total_predictions"`
+	TruePositives    int     `json:"true_positives"`
+	FalsePositives   int     `json:"false_positives"`
+	AccuracyRate     float64 `json:"accuracy_rate"` // TruePositives / TotalPredictions
+}
+
+// ConfidenceCalibrator adjusts AI confidence based on historical accuracy
+type ConfidenceCalibrator struct {
+	StatsFile string
+	Stats     map[string]*VulnerabilityStats // Severity -> Stats
+	mu        sync.RWMutex
+}
+
+// NewConfidenceCalibrator initializes a calibrator
+func NewConfidenceCalibrator(targetDir string) *ConfidenceCalibrator {
+	statsFile := filepath.Join(targetDir, ".scanner-ai-stats.json")
+	c := &ConfidenceCalibrator{
+		StatsFile: statsFile,
+		Stats:     make(map[string]*VulnerabilityStats),
+	}
+	c.LoadStats()
+	return c
+}
+
+// LoadStats loads historical validation stats
+func (c *ConfidenceCalibrator) LoadStats() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	data, err := os.ReadFile(c.StatsFile)
+	if err == nil {
+		json.Unmarshal(data, &c.Stats)
+	}
+}
+
+// SaveStats saves current stats to disk
+func (c *ConfidenceCalibrator) SaveStats() {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	data, err := json.MarshalIndent(c.Stats, "", "  ")
+	if err == nil {
+		os.WriteFile(c.StatsFile, data, 0644)
+	}
+}
+
+// RecordValidation updates stats after an AI validation round
+func (c *ConfidenceCalibrator) RecordValidation(severity string, isTruePositive bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	stats, exists := c.Stats[severity]
+	if !exists {
+		stats = &VulnerabilityStats{}
+		c.Stats[severity] = stats
+	}
+
+	stats.TotalPredictions++
+	if isTruePositive {
+		stats.TruePositives++
+	} else {
+		stats.FalsePositives++
+	}
+
+	stats.AccuracyRate = float64(stats.TruePositives) / float64(stats.TotalPredictions)
+}
+
+// CalibrateConfidence adjusts the raw confidence score based on historical accuracy for that severity
+func (c *ConfidenceCalibrator) CalibrateConfidence(severity string, rawConfidence float64) float64 {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	stats, exists := c.Stats[severity]
+	if !exists || stats.TotalPredictions < 5 {
+		// Not enough data to calibrate, return raw
+		return rawConfidence
+	}
+
+	// If the AI is highly accurate for this severity, boost confidence slightly
+	// If it heavily false positives, downgrade confidence significantly
+
+	// Weight: 70% raw confidence, 30% historical accuracy
+	calibrated := (rawConfidence * 0.70) + (stats.AccuracyRate * 0.30)
+
+	// Cap between 0.1 and 0.99
+	if calibrated > 0.99 {
+		return 0.99
+	}
+	if calibrated < 0.1 {
+		return 0.1
+	}
+
+	return calibrated
+}
+
+// ApplyCalibrationToFindings takes a list of findings and adjusts their confidence scores
+func (c *ConfidenceCalibrator) ApplyCalibrationToFindings(findings []reporter.Finding) []reporter.Finding {
+	for i := range findings {
+		// Only calibrate if it actually came from an AI source and has a confidence score
+		if findings[i].Confidence > 0 && (findings[i].Source == "ai-discovery" || findings[i].AiValidated == "Yes") {
+			oldConf := findings[i].Confidence
+			newConf := c.CalibrateConfidence(findings[i].Severity, oldConf)
+			findings[i].Confidence = newConf
+
+			if oldConf != newConf {
+				utils.LogInfo(fmt.Sprintf("Calibrated confidence for %s: %.2f → %.2f", findings[i].Severity, oldConf, newConf))
+			}
+		}
+	}
+	return findings
+}

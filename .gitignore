@@ -1,0 +1,29 @@
+# Binaries and executables
+QWEN_SCR_24_FEB_2026
+scanner
+cmd/scanner/scanner
+
+# Output Reports
+report.csv
+report.html
+report.pdf
+*.csv
+*.html
+*.pdf
+
+# Dependency directories (run go mod tidy instead)
+vendor/
+
+# Environment and Secrets
+.env
+*.env
+
+# IDE and OS files
+.idea/
+.vscode/
+.DS_Store
+*.swp
+
+# Temporary files
+tmp/
+temp/

@@ -1,0 +1,3333 @@
+- id: ts-type-guard-nullish-coalescing
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        \w+\s*\?\?\s*\w+
+  severity: low
+  description: "Nullish coalescing operator used - good for default values"
+  remediation: "Good practice for providing defaults for null/undefined"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-type-guard-array-isarray
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        Array\.isArray\s*\(\s*\w+\s*\)
+  severity: low
+  description: "Array.isArray check - good for array validation"
+  remediation: "Combine with element validation for complete type safety"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-type-guard-number-isnan
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        isNaN\s*\(\s*\w+\s*\)
+  severity: medium
+  description: "isNaN used for number validation - can be unreliable"
+  remediation: "Use Number.isFinite() or typeof value === 'number' && !isNaN(value)"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-type-guard-number-finite
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        Number\.isFinite\s*\(\s*\w+\s*\)
+  severity: low
+  description: "Number.isFinite check - good for number validation"
+  remediation: "Good practice for validating numbers"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-type-guard-date-validation
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        \w+\s+instanceof\s+Date
+  severity: low
+  description: "Date instanceof check - but doesn't validate invalid dates"
+  remediation: "Also check !isNaN(date.getTime()) for valid dates"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-type-guard-enum
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        Object\.values\s*\(\s*\w+Enum\s*\)\.includes\s*\(\s*\w+\s*\)
+  severity: low
+  description: "Enum value validation - good for checking allowed values"
+  remediation: "Good practice - also consider using zod enums"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-type-guard-union
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        switch\s*\(\s*typeof\s*\w+\s*\)\s*\{\s*case\s*['"]string['"]:[^}]*case\s*['"]number['"]:
+  severity: medium
+  description: "Union type validation with typeof switch - may miss complex types"
+  remediation: "Use discriminated unions with type guards"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-generic-any-constraint
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        <\s*\w+\s+extends\s+any\s*>
+  severity: high
+  description: "Generic constraint with 'any' - no actual constraint"
+  remediation: "Use specific type or unknown: <T extends object> or <T extends Record<string, unknown>>"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-generic-unknown-constraint
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        <\s*\w+\s+extends\s+unknown\s*>
+  severity: medium
+  description: "Generic constraint with 'unknown' - better than any but still permissive"
+  remediation: "Add more specific constraints based on usage"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-generic-object-constraint
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        <\s*\w+\s+extends\s+object\s*>
+  severity: low
+  description: "Generic constraint with 'object' - ensures non-primitive"
+  remediation: "Good practice - consider Record<string, unknown> for index signatures"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-generic-unused
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        <\s*\w+\s*>\s*function\s+\w+[^{]*\{[^}]*(?!\1)
+  severity: medium
+  description: "Unused generic type parameter"
+  remediation: "Remove unused generic or use it in function signature"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-generic-default-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        <[^>=]+=\s*any>
+  severity: high
+  description: "Generic default type set to 'any'"
+  remediation: "Use specific default type or unknown: <T = unknown>"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-utility-partial-unsafe
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        Partial<\s*\w+\s*>.*(?!validate|schema)
+  severity: medium
+  description: "Partial type used without runtime validation"
+  remediation: "Validate partial objects with zod or class-validator"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-utility-required-unsafe
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        Required<\s*\w+\s*>.*(?!validate)
+  severity: medium
+  description: "Required type used without validation"
+  remediation: "Ensure all required fields are validated at runtime"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-utility-readonly-unsafe
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        Readonly<\s*\w+\s*>.*(?:as\s+any|@ts-ignore)
+  severity: medium
+  description: "Readonly type bypassed with assertion"
+  remediation: "Respect readonly constraints, don't bypass"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-utility-record-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        Record<\s*(?:string|number),\s*any\s*>
+  severity: high
+  description: "Record with any values - loses type safety"
+  remediation: "Use specific type: Record<string, User> or Record<string, unknown>"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-utility-pick-unsafe
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        Pick<\s*\w+,\s*[^>]+>.*(?!validate)
+  severity: medium
+  description: "Pick type used without validation"
+  remediation: "Validate picked properties at runtime"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-utility-omit-unsafe
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        Omit<\s*\w+,\s*[^>]+>.*(?!validate)
+  severity: medium
+  description: "Omit type used without validation"
+  remediation: "Ensure omitted fields aren't expected at runtime"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-utility-exclude-unsafe
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        Exclude<\s*[^,]+,\s*[^>]+>.*(?!check)
+  severity: low
+  description: "Exclude utility type used on union"
+  remediation: "Ensure excluded values aren't present at runtime"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-utility-extract-unsafe
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        Extract<\s*[^,]+,\s*[^>]+>.*(?!check)
+  severity: low
+  description: "Extract utility type used on union"
+  remediation: "Ensure extracted values are present at runtime"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-utility-nonnullable-unsafe
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        NonNullable<\s*\w+\s*>.*(?!null\s*check)
+  severity: medium
+  description: "NonNullable used without null check"
+  remediation: "Add runtime null check before using value"
+  cwe: "CWE-476"
+  owasp: "N/A"
+
+- id: ts-utility-return-type-unsafe
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        ReturnType<\s*\w+\s*>.*(?!validate)
+  severity: medium
+  description: "ReturnType used without validating actual return"
+  remediation: "Validate function return values at runtime"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-utility-parameters-unsafe
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        Parameters<\s*\w+\s*>.*(?!validate)
+  severity: medium
+  description: "Parameters used without validating arguments"
+  remediation: "Validate function arguments at runtime"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+# ======================== REACT TYPESCRIPT (151-180) ========================
+
+- id: ts-react-fc-children-any
+  languages: [typescript, tsx]
+  patterns:
+    - regex: |-
+        React\.FC<[^>]*children\?\s*:\s*any
+  severity: high
+  description: "React.FC with children as any type"
+  remediation: "Use React.FC<PropsWithChildren<Props>> or define children: React.ReactNode"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-react-fc-return-any
+  languages: [typescript, tsx]
+  patterns:
+    - regex: |-
+        :\s*React\.FC<[^>]*>\s*=\s*\([^)]*\)\s*=>\s*[^{]*any
+  severity: high
+  description: "React.FC returning any type"
+  remediation: "Component should return JSX.Element | React.ReactNode"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-react-props-any
+  languages: [typescript, tsx]
+  patterns:
+    - regex: |-
+        interface\s+\w+Props\s*\{\s*[^}]*\w+\?\s*:\s*any
+  severity: high
+  description: "React props interface with any type"
+  remediation: "Define specific types for all props"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-react-usestate-any
+  languages: [typescript, tsx]
+  patterns:
+    - regex: |-
+        useState<any>|useState\s*\(\s*[^)]*\)\s+as\s+any
+  severity: high
+  description: "useState with any type"
+  remediation: "Define state type: useState<MyType>(initialValue)"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-react-useref-any
+  languages: [typescript, tsx]
+  patterns:
+    - regex: |-
+        useRef<any>|useRef\s*\(\s*null\s*\)\s+as\s+any
+  severity: high
+  description: "useRef with any type"
+  remediation: "Use specific element type: useRef<HTMLDivElement>(null)"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-react-usecontext-any
+  languages: [typescript, tsx]
+  patterns:
+    - regex: |-
+        useContext<any>|useContext\s*\(\s*[^)]+\s*\)\s+as\s+any
+  severity: high
+  description: "useContext with any type"
+  remediation: "Create typed context: const MyContext = createContext<MyType>(defaultValue)"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-react-usememo-any
+  languages: [typescript, tsx]
+  patterns:
+    - regex: |-
+        useMemo<any>|useMemo\s*\(\s*\([^)]*\)\s*=>\s*[^{]*any
+  severity: high
+  description: "useMemo returning any type"
+  remediation: "Return type is inferred, avoid explicit any"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-react-usecallback-any
+  languages: [typescript, tsx]
+  patterns:
+    - regex: |-
+        useCallback<any>|useCallback\s*\(\s*\([^)]*\)\s*=>\s*[^{]*any
+  severity: high
+  description: "useCallback with any return type"
+  remediation: "Callback type is inferred, avoid explicit any"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-react-usereducer-any
+  languages: [typescript, tsx]
+  patterns:
+    - regex: |-
+        useReducer<any>|useReducer\s*\(\s*[^,]+,\s*[^)]+\)\s+as\s+any
+  severity: high
+  description: "useReducer with any type"
+  remediation: "Define State and Action types for reducer"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-react-forwardref-any
+  languages: [typescript, tsx]
+  patterns:
+    - regex: |-
+        forwardRef<any>|forwardRef\s*\([^)]*\)\s+as\s+any
+  severity: high
+  description: "forwardRef with any type"
+  remediation: "Use forwardRef<RefType, PropsType>(props, ref)"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-react-event-handler-any
+  languages: [typescript, tsx]
+  patterns:
+    - regex: |-
+        onClick=\{\s*\(\s*e\s*:\s*any\s*\)\s*=>|onChange=\{\s*\(\s*e\s*:\s*any
+  severity: high
+  description: "Event handler with any event type"
+  remediation: "Use specific event types: React.MouseEvent, React.ChangeEvent"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-react-event-handler-missing
+  languages: [typescript, tsx]
+  patterns:
+    - regex: |-
+        onClick=\{\s*\(\s*e\s*\)\s*=>|onChange=\{\s*\(\s*e\s*\)\s*=>|onSubmit=\{\s*\(\s*e\s*\)\s*=>
+  severity: medium
+  description: "Event handler without type annotation - uses implicit any"
+  remediation: "Add type annotation: (e: React.MouseEvent<HTMLButtonElement>) =>"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-react-dangerouslysetinnerhtml
+  languages: [typescript, tsx]
+  patterns:
+    - regex: |-
+        dangerouslySetInnerHTML=\{\{\s*__html:\s*[^}]+\}\}
+  severity: high
+  description: "dangerouslySetInnerHTML used - XSS vulnerability"
+  remediation: "Sanitize HTML with DOMPurify: __html: DOMPurify.sanitize(html)"
+  cwe: "CWE-79"
+  owasp: "A03:2021"
+
+- id: ts-react-dangerouslysetinnerhtml-from-props
+  languages: [typescript, tsx]
+  patterns:
+    - regex: |-
+        dangerouslySetInnerHTML=\{\{\s*__html:\s*props\.[^}]+\}\}
+  severity: high
+  description: "dangerouslySetInnerHTML with props - XSS risk from parent"
+  remediation: "Sanitize props in parent or use DOMPurify"
+  cwe: "CWE-79"
+  owasp: "A03:2021"
+
+- id: ts-react-href-javascript
+  languages: [typescript, tsx]
+  patterns:
+    - regex: |-
+        href=\{\s*['"`]javascript:[^'"`]*['"`]\s*\}
+  severity: high
+  description: "JavaScript protocol in href - XSS vulnerability"
+  remediation: "Use proper URLs or event handlers"
+  cwe: "CWE-79"
+  owasp: "A03:2021"
+
+- id: ts-react-href-javascript-variable
+  languages: [typescript, tsx]
+  patterns:
+    - regex: |-
+        href=\{\s*[a-zA-Z_$][a-zA-Z0-9_$]*\s*\}\s*/\*\s*javascript:.*\*/
+  severity: high
+  description: "JavaScript protocol via variable - dynamic XSS"
+  remediation: "Validate URL scheme: url.startsWith('https://')"
+  cwe: "CWE-79"
+  owasp: "A03:2021"
+
+- id: ts-react-iframe-src
+  languages: [typescript, tsx]
+  patterns:
+    - regex: |-
+        <iframe[^>]*src=\{\s*[^}]+\}[^>]*>.*</iframe>
+  severity: high
+  description: "Iframe with dynamic src - XSS risk"
+  remediation: "Validate src URL and use sandbox attribute"
+  cwe: "CWE-79"
+  owasp: "A03:2021"
+
+- id: ts-react-iframe-srcdoc
+  languages: [typescript, tsx]
+  patterns:
+    - regex: |-
+        <iframe[^>]*srcdoc=\{\s*[^}]+\}[^>]*>.*</iframe>
+  severity: high
+  description: "Iframe with dynamic srcdoc - XSS vulnerability"
+  remediation: "Sanitize HTML content for srcdoc"
+  cwe: "CWE-79"
+  owasp: "A03:2021"
+
+- id: ts-react-form-default
+  languages: [typescript, tsx]
+  patterns:
+    - regex: |-
+        <form[^>]*onSubmit=\{\s*[^}]+\}[^>]*>.*<button\s+type="submit"
+  severity: low
+  description: "Form with submit handler - ensure preventDefault is called"
+  remediation: "Call e.preventDefault() in submit handler"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-react-form-preventdefault-missing
+  languages: [typescript, tsx]
+  patterns:
+    - regex: |-
+        onSubmit=\{\s*\(\s*e\s*\)\s*=>\s*\{[^}]*(?!e\.preventDefault\(\))
+  severity: medium
+  description: "Form submit handler without preventDefault - page may reload"
+  remediation: "Add e.preventDefault() to handle form with JavaScript"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-react-key-prop
+  languages: [typescript, tsx]
+  patterns:
+    - regex: |-
+        <\w+[^>]*key=\{\s*Math\.random\(\)|key=\{\s*index\s*\}
+  severity: medium
+  description: "Using random or index as key - causes re-render issues"
+  remediation: "Use stable unique identifiers from data"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-react-setstate-unsafe
+  languages: [typescript, tsx]
+  patterns:
+    - regex: |-
+        set\w+State\s*\(\s*\w+\s*\+\s*\w+\s*\)|set\w+State\s*\(\s*[^)]+\+\s*[^)]+\)
+  severity: medium
+  description: "setState with addition - may use stale state"
+  remediation: "Use functional update: setState(prev => prev + value)"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-react-effect-deps-missing
+  languages: [typescript, tsx]
+  patterns:
+    - regex: |-
+        useEffect\s*\(\s*\(\s*\)\s*=>\s*\{[^}]*(?:fetch|axios|get|post)[^}]*\},\s*\[\s*\]\s*\)
+  severity: high
+  description: "useEffect with empty deps but using external variables - stale closure"
+  remediation: "Add all dependencies to array or fix logic"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-react-effect-cleanup-missing
+  languages: [typescript, tsx]
+  patterns:
+    - regex: |-
+        useEffect\s*\(\s*\(\s*\)\s*=>\s*\{[^}]*(?:addEventListener|setInterval|setTimeout|subscribe)[^}]*(?!return\s*\(\s*\)\s*=>)
+  severity: high
+  description: "useEffect with subscriptions without cleanup - memory leak"
+  remediation: "Return cleanup function: return () => { clearInterval(id); }"
+  cwe: "CWE-770"
+  owasp: "A04:2023"
+
+- id: ts-react-ref-current-assign
+  languages: [typescript, tsx]
+  patterns:
+    - regex: |-
+        \w+Ref\.current\s*=\s*[^;]+
+  severity: low
+  description: "Direct ref assignment - may cause issues"
+  remediation: "Use ref callbacks or let React manage refs"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-react-children-foreach
+  languages: [typescript, tsx]
+  patterns:
+    - regex: |-
+        React\.Children\.(?:map|forEach)\(\s*children,\s*\([^)]*\)\s*=>\s*[^{]*\<[^>]*\>
+  severity: low
+  description: "Manipulating children - may break React's reconciliation"
+  remediation: "Use composition instead of manipulating children"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+# ======================== NEXT.JS TYPESCRIPT (181-200) ========================
+
+- id: ts-nextjs-getserversideprops-return
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        export\s+const\s+getServerSideProps\s*:\s*GetServerSideProps\s*=\s*async\s*\(\s*context\s*\)\s*=>\s*\{[^}]*(?!props|notFound|redirect)
+  severity: high
+  description: "getServerSideProps missing proper return - may break page"
+  remediation: "Always return { props: {} } or { notFound: true } or { redirect: {} }"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-nextjs-getserversideprops-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        export\s+const\s+getServerSideProps\s*:\s*GetServerSideProps\s*=\s*async\s*\(\s*context:\s*any\s*\)
+  severity: high
+  description: "getServerSideProps context as any - loses type safety"
+  remediation: "Use GetServerSidePropsContext or typed context"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-nextjs-getstaticprops-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        export\s+const\s+getStaticProps\s*:\s*GetStaticProps\s*=\s*async\s*\(\s*context:\s*any\s*\)
+  severity: high
+  description: "getStaticProps context as any - loses type safety"
+  remediation: "Use GetStaticPropsContext or typed context"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-nextjs-getstaticpaths-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        export\s+const\s+getStaticPaths\s*:\s*GetStaticPaths\s*=\s*async\s*\(\s*\)\s*=>\s*\{[^}]*(?!fallback|paths)
+  severity: high
+  description: "getStaticPaths missing fallback or paths - may break SSG"
+  remediation: "Always return { paths: [], fallback: 'blocking' }"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-nextjs-api-route-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        export\s+default\s+async\s+function\s+handler\s*\(\s*req:\s*any\s*,\s*res:\s*any\s*\)
+  severity: critical
+  description: "Next.js API route with any types - no validation"
+  remediation: "Use NextApiRequest and NextApiResponse types"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-nextjs-api-route-body-validation
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        export\s+default\s+async\s+function\s+handler\s*\(\s*req:\s*NextApiRequest[^)]*\)\s*\{[^}]*(?:\w+:\s*req\.body\.\w+)(?!.*zod|.*yup|.*validate)
+  severity: high
+  description: "API route using req.body without validation"
+  remediation: "Validate request body with zod, yup, or middleware"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-nextjs-api-route-method-check
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        export\s+default\s+async\s+function\s+handler\s*\(\s*req:\s*NextApiRequest[^)]*\)\s*\{[^}]*(?!if\s*\(\s*req\.method\s*===)
+  severity: high
+  description: "API route without method check - accepts any HTTP method"
+  remediation: "Check req.method and return 405 for unsupported methods"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-nextjs-api-route-error-handling
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        export\s+default\s+async\s+function\s+handler\s*\([^)]*\)\s*\{[^}]*(?!try|catch)
+  severity: medium
+  description: "API route without try/catch - unhandled rejections"
+  remediation: "Wrap logic in try/catch and return appropriate error responses"
+  cwe: "CWE-754"
+  owasp: "A06:2021"
+
+- id: ts-nextjs-api-route-cors
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        export\s+default\s+async\s+function\s+handler\s*\([^)]*\)\s*\{[^}]*(?:res\.setHeader\([^)]*Access-Control-Allow-Origin[^)]*\))(?!.*\*)
+  severity: high
+  description: "API route with CORS headers - ensure proper configuration"
+  remediation: "Use Next.js CORS middleware or validate origins"
+  cwe: "CWE-942"
+  owasp: "A05:2021"
+
+- id: ts-nextjs-middleware-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        export\s+function\s+middleware\s*\(\s*request:\s*any\s*\)
+  severity: critical
+  description: "Next.js middleware with any type - no request validation"
+  remediation: "Use NextRequest type from 'next/server'"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-nextjs-middleware-auth
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        export\s+function\s+middleware\s*\(\s*request:\s*NextRequest\s*\)\s*\{[^}]*(?:const\s+token\s*=\s*request\.cookies\.get\s*\(\s*['"]token['"]\s*\))(?!.*if.*!token)
+  severity: high
+  description: "Middleware getting token without validation - auth bypass"
+  remediation: "Check token presence and validity"
+  cwe: "CWE-306"
+  owasp: "A01:2021"
+
+- id: ts-nextjs-middleware-redirect
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        NextResponse\.redirect\s*\(\s*new\s+URL\s*\(\s*[^,]+,\s*request\.url\s*\)\s*\)(?!.*allowlist)
+  severity: high
+  description: "Middleware redirect - ensure redirect URL is safe"
+  remediation: "Use allowed paths array: allowedPaths.includes(url.pathname)"
+  cwe: "CWE-601"
+  owasp: "A01:2021"
+
+- id: ts-nextjs-image-src
+  languages: [typescript, tsx]
+  patterns:
+    - regex: |-
+        <Image[^>]*src=\{\s*[^}]+\}[^>]*>
+  severity: low
+  description: "Next.js Image with dynamic src - ensure domain is allowed"
+  remediation: "Add domain to next.config.js images.domains"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-nextjs-link-href
+  languages: [typescript, tsx]
+  patterns:
+    - regex: |-
+        <Link[^>]*href=\{\s*[^}]+\}[^>]*>.*</Link>
+  severity: low
+  description: "Next.js Link with dynamic href - ensure valid path"
+  remediation: "Validate href format before passing to Link"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-nextjs-env-public
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        process\.env\.NEXT_PUBLIC_(?:SECRET|PASSWORD|KEY|TOKEN|API_KEY)
+  severity: critical
+  description: "Secret exposed via NEXT_PUBLIC_ prefix - client-side exposure"
+  remediation: "Remove NEXT_PUBLIC_ prefix, use server-side env vars only"
+  cwe: "CWE-200"
+  owasp: "A01:2021"
+
+- id: ts-nextjs-env-client-side
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        useEffect\s*\(\s*\(\s*\)\s*=>\s*\{[^}]*process\.env\.[^N]|getServerSideProps.*process\.env\.NEXT_PUBLIC
+  severity: high
+  description: "Environment variables misused - may expose secrets"
+  remediation: "Use NEXT_PUBLIC_ only for public values, others in getServerSideProps"
+  cwe: "CWE-200"
+  owasp: "A01:2021"
+
+- id: ts-nextjs-document-getinitialprops
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        MyDocument\.getInitialProps\s*=\s*async\s*\(\s*ctx\s*\)\s*=>\s*\{[^}]*\}
+  severity: medium
+  description: "Custom Document with getInitialProps - blocks static optimization"
+  remediation: "Avoid getInitialProps in _document, use _app instead"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+# ======================== ANGULAR TYPESCRIPT (201-225) ========================
+
+- id: ts-angular-component-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        @Component\(\{[^}]*\}[^)]*\)\s*export\s+class\s+\w+Component\s*\{\s*[^}]*\w+\s*:\s*any
+  severity: high
+  description: "Angular component with any type property"
+  remediation: "Define proper interfaces for component data"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-angular-input-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        @Input\(\)\s*\w+\s*:\s*any
+  severity: high
+  description: "Angular @Input with any type - loses type safety"
+  remediation: "Define specific type for inputs"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-angular-output-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        @Output\(\)\s*\w+\s*:\s*EventEmitter<any>
+  severity: high
+  description: "Angular @Output with any event type"
+  remediation: "Use EventEmitter<SpecificType>"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-angular-service-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        @Injectable\(\)\s*export\s+class\s+\w+Service\s*\{\s*[^}]*\w+\s*:\s*any
+  severity: high
+  description: "Angular service with any type property"
+  remediation: "Define proper types for service data"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-angular-http-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        this\.http\.(?:get|post|put|delete)<any>|as any.*subscribe
+  severity: critical
+  description: "Angular HTTP request with any type - no response validation"
+  remediation: "Define response interface and validate"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-angular-http-no-type
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        this\.http\.(?:get|post|put|delete)\([^)]*\)\.subscribe\s*\(\s*\(\s*data\s*\)\s*=>\s*[^{]*data(?!\s*:\s*\w+)
+  severity: high
+  description: "Angular HTTP request without type - data is any"
+  remediation: "Use http.get<MyType>() and validate response"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-angular-http-error-handling
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        subscribe\s*\(\s*\(\s*data\s*\)\s*=>\s*\{[^}]*(?!},\s*error\s*=>)
+  severity: high
+  description: "Angular HTTP subscribe without error handler"
+  remediation: "Add error callback: subscribe({ next: data => {}, error: err => {} })"
+  cwe: "CWE-754"
+  owasp: "A06:2021"
+
+- id: ts-angular-route-params-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        this\.route\.params\.subscribe\s*\(\s*\(\s*params\s*\)\s*=>\s*\{[^}]*params\.\w+\s+as\s+any
+  severity: high
+  description: "Angular route params with any - no validation"
+  remediation: "Use params['id'] with type assertion after validation"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-angular-route-param-validation
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        this\.route\.params\.subscribe\s*\(\s*\(\s*params\s*\)\s*=>\s*\{[^}]*(?!if\s*\(\s*params\['id'\])
+  severity: medium
+  description: "Route params used without existence check"
+  remediation: "Check if params exist before using"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-angular-formgroup-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        this\.formGroup\.value\s+as\s+any
+  severity: high
+  description: "FormGroup value as any - loses type safety"
+  remediation: "Define interface for form value and use type assertion"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-angular-formgroup-novalidation
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        new\s+FormGroup\(\{\s*[^}]+\}\}\);(?!.*Validators)
+  severity: medium
+  description: "FormGroup without validators - accepts any input"
+  remediation: "Add Validators for required fields, email, minlength, etc."
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-angular-bypass-security
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        bypassSecurityTrust(?:Html|Script|Style|Url|ResourceUrl)
+  severity: high
+  description: "Angular DomSanitizer bypass - XSS vulnerability"
+  remediation: "Use with extreme caution, sanitize input first"
+  cwe: "CWE-79"
+  owasp: "A03:2021"
+
+- id: ts-angular-bypass-with-input
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        bypassSecurityTrustHtml\s*\(\s*[^)]*(?:this\.|input|@Input)
+  severity: high
+  description: "DomSanitizer bypass with component input - XSS risk"
+  remediation: "Validate and sanitize input before bypass"
+  cwe: "CWE-79"
+  owasp: "A03:2021"
+
+- id: ts-angular-innerhtml
+  languages: [typescript, html]
+  patterns:
+    - regex: |-
+        \[innerHTML\]\s*=\s*['"`][^'"`]*\{\{[^}]*\}\}['"`]|\[innerHTML\]\s*=\s*["']?[^"']*this\.[^"']*
+  severity: high
+  description: "Angular innerHTML binding - XSS vulnerability"
+  remediation: "Use DomSanitizer or avoid binding user HTML"
+  cwe: "CWE-79"
+  owasp: "A03:2021"
+
+- id: ts-angular-interpolation-injection
+  languages: [typescript, html]
+  patterns:
+    - regex: |-
+        \{\{\s*[^}]*(?:this\.|component\.)[^}]*\}\}
+  severity: medium
+  description: "Angular interpolation - ensure content is escaped"
+  remediation: "Angular escapes by default - safe unless bypassed"
+  cwe: "CWE-79"
+  owasp: "A03:2021"
+
+- id: ts-angular-http-interceptor
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        intercept\s*\(\s*req:\s*HttpRequest<any>,\s*next:\s*HttpHandler
+  severity: medium
+  description: "HTTP interceptor with any request type"
+  remediation: "Use HttpRequest<unknown> and clone with type"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-angular-guard-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        canActivate\s*\(\s*route:\s*ActivatedRouteSnapshot,\s*state:\s*RouterStateSnapshot\s*\):[^}]*\{[^}]*return\s+[^;]+\s*;\s*\}
+  severity: medium
+  description: "Route guard without auth check - may allow unauthorized access"
+  remediation: "Implement proper authentication check"
+  cwe: "CWE-306"
+  owasp: "A01:2021"
+
+- id: ts-angular-resolver-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        resolve\s*\(\s*route:\s*ActivatedRouteSnapshot\s*\):\s*Observable<any>|Promise<any>|any
+  severity: high
+  description: "Resolver returning any - no type safety"
+  remediation: "Return typed Observable<MyType>"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-angular-pipe-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        transform\s*\(\s*value:\s*any,\s*\.\.\.args:\s*any\[\]\s*\):\s*any
+  severity: high
+  description: "Angular pipe with any inputs/outputs"
+  remediation: "Define specific types for transform method"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-angular-directive-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        @Directive\(\{[^}]*\}[^)]*\)\s*export\s+class\s+\w+Directive\s*\{\s*@Input\(\)\s*\w+\s*:\s*any
+  severity: high
+  description: "Angular directive with any input"
+  remediation: "Define specific type for directive inputs"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-angular-ngzone-run
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        this\.ngZone\.run\s*\(\s*\(\s*\)\s*=>\s*\{[^}]*this\.
+  severity: low
+  description: "NgZone.run used - ensure change detection needed"
+  remediation: "Only use when Angular doesn't detect changes automatically"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+# ======================== VUE.JS TYPESCRIPT (226-245) ========================
+
+- id: ts-vue-define-component-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        defineComponent\s*\(\s*\{\s*[^}]*props:\s*[^,]*\w+\s*:\s*\{[^}]*type:\s*[^,]*\w+\s*,\s*default:\s*[^,]*any
+  severity: high
+  description: "Vue component props with any default - loses type safety"
+  remediation: "Use specific prop types with TypeScript"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-vue-ref-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        (?:ref|shallowRef)<any>|ref\s*\(\s*[^)]*\)\s+as\s+Ref<any>
+  severity: high
+  description: "Vue ref with any type"
+  remediation: "Use ref<SpecificType>(initialValue)"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-vue-reactive-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        reactive<any>|reactive\s*\(\s*\{\s*[^}]*\}\s*\)\s+as\s+any
+  severity: high
+  description: "Vue reactive with any type"
+  remediation: "Define interface for reactive object"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-vue-computed-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        computed<any>|computed\s*\(\s*\(\)\s*=>\s*[^{]*[^}]+\s*\)\s+as\s+any
+  severity: high
+  description: "Vue computed with any return type"
+  remediation: "Computed type is inferred, avoid explicit any"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-vue-watch-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        watch\s*\(\s*[^,]+,\s*\(\s*newVal:\s*any\s*,\s*oldVal:\s*any\s*\)\s*=>
+  severity: high
+  description: "Vue watch with any parameters"
+  remediation: "Types are inferred from watched source"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-vue-emit-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        emit\s*\(\s*['"][^'"]+['"]\s*,\s*[^)]+as\s+any
+  severity: high
+  description: "Vue emit with any payload"
+  remediation: "Define emit types with defineEmits<{...}>()"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-vue-props-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        defineProps<{[^}]*\w+\?\s*:\s*any
+  severity: high
+  description: "Vue props with any type"
+  remediation: "Define proper prop types"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-vue-slots-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        defineSlots<{[^}]*:\s*any
+  severity: high
+  description: "Vue slots with any type"
+  remediation: "Define slot prop types"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-vue-route-params-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        useRoute\(\s*\)\.params\.\w+\s+as\s+any
+  severity: high
+  description: "Vue route params as any - no validation"
+  remediation: "Use route.params.id with type assertion after validation"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-vue-route-query-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        useRoute\(\s*\)\.query\.\w+\s+as\s+any
+  severity: high
+  description: "Vue route query as any - no validation"
+  remediation: "Validate query parameters"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-vue-store-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        useStore\(\s*\)\.state\.[^.]+\s+as\s+any
+  severity: high
+  description: "Vue store state as any - no type safety"
+  remediation: "Define store with typed state"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-vue-v-html
+  languages: [typescript, vue]
+  patterns:
+    - regex: |-
+        v-html\s*=\s*['"`][^'"`]*\w+[^'"`]*['"`]
+  severity: high
+  description: "Vue v-html directive - XSS vulnerability"
+  remediation: "Use v-text or sanitize HTML with DOMPurify"
+  cwe: "CWE-79"
+  owasp: "A03:2021"
+
+- id: ts-vue-v-html-from-props
+  languages: [typescript, vue]
+  patterns:
+    - regex: |-
+        v-html\s*=\s*['"`]\s*props\.\w+\s*['"`]
+  severity: high
+  description: "Vue v-html with props - XSS risk from parent"
+  remediation: "Sanitize props in parent or use v-text"
+  cwe: "CWE-79"
+  owasp: "A03:2021"
+
+- id: ts-vue-router-push
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        router\.push\s*\(\s*[^)]*\+|router\.push\s*\(\s*`[^`]*\${[^`]*}`\s*\)
+  severity: high
+  description: "Router.push with concatenated path - open redirect risk"
+  remediation: "Validate redirect path or use named routes"
+  cwe: "CWE-601"
+  owasp: "A01:2021"
+
+- id: ts-vue-template-ref-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        templateRef\s*=\s*['"`]\w+['"`]\s*\).*\s+as\s+any
+  severity: medium
+  description: "Vue template ref as any - no element type"
+  remediation: "Use ref<HTMLElement | null>(null)"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+# ======================== NESTJS TYPESCRIPT (246-275) ========================
+
+- id: ts-nestjs-controller-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        @Controller\([^)]*\)\s*export\s+class\s+\w+Controller\s*\{\s*[^}]*\w+\s*:\s*any
+  severity: high
+  description: "NestJS controller with any type property"
+  remediation: "Define proper types for controller dependencies"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-nestjs-body-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        @Body\(\)\s*\w+\s*:\s*any
+  severity: critical
+  description: "NestJS @Body with any type - no validation"
+  remediation: "Use DTO class with class-validator decorators"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-nestjs-query-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        @Query\(\)\s*\w+\s*:\s*any
+  severity: critical
+  description: "NestJS @Query with any type - no validation"
+  remediation: "Use DTO or class-validator for query params"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-nestjs-params-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        @Param\([^)]*\)\s*\w+\s*:\s*any
+  severity: critical
+  description: "NestJS @Param with any type - no validation"
+  remediation: "Use ParseIntPipe or custom validation pipes"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-nestjs-headers-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        @Headers\([^)]*\)\s*\w+\s*:\s*any
+  severity: high
+  description: "NestJS @Headers with any type - no validation"
+  remediation: "Define expected header interface"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-nestjs-ip-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        @Ip\(\)\s*\w+\s*:\s*any
+  severity: medium
+  description: "NestJS @Ip with any type - IP is string"
+  remediation: "Use string type for IP"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-nestjs-session-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        @Session\(\)\s*\w+\s*:\s*any
+  severity: high
+  description: "NestJS @Session with any type - no session validation"
+  remediation: "Define session interface"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-nestjs-uploaded-file-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        @UploadedFile\(\)\s*\w+\s*:\s*any
+  severity: critical
+  description: "NestJS uploaded file as any - no file validation"
+  remediation: "Use Express.Multer.File type and validate"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-nestjs-uploaded-files-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        @UploadedFiles\(\)\s*\w+\s*:\s*any
+  severity: critical
+  description: "NestJS uploaded files as any - no validation"
+  remediation: "Use Express.Multer.File[] type and validate"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-nestjs-dto-validation-missing
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        class\s+\w+Dto\s*\{\s*[^}]*(?!@Is|@Validate|@Matches)
+  severity: high
+  description: "DTO class without validation decorators"
+  remediation: "Add class-validator decorators to DTO properties"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-nestjs-dto-partial-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        PartialType\s*\(\s*\w+Dto\s*\)\s*:\s*any
+  severity: medium
+  description: "PartialType incorrectly typed"
+  remediation: "Return type is inferred, avoid explicit any"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-nestjs-guard-return
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        canActivate\s*\(\s*[^)]*\)\s*:\s*(?:Promise<boolean>|Observable<boolean>|boolean)\s*\{\s*return\s+true
+  severity: critical
+  description: "Guard always returns true - no authorization"
+  remediation: "Implement proper authentication/authorization logic"
+  cwe: "CWE-306"
+  owasp: "A01:2021"
+
+- id: ts-nestjs-guard-without-reflection
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        canActivate\s*\(\s*[^)]*\)\s*:\s*(?:Promise<boolean>|Observable<boolean>|boolean)\s*\{\s*[^}]*(?!Reflector|@SetMetadata)
+  severity: high
+  description: "Guard without role/permission metadata"
+  remediation: "Use @SetMetadata and Reflector for role-based auth"
+  cwe: "CWE-284"
+  owasp: "A01:2021"
+
+- id: ts-nestjs-interceptor-stream-handling
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        intercept\s*\(\s*[^)]*\)\s*:\s*Observable<any>\s*\{\s*return\s+next\.handle\(\)
+  severity: low
+  description: "Interceptor without logic - consider if needed"
+  remediation: "Remove interceptor or add functionality"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-nestjs-pipe-transform
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        transform\s*\(\s*value:\s*any,\s*metadata:\s*ArgumentMetadata\s*\)\s*:\s*any
+  severity: high
+  description: "Pipe with any transform - no type safety"
+  remediation: "Use generics: transform<T>(value: T, metadata): T"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-nestjs-exception-filter
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        catch\s*\(\s*exception:\s*any\s*,\s*host:\s*ArgumentsHost\s*\)\s*\{[^}]*(?:exception\.message\s*\+\s*exception\.stack)
+  severity: high
+  description: "Exception filter exposing error details"
+  remediation: "Return sanitized error messages, log details"
+  cwe: "CWE-209"
+  owasp: "A05:2021"
+
+- id: ts-nestjs-middleware-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        use\s*\(\s*req:\s*any,\s*res:\s*any,\s*next:\s*any\s*\)\s*=>\s*\{
+  severity: critical
+  description: "Middleware with any types - no request validation"
+  remediation: "Use Request, Response, NextFunction from Express"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-nestjs-module-imports
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        @Module\(\{[^}]*imports:\s*\[\s*[^\]]*\.\.\.
+  severity: low
+  description: "Module imports with spread - may hide dependencies"
+  remediation: "List imports explicitly"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-nestjs-circular-dependency
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        @Inject\(forwardRef\(\(\) => \w+\)\)\s*\w+\s*:\s*\w+
+  severity: low
+  description: "Circular dependency detected"
+  remediation: "Refactor to avoid circular dependencies"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-nestjs-optional-injection
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        @Optional\(\)\s*@Inject\([^)]+\)\s*\w+\s*:\s*\w+\s*=\s*null
+  severity: low
+  description: "Optional injection with default null"
+  remediation: "Handle null case in service methods"
+  cwe: "CWE-476"
+  owasp: "N/A"
+
+- id: ts-nestjs-config-service
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        configService\.get<[^>]+>\(\s*['"][^'"]+['"]\s*\)\s*\?\?
+  severity: low
+  description: "ConfigService with fallback - ensure default safe"
+  remediation: "Provide safe defaults for production"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-nestjs-cache-interceptor
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        @UseInterceptors\(CacheInterceptor\)\s*@Get\(\)
+  severity: medium
+  description: "CacheInterceptor on GET - may cache sensitive data"
+  remediation: "Use @CacheKey and @CacheTTL for fine control"
+  cwe: "CWE-524"
+  owasp: "A05:2021"
+
+# ======================== EXPRESS TYPESCRIPT (276-300) ========================
+
+- id: ts-express-request-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        app\.(?:get|post|put|delete|use)\(\s*['"][^'"]+['"]\s*,\s*\(\s*req:\s*any\s*,\s*res:\s*any\s*\)\s*=>
+  severity: critical
+  description: "Express route with any types - no request validation"
+  remediation: "Use Request, Response types from express"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-express-request-body-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        req\.body\s+as\s+any
+  severity: critical
+  description: "Request body as any - no validation"
+  remediation: "Define interface and validate with zod"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-express-request-params-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        req\.params\.\w+\s+as\s+any
+  severity: critical
+  description: "Request params as any - no validation"
+  remediation: "Validate params with express-validator or zod"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-express-request-query-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        req\.query\.\w+\s+as\s+any
+  severity: critical
+  description: "Request query as any - no validation"
+  remediation: "Validate query parameters with schema"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-express-request-headers-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        req\.headers\.[a-z-]+\s+as\s+any
+  severity: high
+  description: "Request headers as any - no validation"
+  remediation: "Check header existence and format"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-express-response-send-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        res\.(?:json|send)\s*\(\s*[^)]+as\s+any
+  severity: medium
+  description: "Response with any - ensure proper response format"
+  remediation: "Define response interface and validate"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-express-next-error
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        next\s*\(\s*err\s*\)(?!.*\?\?.*|.*\|\|.*)
+  severity: medium
+  description: "next(err) without error handling - may crash"
+  remediation: "Use error-handling middleware after routes"
+  cwe: "CWE-754"
+  owasp: "A06:2021"
+
+- id: ts-express-middleware-order
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        app\.use\(\s*express\.json\(\)\s*\);\s*app\.use\(\s*['"][^'"]+['"]\s*,\s*[^)]+\);\s*app\.use\(\s*express\.urlencoded\(
+  severity: high
+  description: "Body parser after routes - won't work"
+  remediation: "Place body-parser middleware before routes"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-express-cors-all
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        cors\(\s*\{\s*origin:\s*['"]\*['"]\s*\}
+  severity: medium
+  description: "CORS with wildcard origin - security risk"
+  remediation: "Specify allowed origins: origin: ['https://example.com']"
+  cwe: "CWE-942"
+  owasp: "A05:2021"
+
+- id: ts-express-cors-credentials
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        cors\(\s*\{\s*origin:\s*['"]\*['"]\s*,\s*credentials:\s*true\s*\}
+  severity: medium
+  description: "CORS wildcard with credentials - completely insecure"
+  remediation: "Never combine credentials: true with wildcard origin"
+  cwe: "CWE-942"
+  owasp: "A05:2021"
+
+- id: ts-express-cookie-parser
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        cookieParser\(\s*['"][^'"]+['"]\s*\)
+  severity: medium
+  description: "Cookie parser with secret - ensure secret is secure"
+  remediation: "Use environment variable for secret"
+  cwe: "CWE-798"
+  owasp: "A07:2021"
+
+- id: ts-express-session-config
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        session\(\s*\{\s*secret:\s*['"][^'"]+['"]\s*,\s*resave:\s*false\s*,\s*saveUninitialized:\s*false\s*\}
+  severity: high
+  description: "Session config - ensure secure settings"
+  remediation: "Add cookie: { secure: true, httpOnly: true, sameSite: 'strict' }"
+  cwe: "CWE-614"
+  owasp: "A01:2021"
+
+- id: ts-express-static-files
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        express\.static\s*\(\s*['"](?:\./|\.\./)?[^'"]*['"]\s*\)
+  severity: medium
+  description: "Static file serving - ensure no sensitive files exposed"
+  remediation: "Serve static files from dedicated directory, not root"
+  cwe: "CWE-200"
+  owasp: "A05:2021"
+
+- id: ts-prisma-raw-sql
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        prisma\.\$queryRaw\s*`[^`]*\${[^}`]*}[^`]*`
+  severity: critical
+  description: "Prisma raw query with interpolation - SQL injection"
+  remediation: "Use Prisma.sql tagged template: Prisma.sql`SELECT * FROM user WHERE id = ${id}`"
+  cwe: "CWE-89"
+  owasp: "A03:2021"
+
+- id: ts-prisma-raw-unsafe
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        prisma\.\$(?:executeRaw|queryRaw)Unsafe\s*\(\s*['"`][^'"`]*\${[^}`]*}[^'"`]*['"`]
+  severity: critical
+  description: "Prisma rawUnsafe query with interpolation - SQL injection"
+  remediation: "Never use unsafe methods with user input"
+  cwe: "CWE-89"
+  owasp: "A03:2021"
+
+- id: ts-prisma-where-raw
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        where:\s*\{\s*\w+:\s*\{\s*contains:\s*req\.
+  severity: high
+  description: "Prisma where with contains from request - potential injection"
+  remediation: "Validate and sanitize search input"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-typeorm-raw-query
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        .query\s*\(\s*['"`][^'"`]*\${[^}`]*}[^'"`]*['"`]
+  severity: critical
+  description: "TypeORM raw query with interpolation - SQL injection"
+  remediation: "Use query builder with parameters: .where('user.id = :id', { id: userId })"
+  cwe: "CWE-89"
+  owasp: "A03:2021"
+
+- id: ts-typeorm-where-raw
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        .where\s*\(\s*['"`][^'"`]*\${[^}`]*}[^'"`]*['"`]
+  severity: critical
+  description: "TypeORM where with interpolation - SQL injection"
+  remediation: "Use parameterized where: .where('user.id = :id', { id })"
+  cwe: "CWE-89"
+  owasp: "A03:2021"
+
+- id: ts-typeorm-find-idor
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        findOne(?:OrFail)?\s*\(\s*\{\s*where:\s*\{\s*id:\s*req\.params\.id\s*\}\s*\}
+  severity: critical
+  description: "Find by ID from request without ownership check - IDOR vulnerability"
+  remediation: "Check user authorization before returning data"
+  cwe: "CWE-639"
+  owasp: "A01:2021"
+
+- id: ts-typeorm-update-idor
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        update\s*\(\s*\{\s*[^}]*id:\s*req\.params\.id[^}]*\},\s*[^)]+\)
+  severity: critical
+  description: "Update by ID from request without ownership check - IDOR"
+  remediation: "Verify user owns the resource before updating"
+  cwe: "CWE-639"
+  owasp: "A01:2021"
+
+- id: ts-typeorm-delete-idor
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        delete\s*\(\s*\{\s*[^}]*id:\s*req\.params\.id[^}]*\}
+  severity: critical
+  description: "Delete by ID from request without ownership check - IDOR"
+  remediation: "Check authorization before deletion"
+  cwe: "CWE-639"
+  owasp: "A01:2021"
+
+- id: ts-mongoose-query-injection
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        Model\.(?:find|findOne|findById|update|delete)\(\s*\{\s*[^}]*(?:req\.|query\.|body\.)
+  severity: high
+  description: "Mongoose query with request data - NoSQL injection"
+  remediation: "Validate and sanitize query parameters"
+  cwe: "CWE-943"
+  owasp: "A03:2021"
+
+- id: ts-mongoose-where-injection
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        \.where\s*\(\s*['"`][^'"`]*\${[^}`]*}[^'"`]*['"`]
+  severity: critical
+  description: "Mongoose where with interpolation - NoSQL injection"
+  remediation: "Use query builder with object notation"
+  cwe: "CWE-943"
+  owasp: "A03:2021"
+
+- id: ts-mongoose-json-injection
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        \.find\s*\(\s*JSON\.parse\s*\(\s*req\.
+  severity: critical
+  description: "Mongoose find with parsed JSON from request - injection risk"
+  remediation: "Validate query structure before using"
+  cwe: "CWE-943"
+  owasp: "A03:2021"
+
+- id: ts-sequelize-raw-query
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        sequelize\.query\s*\(\s*['"`][^'"`]*\${[^}`]*}[^'"`]*['"`]
+  severity: critical
+  description: "Sequelize raw query with interpolation - SQL injection"
+  remediation: "Use replacements: sequelize.query('SELECT * FROM users WHERE id = :id', { replacements: { id } })"
+  cwe: "CWE-89"
+  owasp: "A03:2021"
+
+- id: ts-sequelize-where-raw
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        where:\s*sequelize\.literal\s*\(\s*['"`][^'"`]*\${[^}`]*}
+  severity: critical
+  description: "Sequelize literal with interpolation - SQL injection"
+  remediation: "Avoid literal with user input"
+  cwe: "CWE-89"
+  owasp: "A03:2021"
+
+- id: ts-knex-raw-query
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        knex\.raw\s*\(\s*['"`][^'"`]*\${[^}`]*}[^'"`]*['"`]
+  severity: critical
+  description: "Knex raw query with interpolation - SQL injection"
+  remediation: "Use bindings: knex.raw('SELECT * FROM users WHERE id = ?', [id])"
+  cwe: "CWE-89"
+  owasp: "A03:2021"
+
+- id: ts-redis-injection
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        redis\.(?:set|get|hset|hget)\s*\(\s*['"`][^'"`]*\${[^}`]*}[^'"`]*['"`]
+  severity: high
+  description: "Redis command with interpolation - command injection"
+  remediation: "Use Redis parameterized commands or validate keys"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+# ======================== RXJS TYPESCRIPT (326-350) ========================
+
+- id: ts-rxjs-subscribe-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        subscribe\s*\(\s*\(\s*(?:data|res|response)\s*:\s*any\s*\)\s*=>
+  severity: high
+  description: "RxJS subscribe with any type - no type safety"
+  remediation: "Observable should be typed: Observable<MyType>"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-rxjs-subscribe-error
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        subscribe\s*\(\s*\(\s*[^)]*\)\s*=>\s*\{[^}]*(?!,\s*\(\s*err\s*\)\s*=>|,\s*error\s*=>)
+  severity: high
+  description: "RxJS subscribe without error handler - unhandled errors"
+  remediation: "Add error callback: subscribe({ next: v => {}, error: e => {} })"
+  cwe: "CWE-754"
+  owasp: "A06:2021"
+
+- id: ts-rxjs-subscribe-complete
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        subscribe\s*\(\s*\(\s*[^)]*\)\s*=>\s*\{[^}]*(?!,\s*\(\s*\)\s*=>|,\s*complete\s*=>)
+  severity: low
+  description: "RxJS subscribe without completion handler"
+  remediation: "Add complete callback if needed"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-rxjs-subscribe-in-component
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        ngOnInit\s*\(\s*\)\s*\{\s*[^}]*(?:service|api)\.\w+\(\)\.subscribe\(
+  severity: high
+  description: "RxJS subscribe in component without cleanup - memory leak"
+  remediation: "Use async pipe in template or unsubscribe in ngOnDestroy"
+  cwe: "CWE-770"
+  owasp: "A04:2023"
+
+- id: ts-rxjs-unsubscribe-missing
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        subscribe\([^)]*\)\s*;\s*(?!this\.subscription|private\s+subscription|unsubscribe)
+  severity: high
+  description: "Subscription without tracking - memory leak"
+  remediation: "Store subscription and unsubscribe in ngOnDestroy"
+  cwe: "CWE-770"
+  owasp: "A04:2023"
+
+- id: ts-rxjs-pipe-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        pipe\([^)]*\)\s*:\s*Observable<any>
+  severity: medium
+  description: "Pipe returning Observable<any> - loses type"
+  remediation: "Types should flow through operators"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-rxjs-map-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        map\s*\(\s*\(\s*[^)]*\)\s*:\s*any\s*=>|map\s*\(\s*\(\s*[^)]*\)\s*=>\s*[^{]*(?:as\s+any)
+  severity: high
+  description: "Map operator returning any - loses type"
+  remediation: "Return type should be explicit or inferred"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-rxjs-switchmap-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        switchMap\s*\(\s*\(\s*[^)]*\)\s*:\s*Observable<any>
+  severity: high
+  description: "switchMap returning Observable<any>"
+  remediation: "Inner observable should be typed"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-rxjs-mergemap-concurrency
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        mergeMap\s*\(\s*[^,)]+\)(?!,)
+  severity: medium
+  description: "mergeMap without concurrency limit - may overload"
+  remediation: "Add concurrency limit: mergeMap(fn, 5)"
+  cwe: "CWE-770"
+  owasp: "A04:2023"
+
+- id: ts-rxjs-concatmap-infinite
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        concatMap\s*\(\s*[^)]+\)\s*\.subscribe
+  severity: low
+  description: "concatMap on infinite observable - never completes"
+  remediation: "Ensure source completes or use takeUntil"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-rxjs-exhaustmap-overload
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        exhaustMap\s*\(\s*[^)]+\)\s*\.subscribe
+  severity: low
+  description: "exhaustMap - ignores new emissions while processing"
+  remediation: "Ensure this is desired behavior"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-rxjs-combinelatest-untyped
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        combineLatest\([^)]+\)\.subscribe\(\s*\(\s*[^)]*\)\s*=>\s*\{[^}]*(?:as\s+any)
+  severity: medium
+  description: "combineLatest with destructuring as any"
+  remediation: "combineLatest returns tuple type"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-rxjs-forkjoin-error
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        forkJoin\([^)]+\)\.subscribe\(\s*\(\s*[^)]*\)\s*=>\s*\{[^}]*(?!,\s*err\s*=>)
+  severity: high
+  description: "forkJoin without error handling - any error fails all"
+  remediation: "Add error callback or catchError per observable"
+  cwe: "CWE-754"
+  owasp: "A06:2021"
+
+- id: ts-rxjs-retry-infinite
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        retry\(\)|retry\(\s*Infinity\s*\)
+  severity: high
+  description: "Infinite retry - may cause never-ending failures"
+  remediation: "Limit retries: retry(3) with backoff"
+  cwe: "CWE-770"
+  owasp: "A04:2023"
+
+# ======================== TESTING (351-375) ========================
+
+- id: ts-jest-mock-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        jest\.fn\(\)\s+as\s+any|jest\.mock\([^)]+,\s*\(\s*\)\s*=>\s*\(\{\}\)\s+as\s+any
+  severity: high
+  description: "Jest mock as any - loses type safety in tests"
+  remediation: "Use jest.Mocked<Type> or jest.mocked()"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-jest-mockimplementation-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        mockImplementation\(\s*\(\s*\.\.\.args:\s*any\[\]\s*\)\s*:\s*any\s*=>\s*
+  severity: high
+  description: "mockImplementation with any args/return - no type check"
+  remediation: "Use typed parameters and return"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-jest-mockreturnvalue-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        mockReturnValue\(\s*[^)]+as\s+any\s*\)
+  severity: high
+  description: "mockReturnValue with any - return type unchecked"
+  remediation: "Return value should match mocked type"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-jest-mockresolvedvalue-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        mockResolvedValue\(\s*[^)]+as\s+any\s*\)
+  severity: high
+  description: "mockResolvedValue with any - resolved type unchecked"
+  remediation: "Value should match Promise resolution type"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-jest-mockrejectedvalue-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        mockRejectedValue\(\s*[^)]+as\s+any\s*\)
+  severity: high
+  description: "mockRejectedValue with any - error type unchecked"
+  remediation: "Use Error instance or typed error"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-jest-spyon-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        jest\.spyOn\([^,]+,\s*['"][^'"]+['"]\)\s+as\s+any
+  severity: high
+  description: "spyOn as any - loses method typing"
+  remediation: "Spy type is inferred, don't assert"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-testing-library-query-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        screen\.getBy(?:Text|Role|LabelText|PlaceholderText)\([^)]+\)\s+as\s+any
+  severity: medium
+  description: "Testing Library query as any - element may be null"
+  remediation: "Use expect(element).toBeInTheDocument()"
+  cwe: "CWE-476"
+  owasp: "N/A"
+
+- id: ts-testing-library-find-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        screen\.findBy(?:Text|Role|LabelText)\([^)]+\)\s+as\s+any
+  severity: medium
+  description: "findBy query as any - async element may not exist"
+  remediation: "Use await and handle null case"
+  cwe: "CWE-476"
+  owasp: "N/A"
+
+- id: ts-testing-library-queryall-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        screen\.getAllBy(?:Text|Role)\([^)]+\)\s+as\s+any
+  severity: low
+  description: "getAllBy query as any - array may be empty"
+  remediation: "Check array length before access"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-cypress-request-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        cy\.request\([^)]+\)\.then\(\s*\(\s*response:\s*any\s*\)\s*=>
+  severity: high
+  description: "Cypress request with any response - no typing"
+  remediation: "Use Cypress.Response<MyType>"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-cypress-intercept-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        cy\.intercept\([^)]+\)\.as\([^)]+\);\s*cy\.wait\('@[^']+'\)\.then\(\s*\(\s*interception:\s*any\s*\)\s*=>\s*
+  severity: high
+  description: "Cypress interception as any - loses response typing"
+  remediation: "Use Cypress.Interception type"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-cypress-custom-command
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        Cypress\.Commands\.add\(['"][^'"]+['"],\s*\(\s*\.\.\.args:\s*any\[\]\s*\)\s*=>\s*\{[^}]*\}
+  severity: medium
+  description: "Cypress custom command with any args"
+  remediation: "Add type definitions for custom commands"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-playwright-page-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        page\.(?:locator|frameLocator)\([^)]+\)\s+as\s+any
+  severity: medium
+  description: "Playwright locator as any - loses element typing"
+  remediation: "Use Locator type directly"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-playwright-request-any
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        page\.waitForResponse\([^)]+\)\.then\(\s*\(\s*response:\s*any\s*\)\s*=>
+  severity: high
+  description: "Playwright response as any - no typing"
+  remediation: "Use Response type and validate"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+# ======================== BUILD & CONFIGURATION (376-400) ========================
+
+- id: ts-config-eslint-disabled
+  languages: [json]
+  patterns:
+    - regex: |-
+        "rules":\s*\{\s*"[^"]+":\s*"off"
+  severity: medium
+  description: "ESLint rules disabled - may miss security issues"
+  remediation: "Review disabled rules, re-enable if possible"
+  cwe: "CWE-1104"
+  owasp: "A06:2021"
+
+- id: ts-config-tslint-used
+  languages: [json]
+  patterns:
+    - regex: |-
+        "tslint"
+  severity: high
+  description: "TSLint is deprecated, use ESLint"
+  remediation: "Migrate from TSLint to ESLint with typescript-eslint"
+  cwe: "CWE-1104"
+  owasp: "A06:2021"
+
+- id: ts-config-prettier-ignore
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        //\s*prettier-ignore
+  severity: low
+  description: "Prettier ignored - formatting bypassed"
+  remediation: "Remove ignore or reformat manually"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-config-ts-ignore
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        //\s*@ts-ignore
+  severity: high
+  description: "TypeScript error suppressed - may hide type issues"
+  remediation: "Fix underlying type error instead of ignoring"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-config-ts-expect-error
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        //\s*@ts-expect-error
+  severity: medium
+  description: "TypeScript error expected - ensure error is intentional"
+  remediation: "Add comment explaining why error is expected"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-config-ts-nocheck
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        //\s*@ts-nocheck
+  severity: critical
+  description: "Type checking disabled for entire file"
+  remediation: "Never use @ts-nocheck, fix type errors instead"
+  cwe: "CWE-710"
+  owasp: "N/A"
+
+- id: ts-config-declaration-map
+  languages: [json]
+  patterns:
+    - regex: |-
+        "declarationMap":\s*true
+  severity: medium
+  description: "Declaration maps generated - may expose source maps"
+  remediation: "Set to false in production"
+  cwe: "CWE-200"
+  owasp: "A05:2021"
+
+- id: ts-config-inline-source-map
+  languages: [json]
+  patterns:
+    - regex: |-
+        "inlineSourceMap":\s*true
+  severity: high
+  description: "Source maps inlined in production files - exposes source"
+  remediation: "Disable in production or use external source maps"
+  cwe: "CWE-200"
+  owasp: "A05:2021"
+
+- id: ts-config-inline-sources
+  languages: [json]
+  patterns:
+    - regex: |-
+        "inlineSources":\s*true
+  severity: high
+  description: "Source code inlined in source maps - exposes code"
+  remediation: "Set to false in production"
+  cwe: "CWE-200"
+  owasp: "A05:2021"
+
+- id: ts-config-paths-expose
+  languages: [json]
+  patterns:
+    - regex: |-
+        "paths":\s*\{\s*"[^"]+":\s*\[\s*"[^"]*\.\.\/
+  severity: high
+  description: "Path mappings with parent directory - may expose outside root"
+  remediation: "Use absolute paths or restrict to project root"
+  cwe: "CWE-22"
+  owasp: "A01:2021"
+
+# ======================== SECURITY HEADERS & CSP (401-425) ========================
+
+- id: ts-csp-meta-unsafe-inline
+  languages: [typescript, html]
+  patterns:
+    - regex: |-
+        <meta[^>]*http-equiv\s*=\s*['"]Content-Security-Policy['"][^>]*content\s*=\s*['"][^'"]*'unsafe-inline'[^'"]*['"]
+  severity: high
+  description: "CSP meta tag with unsafe-inline - disables XSS protection"
+  remediation: "Remove 'unsafe-inline', use nonces or hashes for inline scripts"
+  cwe: "CWE-79"
+  owasp: "A03:2021"
+
+- id: ts-csp-meta-unsafe-eval
+  languages: [typescript, html]
+  patterns:
+    - regex: |-
+        <meta[^>]*http-equiv\s*=\s*['"]Content-Security-Policy['"][^>]*content\s*=\s*['"][^'"]*'unsafe-eval'[^'"]*['"]
+  severity: high
+  description: "CSP meta tag with unsafe-eval - allows eval()"
+  remediation: "Remove 'unsafe-eval', refactor code to avoid eval"
+  cwe: "CWE-94"
+  owasp: "A03:2021"
+
+- id: ts-csp-meta-missing
+  languages: [typescript, html]
+  patterns:
+    - regex: |-
+        <head>(?!.*Content-Security-Policy)
+  severity: high
+  description: "Missing CSP meta tag - no XSS protection"
+  remediation: "Add CSP meta tag with strict policy"
+  cwe: "CWE-693"
+  owasp: "A05:2021"
+
+- id: ts-xss-protection-header
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        res\.setHeader\(\s*['"]X-XSS-Protection['"],\s*['"]0['"]\s*\)
+  severity: high
+  description: "XSS Protection header disabled - legacy browsers vulnerable"
+  remediation: "Set to '1; mode=block' or rely on CSP"
+  cwe: "CWE-79"
+  owasp: "A03:2021"
+
+- id: ts-frame-options-header
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        res\.setHeader\(\s*['"]X-Frame-Options['"],\s*['"]ALLOWALL['"]\s*\)
+  severity: critical
+  description: "X-Frame-Options: ALLOWALL - clickjacking risk"
+  remediation: "Set to 'DENY' or 'SAMEORIGIN'"
+  cwe: "CWE-1021"
+  owasp: "A01:2021"
+
+- id: ts-hsts-header-missing
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        app\.listen\([^)]*\)(?!.*Strict-Transport-Security)
+  severity: high
+  description: "HSTS header missing - SSL stripping risk"
+  remediation: "Add Strict-Transport-Security header with max-age"
+  cwe: "CWE-319"
+  owasp: "A02:2021"
+
+- id: ts-referrer-policy-unsafe
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        res\.setHeader\(\s*['"]Referrer-Policy['"],\s*['"](?:unsafe-url|origin-when-cross-origin)['"]\s*\)
+  severity: high
+  description: "Permissive referrer policy - leaks URL information"
+  remediation: "Use strict-origin-when-cross-origin or no-referrer"
+  cwe: "CWE-200"
+  owasp: "A05:2021"
+
+# ======================== ENVIRONMENT VARIABLES (426-450) ========================
+
+- id: ts-env-missing-validation
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        process\.env\.\w+(?!.*zod.*parse|.*envSchema|.*validate)
+  severity: high
+  description: "Environment variable used without validation"
+  remediation: "Validate env vars at startup with zod"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-env-development-in-production
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        process\.env\.NODE_ENV\s*===\s*['"]development['"][^)]*(?:console\.log|debugger)
+  severity: high
+  description: "Development code conditional on NODE_ENV - may run in production"
+  remediation: "Remove development code or use proper feature flags"
+  cwe: "CWE-200"
+  owasp: "A05:2021"
+
+- id: ts-env-default-unsafe
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        process\.env\.\w+\s*\|\|\s*['"](?:admin|password|secret|root)['"]
+  severity: critical
+  description: "Environment variable with unsafe default - may expose credentials"
+  remediation: "Require env vars to be set, no defaults for secrets"
+  cwe: "CWE-798"
+  owasp: "A07:2021"
+
+- id: ts-env-logging
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        console\.(?:log|debug|info)\(\s*[^)]*process\.env\.[A-Z_]+\s*[^)]*\)
+  severity: high
+  description: "Environment variable logged - may expose secrets"
+  remediation: "Never log environment variables"
+  cwe: "CWE-532"
+  owasp: "A05:2021"
+
+- id: ts-env-type-assertion
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        process\.env\.\w+\s+as\s+\w+
+  severity: high
+  description: "Environment variable with type assertion - no runtime validation"
+  remediation: "Validate with zod: z.string().parse(process.env.VAR)"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-env-boolean-coercion
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        process\.env\.\w+\s*===\s*['"]true['"]
+  severity: low
+  description: "Boolean env var comparison - case sensitive"
+  remediation: "Use ['true', '1'].includes(process.env.VAR?.toLowerCase())"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-env-number-coercion
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        Number\(\s*process\.env\.\w+\s*\)
+  severity: medium
+  description: "Number coercion without validation - NaN possible"
+  remediation: "Use parseInt with radix and validate"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+- id: ts-env-dotenv-committed
+  languages: [typescript]
+  patterns:
+    - regex: |-
+        require\(['"]dotenv['"]\)\.config\(\)(?!.*ignore)
+  severity: high
+  description: "dotenv configured - ensure .env not committed"
+  remediation: "Add .env to .gitignore, use .env.example for template"
+  cwe: "CWE-798"
+  owasp: "A07:2021"
+
+# ======================== SECURITY VULNERABILITIES ========================
+
+# Hardcoded Secrets
+- id: ts-hardcoded-password
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(password|passwd|pwd)\\s*[=:]\\s*['\"][^'\"]{8,}['\"]"
+  severity: high
+  description: "Hardcoded password detected"
+  remediation: "Use environment variables or secrets manager"
+  cwe: "CWE-798"
+  owasp: "A07:2021"
+
+- id: ts-hardcoded-api-key
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(api[_-]?key|apikey)\\s*[=:]\\s*['\"][a-zA-Z0-9]{16,}['\"]"
+  severity: high
+  description: "Hardcoded API key detected"
+  remediation: "Store API keys in environment variables"
+  cwe: "CWE-798"
+  owasp: "A07:2021"
+
+- id: ts-hardcoded-aws-credentials
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "AKIA[0-9A-Z]{16}"
+  severity: critical
+  description: "AWS Access Key ID detected"
+  remediation: "Remove credentials, use IAM roles"
+  cwe: "CWE-798"
+  owasp: "A07:2021"
+
+- id: ts-hardcoded-jwt-secret
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(jwt|jsonwebtoken)\\s*['\"][a-zA-Z0-9]{8,}['\"]"
+  severity: critical
+  description: "Hardcoded JWT secret detected"
+  remediation: "Use environment variable for JWT secret"
+  cwe: "CWE-798"
+  owasp: "A07:2021"
+
+# Command Injection
+- id: ts-command-injection
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(exec|spawn|execSync)\\s*\\([^)]*\\+.*(?:req|params|body|input)"
+  severity: critical
+  description: "Potential command injection"
+  remediation: "Never pass user input to shell commands"
+  cwe: "CWE-78"
+  owasp: "A03:2021"
+
+- id: ts-eval-usage
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "\\beval\\s*\\("
+  severity: critical
+  description: "eval() usage - arbitrary code execution risk"
+  remediation: "Never use eval. Use JSON.parse for data"
+  cwe: "CWE-94"
+  owasp: "A03:2021"
+
+- id: ts-function-constructor
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "new\\s+Function\\s*\\("
+  severity: critical
+  description: "Function constructor - code injection risk"
+  remediation: "Avoid dynamic function creation"
+  cwe: "CWE-94"
+  owasp: "A03:2021"
+
+- id: ts-child-process-user-input
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "child_process\\.(exec|spawn|execSync)\\s*\\([^)]*(?:req|params|body)"
+  severity: critical
+  description: "Command injection via child_process"
+  remediation: "Use argument arrays, not shell strings"
+  cwe: "CWE-78"
+  owasp: "A03:2021"
+
+# SSRF
+- id: ts-ssrf
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(fetch|axios|request|http\\.get|http\\.post)\\s*\\([^)]*\\+.*(?:req|params|url|body)"
+  severity: high
+  description: "Server-Side Request Forgery via user-controlled URL"
+  remediation: "Validate URLs against allowlist"
+  cwe: "CWE-918"
+  owasp: "A10:2021"
+
+# XSS
+- id: ts-xss-innerhtml
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)innerHTML\\s*=\\s*.*(?:req|params|body|input)"
+  severity: high
+  description: "XSS via innerHTML with user input"
+  remediation: "Use textContent or sanitize with DOMPurify"
+  cwe: "CWE-79"
+  owasp: "A03:2021"
+
+- id: ts-xss-document-write
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "document\\.write\\s*\\("
+  severity: high
+  description: "document.write usage - XSS risk"
+  remediation: "Use DOM manipulation instead"
+  cwe: "CWE-79"
+  owasp: "A03:2021"
+
+- id: ts-xss-insert-adjacent-html
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "insertAdjacentHTML\\s*\\("
+  severity: high
+  description: "insertAdjacentHTML with user input - XSS risk"
+  remediation: "Sanitize input before using insertAdjacentHTML"
+  cwe: "CWE-79"
+  owasp: "A03:2021"
+
+# Path Traversal
+- id: ts-path-traversal
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(readFile|readFileSync|createReadStream|writeFile)\\s*\\([^)]*\\+.*(?:req|params|filename)"
+  severity: high
+  description: "Path traversal via user input"
+  remediation: "Validate and sanitize file paths"
+  cwe: "CWE-22"
+  owasp: "A01:2021"
+
+# JWT Security
+- id: ts-jwt-none-algorithm
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(jwt|jsonwebtoken).*algorithms.*none"
+  severity: critical
+  description: "JWT accepts 'none' algorithm"
+  remediation: "Always specify secure algorithms like HS256 or RS256"
+  cwe: "CWE-347"
+  owasp: "A02:2021"
+
+- id: ts-jwt-weak-secret
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(jwt|jsonwebtoken)\\s*sign\\s*\\([^,)]*,\\s*['\"][a-zA-Z0-9]{8,16}['\"]"
+  severity: high
+  description: "JWT with weak secret"
+  remediation: "Use strong, long secrets (32+ chars)"
+  cwe: "CWE-798"
+  owasp: "A07:2021"
+
+# Local Storage Security
+- id: ts-localstorage-sensitive
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "localStorage\\.setItem\\s*\\([^)]*(?:password|token|secret|key)"
+  severity: high
+  description: "Sensitive data in localStorage - XSS can steal"
+  remediation: "Use httpOnly cookies for tokens"
+  cwe: "CWE-312"
+  owasp: "A07:2021"
+
+# Prototype Pollution
+- id: ts-prototype-pollution
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(Object\\.assign|merge|extend)\\s*\\([^)]*__proto__"
+  severity: high
+  description: "Prototype pollution vulnerability"
+  remediation: "Validate and filter user input keys"
+  cwe: "CWE-1321"
+  owasp: "A08:2021"
+
+# Open Redirect
+- id: ts-open-redirect
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(redirect|window\\.location)\\s*=\\s*.*(?:req|params|url|body)"
+  severity: high
+  description: "Open redirect vulnerability"
+  remediation: "Validate redirect URLs against allowlist"
+  cwe: "CWE-601"
+  owasp: "A01:2021"
+
+# CORS Misconfiguration
+- id: ts-cors-wildcard
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)cors\\s*\\(\\s*\\{[^}]*origin\\s*:\\s*['\"]\\*['\"]"
+  severity: high
+  description: "CORS wildcard origin allows any site"
+  remediation: "Specify exact allowed origins"
+  cwe: "CWE-942"
+  owasp: "A05:2021"
+
+- id: ts-cors-credentials
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)cors.*origin.*\\*.*credentials.*true"
+  severity: high
+  description: "CORS with wildcard origin and credentials"
+  remediation: "Never combine * origin with credentials"
+  cwe: "CWE-942"
+  owasp: "A05:2021"
+
+# Cookie Security
+- id: ts-cookie-missing-secure
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(cookie|set-cookie)[^;]*;(?!.*Secure)"
+  severity: medium
+  description: "Cookie without Secure flag"
+  remediation: "Add Secure flag to cookies"
+  cwe: "CWE-614"
+  owasp: "A01:2021"
+
+- id: ts-cookie-missing-httponly
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(cookie|set-cookie)[^;]*;(?!.*HttpOnly)"
+  severity: medium
+  description: "Cookie without HttpOnly flag"
+  remediation: "Add HttpOnly flag to cookies"
+  cwe: "CWE-614"
+  owasp: "A01:2021"
+
+# Template Injection
+- id: ts-template-injection
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(handlebars|ejs|pug|nunjucks)\\.(render|compile)\\s*\\([^)]*\\+.*(?:req|input|data)"
+  severity: critical
+  description: "Template injection vulnerability"
+  remediation: "Never pass user input to template engines"
+  cwe: "CWE-1336"
+  owasp: "A03:2021"
+
+# Weak Cryptography
+- id: ts-weak-crypto-md5
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(MD5|md5|createHash\\s*\\(['\"]md5['\"])"
+  severity: medium
+  description: "MD5 hash usage - insecure"
+  remediation: "Use SHA-256 or stronger"
+  cwe: "CWE-327"
+  owasp: "A02:2021"
+
+- id: ts-weak-crypto-sha1
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(SHA1|sha1|createHash\\s*\\(['\"]sha1['\"])"
+  severity: medium
+  description: "SHA-1 hash usage - insecure"
+  remediation: "Use SHA-256 or stronger"
+  cwe: "CWE-327"
+  owasp: "A02:2021"
+
+- id: ts-insecure-random
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "\\bMath\\.random\\s*\\("
+  severity: medium
+  description: "Math.random() not cryptographically secure"
+  remediation: "Use crypto.getRandomValues()"
+  cwe: "CWE-330"
+  owasp: "A02:2021"
+
+# Regex DoS
+- id: ts-redos
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "new\\s+RegExp\\s*\\([^)]*(\\*\\*|\\+\\+|\\{.*,\\}\\+)"
+  severity: medium
+  description: "Regular expression vulnerable to ReDoS"
+  remediation: "Use re2 library or simplify patterns"
+  cwe: "CWE-1333"
+  owasp: "A06:2021"
+
+# Zip Slip
+- id: ts-zip-slip
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(extract|unzip|decompress)\\s*\\([^)]*\\.\\.\\/"
+  severity: high
+  description: "Zip Slip directory traversal"
+  remediation: "Validate extracted paths"
+  cwe: "CWE-22"
+  owasp: "A01:2021"
+
+# Request Size Limit
+- id: ts-request-body-no-limit
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)express\\.json\\s*\\(\\s*\\)(?!.*limit)"
+  severity: medium
+  description: "JSON body parser without size limit"
+  remediation: "Add limit option: express.json({ limit: '10kb' })"
+  cwe: "CWE-770"
+  owasp: "A04:2023"
+
+# Insecure Dependencies
+- id: ts-vulnerable-package
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(lodash|moment|minimist|node-fetch)[^:]*:.*['\"]?\\d+\\.\\d+\\.\\d+"
+  severity: high
+  description: "Potentially vulnerable package version"
+  remediation: "Update to latest secure version"
+  cwe: "CWE-1104"
+  owasp: "A06:2021"
+
+# Hardcoded Crypto Key
+- id: ts-hardcoded-crypto-key
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(AES|DES|RSA|secret|encryptionKey)\\s*[=:]\\s*['\"][a-zA-Z0-9+/=]{16,}['\"]"
+  severity: critical
+  description: "Hardcoded cryptographic key"
+  remediation: "Use key management services"
+  cwe: "CWE-798"
+  owasp: "A07:2021"
+
+# XXE
+- id: ts-xxe
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)DOMParser\\s*\\(\\s*\\)\\s*\\.parseFromString\\s*\\([^)]*,.*['\"]text/xml"
+  severity: critical
+  description: "XML External Entity (XXE) vulnerability"
+  remediation: "Disable external entities in parsers"
+  cwe: "CWE-611"
+  owasp: "A05:2021"
+
+# Insecure Certificate
+- id: ts-insecure-cert
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(rejectUnauthorized|secure)\\s*:\\s*false"
+  severity: high
+  description: "SSL/TLS certificate validation disabled"
+  remediation: "Set rejectUnauthorized: true"
+  cwe: "CWE-295"
+  owasp: "A07:2021"
+
+# Clickjacking
+- id: ts-clickjacking
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(X-Frame-Options[^-]|frame-ancestors)"
+  severity: medium
+  description: "Missing clickjacking protection"
+  remediation: "Set X-Frame-Options: DENY or SAMEORIGIN"
+  cwe: "CWE-1021"
+  owasp: "A04:2021"
+
+# MIME Sniffing
+- id: ts-mime-sniffing
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)X-Content-Type-Options[^-]"
+  severity: medium
+  description: "Missing MIME sniffing protection"
+  remediation: "Set X-Content-Type-Options: nosniff"
+  cwe: "CWE-16"
+  owasp: "A04:2021"
+
+# Information Disclosure
+- id: ts-info-disclosure
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(stack\\.trace|error\\.stack|console\\.trace)\\s*\\("
+  severity: medium
+  description: "Stack trace exposed"
+  remediation: "Hide stack traces in production"
+  cwe: "CWE-209"
+  owasp: "A05:2021"
+
+# WebSocket Security
+- id: ts-websocket-insecure
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "new\\s+WebSocket\\s*\\(\\s*['\"]ws:"
+  severity: high
+  description: "Insecure WebSocket connection (ws://)"
+  remediation: "Use wss:// for secure WebSocket"
+  cwe: "CWE-319"
+  owasp: "A02:2021"
+
+# File Upload Security
+- id: ts-file-upload-no-validation
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(multer|busboy|formidable|upload)\\s*\\([^)]*(?!.*fileFilter|.*limits)"
+  severity: high
+  description: "File upload without validation"
+  remediation: "Add file type and size validation"
+  cwe: "CWE-434"
+  owasp: "A04:2021"
+
+# YAML Deserialization
+- id: ts-yaml-deserialization
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(yaml|js-yaml)\\.load\\s*\\([^)]*req"
+  severity: critical
+  description: "YAML deserialization vulnerability"
+  remediation: "Use safeLoad instead of load"
+  cwe: "CWE-502"
+  owasp: "A08:2021"
+
+# CSV Injection
+- id: ts-csv-injection
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(csv|parseCSV|fast-csv)\\s*\\.[^,]*(?:req|input)"
+  severity: medium
+  description: "CSV injection vulnerability"
+  remediation: "Sanitize CSV input"
+  cwe: "CWE-1236"
+  owasp: "A03:2021"
+
+# DNS Rebinding
+- id: ts-dns-rebinding
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(dns\\.lookup|gethostbyname)\\s*\\([^)]*req"
+  severity: high
+  description: "DNS rebinding attack risk"
+  remediation: "Validate and cache DNS results"
+  cwe: "CWE-918"
+  owasp: "A10:2021"
+
+# Timing Attack
+- id: ts-timing-attack
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(password|token|secret)\\s*===\\s*(?:req|params|body)"
+  severity: medium
+  description: "Timing attack vulnerability in comparison"
+  remediation: "Use crypto.timingSafeEqual for comparisons"
+  cwe: "CWE-208"
+  owasp: "A02:2021"
+
+# Mass Assignment
+- id: ts-mass-assignment
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(\\.assign|Object\\.assign)\\s*\\([^)]*\\.\\.\\.request"
+  severity: high
+  description: "Mass assignment vulnerability"
+  remediation: "Explicitly whitelist allowed fields"
+  cwe: "CWE-915"
+  owasp: "A01:2021"
+
+# Race Condition
+- id: ts-race-condition
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)if.*exists.*then.*create|check.*then.*use"
+  severity: medium
+  description: "Potential race condition (TOCTOU)"
+  remediation: "Use atomic operations"
+  cwe: "CWE-362"
+  owasp: "A04:2021"
+
+# Log Injection
+- id: ts-log-injection
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)console\\.(log|info|warn|error)\\s*\\(.*req\\.(query|body|params)"
+  severity: medium
+  description: "Log injection via user input"
+  remediation: "Sanitize log input"
+  cwe: "CWE-117"
+  owasp: "A09:2021"
+
+# Debug Mode
+- id: ts-debug-mode
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(DEBUG\\s*=\\s*true|app\\.get\\s*\\('env'\\)\\s*===.*development"
+  severity: high
+  description: "Debug mode enabled in production"
+  remediation: "Disable debug mode in production"
+  cwe: "CWE-489"
+  owasp: "A05:2021"
+
+# Unsafe File Server
+- id: ts-unsafe-file-server
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)express\\.static\\s*\\(\\s*['\"]\\."
+  severity: high
+  description: "Serving static files from root directory"
+  remediation: "Restrict static file serving"
+  cwe: "CWE-22"
+  owasp: "A01:2021"
+
+# Improper Error Handling
+- id: ts-improper-error-handling
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "catch\\s*\\(\\s*\\)\\s*\\{|catch\\s*\\([^)]*\\)\\s*\\{\\s*\\}"
+  severity: low
+  description: "Empty or improper error handling"
+  remediation: "Log and handle errors properly"
+  cwe: "CWE-755"
+  owasp: "A05:2021"
+
+# Improper Shutdown
+- id: ts-improper-shutdown
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(process\\.exit|process\\.abort)\\s*\\("
+  severity: medium
+  description: "Process exit in production code"
+  remediation: "Handle shutdown gracefully"
+  cwe: "CWE-383"
+  owasp: "A04:2021"
+
+# Improper Privilege
+- id: ts-improper-privilege
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(setuid|setgid)\\s*\\([^)]*\\)"
+  severity: high
+  description: "Improper privilege management"
+  remediation: "Drop privileges after use"
+  cwe: "CWE-250"
+  owasp: "A01:2021"
+
+# Improper Session Management
+- id: ts-session-fixation
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(session|maxAge)\\s*[=:]\\s*[^;]*86400000"
+  severity: medium
+  description: "Session fixation risk"
+  remediation: "Regenerate session on login"
+  cwe: "CWE-613"
+  owasp: "A07:2021"
+
+# Improper Access Control
+- id: ts-missing-auth
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(app|router)\\.(get|post|put|delete)\\s*\\(\\s*['\"]\\/api"
+  severity: medium
+  description: "API route without authentication check"
+  remediation: "Add auth middleware to routes"
+  cwe: "CWE-306"
+  owasp: "A07:2021"
+
+# Improper Authorization
+- id: ts-missing-authorization
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(isAdmin|isAuthenticated|checkPermission)\\s*===\\s*false"
+  severity: high
+  description: "Authorization check bypassed"
+  remediation: "Always check authorization"
+  cwe: "CWE-862"
+  owasp: "A01:2021"
+
+# SAML Injection
+- id: ts-saml-injection
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)saml\\.(validate|verify)\\s*\\([^)]*\\+"
+  severity: high
+  description: "SAML signature not validated"
+  remediation: "Always validate SAML signatures"
+  cwe: "CWE-347"
+  owasp: "A02:2021"
+
+# Improper Rate Limiting
+- id: ts-no-rate-limit
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(express|koa|fastify)(?!.*rate-limit|!.*express-rate-limit)"
+  severity: medium
+  description: "No rate limiting detected"
+  remediation: "Add rate limiting middleware"
+  cwe: "CWE-770"
+  owasp: "A04:2021"
+
+# Improper Certificate Validation
+- id: ts-cert-validation
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(tls|https)\\s*\\.\\s*(?:rejectUnauthorized|ca)\\s*[=:](?:false|null)"
+  severity: critical
+  description: "Certificate validation disabled"
+  remediation: "Enable certificate validation"
+  cwe: "CWE-295"
+  owasp: "A07:2021"
+
+# Hash Comparison
+- id: ts-hash-comparison
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(hash|checksum)\\s*[=:]=\\s*[^;]*(?:==|!=)(?!.*timing|crypto)"
+  severity: medium
+  description: "Hash compared unsafely"
+  remediation: "Use timing-safe comparison"
+  cwe: "CWE-208"
+  owasp: "A02:2021"
+
+# Improper Password Storage
+- id: ts-password-storage
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(password|secret)\\s*[=:]\\[?!.*hash|!.*bcrypt|!.*scrypt"
+  severity: critical
+  description: "Password not hashed"
+  remediation: "Hash passwords with bcrypt"
+  cwe: "CWE-916"
+  owasp: "A02:2021"
+
+# Improper Token Generation
+- id: ts-token-generation
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(token|uid|session)\\s*[=:]\\s*(?!.*crypto|!.*randomUUID)"
+  severity: high
+  description: "Weak token generation"
+  remediation: "Use crypto.randomUUID or crypto.randomBytes"
+  cwe: "CWE-331"
+  owasp: "A02:2021"
+
+# Improper Input Validation
+- id: ts-no-input-validation
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(req\\.body|req\\.query|req\\.params)\\.\\w+"
+  severity: low
+  description: "User input used without validation"
+  remediation: "Validate all user input"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+# Improper Output Encoding
+- id: ts-output-encoding
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(innerHTML|outerHTML)\\s*=\\s*.*(?:req|query|body)"
+  severity: high
+  description: "Output without proper encoding"
+  remediation: "Use textContent or encode output"
+  cwe: "CWE-79"
+  owasp: "A03:2021"
+
+# DOM XSS
+- id: ts-dom-xss
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(innerHTML|insertAdjacentHTML|document\\.write)\\s*\\(.*(?:location|hash|search)"
+  severity: critical
+  description: "DOM XSS via location object"
+  remediation: "Sanitize URL parameters"
+  cwe: "CWE-79"
+  owasp: "A03:2021"
+
+# Stored XSS
+- id: ts-stored-xss
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(save|insert|create|update)\\s*\\(.*(?:req|body)\\."
+  severity: high
+  description: "Potential stored XSS"
+  remediation: "Sanitize before storing"
+  cwe: "CWE-79"
+  owasp: "A03:2021"
+
+# Reflected XSS
+- id: ts-reflected-xss
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(res\\.send|res\\.json|res\\.render)\\s*\\(.*req\\."
+  severity: high
+  description: "Potential reflected XSS in response"
+  remediation: "Escape user input in responses"
+  cwe: "CWE-79"
+  owasp: "A03:2021"
+
+# Cache Poisoning
+- id: ts-cache-poisoning
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)cache-control.*no-cache.*X-Forwarded"
+  severity: medium
+  description: "Cache poisoning vulnerability"
+  remediation: "Validate cache keys"
+  cwe: "CWE-444"
+  owasp: "A05:2021"
+
+# HTTP Parameter Pollution
+- id: ts-http-parameter-pollution
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(query|params)\\s*\\[.*\\]"
+  severity: low
+  description: "Potential HTTP parameter pollution"
+  remediation: "Validate parameter count"
+  cwe: "CWE-235"
+  owasp: "A04:2021"
+
+# Memory Exhaustion
+- id: ts-memory-exhaustion
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(JSON\\.parse|Buffer\\.from)\\s*\\(.*req\\."
+  severity: high
+  description: "Potential memory exhaustion"
+  remediation: "Add input size limits"
+  cwe: "CWE-400"
+  owasp: "A04:2023"
+
+# Improper State Management
+- id: ts-state-manipulation
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(global|window)\\.[a-zA-Z_]+\\s*="
+  severity: medium
+  description: "Improper global state management"
+  remediation: "Use proper state management"
+  cwe: "CWE-488"
+  owasp: "A04:2021"
+
+# Weak Auth
+- id: ts-weak-auth
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(password|pass)\\s*===\\s*['\"][^'\"]{0,8}['\"]"
+  severity: high
+  description: "Weak password check"
+  remediation: "Use secure auth libraries"
+  cwe: "CWE-287"
+  owasp: "A07:2021"
+
+# Config Secret
+- id: ts-config-secret
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(config|settings)\\.\\w*secret\\w*\\s*[=:]\\s*['\"][^'\"]+['\"]"
+  severity: critical
+  description: "Hardcoded secret in config"
+  remediation: "Use env variables for secrets"
+  cwe: "CWE-798"
+  owasp: "A07:2021"
+
+# Improper Error Message
+- id: ts-error-message
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)catch\\s*\\([^)]*\\)\\s*\\{[^}]*error\\.message[^}]*\\}"
+  severity: medium
+  description: "Detailed error messages exposed"
+  remediation: "Hide internal error details"
+  cwe: "CWE-209"
+  owasp: "A05:2021"
+
+# Improper Resource Lifetime
+- id: ts-resource-leak
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(createReadStream|createWriteStream|connect)\\s*\\(.*\\)(?!.*close|.*end)"
+  severity: medium
+  description: "Resource not properly closed"
+  remediation: "Use try-finally or .end()"
+  cwe: "CWE-775"
+  owasp: "A04:2021"
+
+# Improper Validation Bypass
+- id: ts-validation-bypass
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(validate|sanitize)\\s*\\([^)]*false\\s*\\)"
+  severity: high
+  description: "Validation disabled"
+  remediation: "Enable validation"
+  cwe: "CWE-20"
+  owasp: "A03:2021"
+
+# Improper Secrets Management
+- id: ts-secrets-management
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(secret|key|cert)\\s*[=:]\\s*[^;]*(?!.*vault|!.*kms|!.*env)"
+  severity: critical
+  description: "Secrets not managed properly"
+  remediation: "Use secrets manager"
+  cwe: "CWE-798"
+  owasp: "A07:2021"
+
+# Improper CSRF Protection
+- id: ts-csrf-protection
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(csrf|csurf)(?!.*token)"
+  severity: high
+  description: "CSRF protection missing"
+  remediation: "Add CSRF tokens"
+  cwe: "CWE-352"
+  owasp: "A01:2021"
+
+# Improper S3 Bucket
+- id: ts-s3-bucket-public
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(aws|s3)\\.[a-z]+\\s*\\([^)]*ACL\\s*[=:][^,)]*public"
+  severity: critical
+  description: "S3 bucket publicly accessible"
+  remediation: "Restrict bucket access"
+  cwe: "CWE-732"
+  owasp: "A01:2021"
+
+# Improper Key Derivation
+- id: ts-key-derivation
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(pbkdf2|scrypt|bcrypt)\\s*\\([^,)]*\\d{1,4}\\s*\\)"
+  severity: high
+  description: "Weak key derivation parameters"
+  remediation: "Use high iteration count (10000+)"
+  cwe: "CWE-328"
+  owasp: "A02:2021"
+
+# Improper IV
+- id: ts-iv-validation
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(iv|nonce|seed)\\s*[=:]\\s*[^;]*(?!.*random|!.*unique)"
+  severity: high
+  description: "IV not random"
+  remediation: "Use random IV"
+  cwe: "CWE-329"
+  owasp: "A02:2021"
+
+# Improper Key Size
+- id: ts-key-size
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(key|secret)\\s*\\.length\\s*[<<=]\\s*16"
+  severity: high
+  description: "Key size too small"
+  remediation: "Use 256-bit keys (32 chars)"
+  cwe: "CWE-326"
+  owasp: "A02:2021"
+
+# Improper Forward Secrecy
+- id: ts-forward-secrecy
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(tls|cipher).*(!.*ephemeral|!.*forward)"
+  severity: high
+  description: "Forward secrecy not enabled"
+  remediation: "Enable forward secrecy"
+  cwe: "CWE-327"
+  owasp: "A02:2021"
+
+# Improper HMAC
+- id: ts-hmac-validation
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(hmac|sign)\\s*\\([^,)]*[^,)]*\\)(?!.*verify)"
+  severity: high
+  description: "HMAC not verified"
+  remediation: "Verify HMAC"
+  cwe: "CWE-347"
+  owasp: "A02:2021"
+
+# Improper OAEP
+- id: ts-oaep
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(RSA|OAEP)\\s*\\.[^,)]*NONE"
+  severity: high
+  description: "Insecure RSA padding"
+  remediation: "Use OAEP padding"
+  cwe: "CWE-327"
+  owasp: "A02:2021"
+
+# Improper ECB Mode
+- id: ts-ecb-mode
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(AES|DES)\\s*\\.[^,)]*ECB"
+  severity: high
+  description: "ECB mode insecure"
+  remediation: "Use GCM or CBC"
+  cwe: "CWE-327"
+  owasp: "A02:2021"
+
+# Improper Account Lockout
+- id: ts-lockout
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(login|auth)\\s*\\([^)]*(?!.*lock|!.*attempt)"
+  severity: medium
+  description: "No account lockout"
+  remediation: "Implement lockout"
+  cwe: "CWE-307"
+  owasp: "A07:2021"
+
+# Improper MFA
+- id: ts-mfa
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(login|authenticate)\\s*\\([^)]*(?!.*2fa|!.*mfa)"
+  severity: medium
+  description: "MFA not enforced"
+  remediation: "Enforce MFA"
+  cwe: "CWE-308"
+  owasp: "A02:2021"
+
+# Improper Session Regeneration
+- id: ts-session-regeneration
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(login|auth)\\s*\\([^)]*(?!.*regenerate|!.*new)"
+  severity: high
+  description: "Session fixation possible"
+  remediation: "Regenerate session on login"
+  cwe: "CWE-384"
+  owasp: "A07:2021"
+
+# Improper Session Timeout
+- id: ts-timeout
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(session|token)\\s*[=:]\\s*[^;]*(?!.*maxAge|!.*expires)"
+  severity: medium
+  description: "No session timeout"
+  remediation: "Set session timeout"
+  cwe: "CWE-613"
+  owasp: "A07:2021"
+
+# Improper Captcha
+- id: ts-captcha
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(register|login|submit)\\s*\\([^)]*(?!.*captcha|!.*verify)"
+  severity: medium
+  description: "No captcha on form"
+  remediation: "Add captcha"
+  cwe: "CWE-803"
+  owasp: "A05:2021"
+
+# Improper Insufficient Entropy
+- id: ts-insufficient-entropy
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(token|id|session)\\s*[=:].*Math\\.random"
+  severity: high
+  description: "Insufficient entropy for tokens"
+  remediation: "Use crypto.randomUUID"
+  cwe: "CWE-331"
+  owasp: "A02:2021"
+
+# Improper File Type Validation
+- id: ts-file-type-validation
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(upload|save)\\s*\\(.*mimetype\\s*[=:][^,)]*\\+"
+  severity: high
+  description: "File type not validated"
+  remediation: "Validate MIME types"
+  cwe: "CWE-434"
+  owasp: "A04:2021"
+
+# Improper Host Validation
+- id: ts-host-validation
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(req\\.hostname|req\\.headers\\[['\\\"]host['\\\"]\\])"
+  severity: medium
+  description: "Host header not validated"
+  remediation: "Validate host header"
+  cwe: "CWE-346"
+  owasp: "A01:2021"
+
+# Improper Origin Validation
+- id: ts-origin-validation
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(socket\\.io|io\\.connect)\\s*\\([^)]*\\)"
+  severity: high
+  description: "WebSocket origin not validated"
+  remediation: "Validate WebSocket origin"
+  cwe: "CWE-346"
+  owasp: "A01:2021"
+
+# Improper GraphQL Security
+- id: ts-graphql-security
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(graphql|apollo)\\s*[=:][^;]*(?!.*introspection|!.*depth)"
+  severity: high
+  description: "GraphQL not secured"
+  remediation: "Disable introspection in production, add depth limiting"
+  cwe: "CWE-1009"
+  owasp: "A05:2021"
+
+# Improper Webhook Security
+- id: ts-webhook-security
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(webhook|callback|event)\\s*[=:][^;]*(?!.*verify|!.*signature)"
+  severity: high
+  description: "Webhook not verified"
+  remediation: "Verify webhooks with signature"
+  cwe: "CWE-1009"
+  owasp: "A05:2021"
+
+# Improper OAuth Security
+- id: ts-oauth-security
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(oauth|authorize)\\s*[=:][^;]*(?!.*state|!.*verify)"
+  severity: high
+  description: "OAuth not secured"
+  remediation: "Use state parameter and verify"
+  cwe: "CWE-1009"
+  owasp: "A05:2021"
+
+# Improper OIDC Security
+- id: ts-oidc-security
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(openid|oidc|identity)\\s*[=:][^;]*(?!.*verify|!.*validate)"
+  severity: high
+  description: "OIDC not secured"
+  remediation: "Verify tokens"
+  cwe: "CWE-1009"
+  owasp: "A05:2021"
+
+# Improper API Key Security
+- id: ts-api-key-security
+  languages: [typescript, javascript]
+  patterns:
+    - regex: "(?i)(api[_-]?key|token|secret)\\s*[=:]\\s*[^;]*(?!.*env|!.*vault)"
+  severity: high
+  description: "API key not secured"
+  remediation: "Use environment variables"
+  cwe: "CWE-798"
+  owasp: "A07:2021"
+
