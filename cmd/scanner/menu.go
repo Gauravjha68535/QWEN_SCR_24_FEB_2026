@@ -22,6 +22,7 @@ type ScanConfig struct {
 	EnableAI              bool
 	EnableAIDiscovery     bool
 	EnableStaticPlusAI    bool // Run static engine + AI discovery + AI validation
+	EnableAIConsolidation bool // New: Run both, save to DB, and merge using AI
 	EnableSemgrep         bool
 	EnableDependencyScan  bool
 	EnableSecretDetection bool
@@ -172,6 +173,8 @@ func showCurrentConfig(config *ScanConfig) {
 	aiMode := color.HiRedString("✗ Disabled")
 	if config.EnableStaticPlusAI {
 		aiMode = color.HiGreenString("✓ Static + AI Discovery + Validation")
+	} else if config.EnableAIConsolidation {
+		aiMode = color.HiGreenString("✓ Consolidated AI + Static Intel (Merge Mode)")
 	} else if config.EnableAI && config.EnableAIDiscovery {
 		aiMode = color.HiGreenString("✓ AI Discovery (Find + Validate)")
 	} else if config.EnableAIDiscovery {
@@ -381,10 +384,11 @@ func configureAIMode(reader *bufio.Reader, c *ScanConfig) {
 	fmt.Println("  2. AI Discovery Only        — Use AI to proactively find new vulnerabilities")
 	fmt.Println("  3. AI Discovery + Validate  — Find new issues AND validate all findings")
 	fmt.Println("  4. Static + AI + Validate   — Run static rules first, then AI discovery, then validate ALL")
-	fmt.Println("  5. Disable AI               — Turn off all AI features")
+	fmt.Println("  5. Consolidated AI + Static — Run both, stash in DB, and merge using AI")
+	fmt.Println("  6. Disable AI               — Turn off all AI features")
 	fmt.Println()
 
-	fmt.Print(color.HiYellowString("Enter choice (1-5): "))
+	fmt.Print(color.HiYellowString("Enter choice (1-6): "))
 	choice, _ := reader.ReadString('\n')
 	choice = strings.TrimSpace(choice)
 
@@ -392,6 +396,7 @@ func configureAIMode(reader *bufio.Reader, c *ScanConfig) {
 	c.EnableAI = false
 	c.EnableAIDiscovery = false
 	c.EnableStaticPlusAI = false
+	c.EnableAIConsolidation = false
 
 	switch choice {
 	case "1":
@@ -410,6 +415,9 @@ func configureAIMode(reader *bufio.Reader, c *ScanConfig) {
 		c.EnableStaticPlusAI = true
 		color.Green("✓ AI Mode: Static + AI Discovery + Validation")
 	case "5":
+		c.EnableAIConsolidation = true
+		color.Green("✓ AI Mode: Consolidated AI + Static Intel")
+	case "6":
 		color.Yellow("✓ AI Mode: Disabled")
 	default:
 		color.Red("✗ Invalid choice. No changes made.")

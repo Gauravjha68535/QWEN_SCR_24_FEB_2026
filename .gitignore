@@ -1,7 +1,9 @@
 # Binaries and executables
-QWEN_SCR_24_FEB_2026
-scanner
+/QWEN_SCR_24_FEB_2026
+/scanner_bin
 cmd/scanner/scanner
+/scanner
+!/scanner/
 
 # Output Reports
 report.csv

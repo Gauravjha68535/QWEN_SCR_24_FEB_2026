@@ -2,10 +2,12 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -44,6 +46,7 @@ func parseFlags() *ScanConfig {
 	enableThreatIntel := flag.Bool("threat-intel", false, "Enable threat intelligence enrichment")
 	enableSymbolic := flag.Bool("symbolic", false, "Enable symbolic execution")
 	enableMLFP := flag.Bool("ml-fp", false, "Enable ML false-positive reduction")
+	enableConsolidation := flag.Bool("consolidated", false, "Enable Consolidated AI + Static intelligence (deduplication mode)")
 	// AI Options
 	modelName := flag.String("model", ai.GetDefaultModel(), "AI model name for validation")
 	ollamaHost := flag.String("ollama-host", "localhost:11434", "Ollama host:port (e.g. 192.168.1.42:11434 for remote)")
@@ -78,6 +81,7 @@ func parseFlags() *ScanConfig {
 		EnableThreatIntel:     *enableThreatIntel,
 		EnableSymbolicExec:    *enableSymbolic,
 		EnableMLFPReduction:   *enableMLFP,
+		EnableAIConsolidation: *enableConsolidation,
 		ModelName:             *modelName,
 		OllamaHost:            *ollamaHost,
 		OutputCSV:             *outputCSV,
@@ -192,6 +196,40 @@ func main() {
 			stats := mlReducer.GetFPStatistics()
 			utils.LogInfo(fmt.Sprintf("ML FP Rate: %.1f%%", stats["fp_rate"].(float64)*100))
 		}
+		fmt.Println()
+
+	} else if config.EnableAIConsolidation {
+		// ═══ CONSOLIDATED MODE: Static -> Stash -> AI -> Merge ═══
+		utils.LogHeader("🧠 CONSOLIDATED AI + STATIC INTELLIGENCE")
+
+		// Phase 1: Static Scan
+		utils.LogSubHeader("📋 Phase 1: Static Security Analysis")
+		staticFindings := runStaticEngine(config, result)
+		utils.LogInfo(fmt.Sprintf("Static engine found %d issues", len(staticFindings)))
+
+		// "Local DB" Stash (JSON)
+		stashPath := filepath.Join(config.TargetDir, ".findings_stashed.json")
+		stashData, _ := json.MarshalIndent(staticFindings, "", "  ")
+		os.WriteFile(stashPath, stashData, 0644)
+		utils.LogInfo(fmt.Sprintf("Findings stashed to local DB: %s", stashPath))
+		fmt.Println()
+
+		// Phase 2: AI Discovery
+		utils.LogSubHeader("🧠 Phase 2: AI Discovery Scan")
+		aiDiscoveryFindings := ai.RunAIDiscovery(config.ModelName, config.TargetDir)
+		utils.LogInfo(fmt.Sprintf("AI discovered %d vulnerabilities", len(aiDiscoveryFindings)))
+		fmt.Println()
+
+		// Phase 3: Semantic Merge
+		utils.LogSubHeader("🔄 Phase 3: Semantic Deduplication & Merging")
+		mergedFindings, err := ai.ConsolidateFindings(staticFindings, aiDiscoveryFindings, config.ModelName)
+		if err != nil {
+			utils.LogWarn(fmt.Sprintf("Deduplication failed: %v. Using raw list.", err))
+			allFindings = append(staticFindings, aiDiscoveryFindings...)
+		} else {
+			allFindings = mergedFindings
+		}
+		updateFindings(allFindings)
 		fmt.Println()
 
 	} else if config.EnableAIDiscovery {
