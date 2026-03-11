@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os/exec"
+	"runtime"
 	"strings"
 
 	"golang.org/x/text/cases"
@@ -40,10 +41,18 @@ type SemgrepOutput struct {
 	Results []SemgrepResult `json:"results"`
 }
 
+// getSemgrepBin returns the correct executable name based on OS
+func getSemgrepBin() string {
+	if runtime.GOOS == "windows" {
+		return "semgrep.exe"
+	}
+	return "semgrep"
+}
+
 func RunSemgrep(targetDir string) ([]reporter.Finding, error) {
 	var findings []reporter.Finding
 
-	_, err := exec.LookPath("semgrep")
+	_, err := exec.LookPath(getSemgrepBin())
 	if err != nil {
 		utils.LogInfo("Semgrep not found. Skipping Semgrep scan.")
 		utils.LogInfo("Install with: pip3 install semgrep")
@@ -52,7 +61,7 @@ func RunSemgrep(targetDir string) ([]reporter.Finding, error) {
 
 	utils.LogInfo("Semgrep detected. Running community rules...")
 
-	cmd := exec.Command("semgrep", "--json", "--config", "auto", "--quiet", targetDir)
+	cmd := exec.Command(getSemgrepBin(), "--json", "--config", "auto", "--quiet", targetDir)
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout

@@ -115,7 +115,7 @@ const chunkOverlap = 50
 
 // DiscoverVulnerabilities scans a single file using AI to find vulnerabilities via sliding window chunking
 func DiscoverVulnerabilities(modelName string, filePath string, content string) ([]DiscoveryFinding, error) {
-	lines := strings.Split(content, "\n")
+	lines := strings.Split(utils.NormalizeNewlines(content), "\n")
 	totalLines := len(lines)
 
 	var allFindings []DiscoveryFinding

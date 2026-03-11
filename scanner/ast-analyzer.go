@@ -66,7 +66,7 @@ func (aa *ASTAnalyzer) AnalyzeFile(filePath string) ([]reporter.Finding, error) 
 	defer tree.Close()
 
 	rootNode := tree.RootNode()
-	lines := strings.Split(string(content), "\n")
+	lines := strings.Split(utils.NormalizeNewlines(string(content)), "\n")
 
 	var findings []reporter.Finding
 	srNo := 1

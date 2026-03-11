@@ -2,6 +2,7 @@ package ai
 
 import (
 	"QWEN_SCR_24_FEB_2026/reporter"
+	"QWEN_SCR_24_FEB_2026/utils"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -177,7 +178,7 @@ func getCodeSnippet(fileContents map[string]string, filePath string, lineNumber 
 		return ""
 	}
 
-	lines := strings.Split(content, "\n")
+	lines := strings.Split(utils.NormalizeNewlines(content), "\n")
 	var start, end int
 	fmt.Sscanf(lineNumber, "%d", &start)
 	end = start

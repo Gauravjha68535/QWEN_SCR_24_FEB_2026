@@ -212,7 +212,7 @@ func parsePackageJSON(data []byte, sourceFile string) []Dependency {
 // parseRequirementsTXT parses Python requirements.txt
 func parseRequirementsTXT(data []byte, sourceFile string) []Dependency {
 	var deps []Dependency
-	lines := strings.Split(string(data), "\n")
+	lines := strings.Split(utils.NormalizeNewlines(string(data)), "\n")
 
 	for lineNum, line := range lines {
 		line = strings.TrimSpace(line)
@@ -256,7 +256,7 @@ func parseRequirementsTXT(data []byte, sourceFile string) []Dependency {
 // parseGoMod parses Go go.mod
 func parseGoMod(data []byte, sourceFile string) []Dependency {
 	var deps []Dependency
-	lines := strings.Split(string(data), "\n")
+	lines := strings.Split(utils.NormalizeNewlines(string(data)), "\n")
 	inRequire := false
 
 	for lineNum, line := range lines {
@@ -295,7 +295,7 @@ func parsePomXML(data []byte, sourceFile string) []Dependency {
 
 	// Simple regex-based parsing for dependencies
 	// In production, use a proper XML parser
-	lines := strings.Split(content, "\n")
+	lines := strings.Split(utils.NormalizeNewlines(content), "\n")
 	for lineNum, line := range lines {
 		if strings.Contains(line, "<dependency>") {
 			// Extract groupId, artifactId, version from next few lines
@@ -316,7 +316,7 @@ func parsePomXML(data []byte, sourceFile string) []Dependency {
 // parseGemfileLock parses Ruby Gemfile.lock
 func parseGemfileLock(data []byte, sourceFile string) []Dependency {
 	var deps []Dependency
-	lines := strings.Split(string(data), "\n")
+	lines := strings.Split(utils.NormalizeNewlines(string(data)), "\n")
 	inSpecs := false
 
 	for lineNum, line := range lines {

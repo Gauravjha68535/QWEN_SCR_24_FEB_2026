@@ -5,11 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"QWEN_SCR_24_FEB_2026/ai"
 	"QWEN_SCR_24_FEB_2026/config"
+	"QWEN_SCR_24_FEB_2026/scanner"
 	"QWEN_SCR_24_FEB_2026/utils"
 
 	"github.com/fatih/color"
@@ -94,7 +97,8 @@ func ShowMainMenu() *ScanConfig {
 		fmt.Println("  14. Set Output Files")
 		fmt.Println("  15. Configure Compliance Frameworks")
 		fmt.Println("  16. Set Ollama Host (Remote AI)")
-		fmt.Println("  17. 🚀 START SCAN")
+		fmt.Println("  17. 🛠️  SYSTEM DIAGNOSTIC (Verify Environment)")
+		fmt.Println("  18. 🚀 START SCAN")
 		fmt.Println("  0.  Exit")
 		fmt.Println()
 
@@ -146,6 +150,8 @@ func ShowMainMenu() *ScanConfig {
 		case "16":
 			setOllamaHost(reader, config)
 		case "17":
+			runDiagnostic()
+		case "18":
 			if config.TargetDir == "" {
 				color.Red("✗ Error: Please set target directory first (Option 1)")
 				fmt.Println()
@@ -157,7 +163,7 @@ func ShowMainMenu() *ScanConfig {
 			color.Yellow("Exiting scanner...")
 			os.Exit(0)
 		default:
-			color.Red("✗ Invalid choice. Please enter 0-17.")
+			color.Red("✗ Invalid choice. Please enter 0-18.")
 		}
 
 		fmt.Println()
@@ -459,4 +465,58 @@ func loadSavedConfig() (*ScanConfig, bool) {
 		config.ModelName = ai.GetDefaultModel()
 	}
 	return &config, true
+}
+
+func runDiagnostic() {
+	fmt.Println()
+	color.Cyan("🛠️  SYSTEM DIAGNOSTIC")
+	fmt.Println("───────────────────────────────────────────────────────")
+
+	// 1. OS Detection
+	fmt.Printf("  Operating System (OS): %s\n", color.HiGreenString(runtime.GOOS))
+	fmt.Printf("  Architecture (Arch):   %s\n", color.HiGreenString(runtime.GOARCH))
+
+	// 2. RAM Detection
+	ram, err := utils.GetSystemRAM()
+	if err != nil {
+		color.Red("  RAM Detection:     FAILED (%v)", err)
+	} else {
+		fmt.Printf("  Total RAM:         %.2f GB\n", ram.TotalGB)
+		fmt.Printf("  Available RAM:     %.2f GB\n", ram.AvailableGB)
+	}
+
+	// 3. External Tools
+	fmt.Print("  osv-scanner:       ")
+	if scanner.CheckOSVCliInstalled() {
+		color.Green("✓ FOUND")
+	} else {
+		color.Yellow("✗ NOT FOUND (Will use API fallback)")
+	}
+
+	fmt.Print("  semgrep:           ")
+	// Note: We need getSemgrepBin() which is in semgrep_runner.go (same package scanner)
+	// But menu.go is in main package. The runner is exported? No.
+	// We'll just check semgrep directly or exported helper.
+	_, err = exec.LookPath("semgrep")
+	if err == nil {
+		color.Green("✓ FOUND")
+	} else {
+		_, err = exec.LookPath("semgrep.exe")
+		if err == nil {
+			color.Green("✓ FOUND")
+		} else {
+			color.Yellow("✗ NOT FOUND (Will skip community rules)")
+		}
+	}
+
+	// 4. Ollama Connectivity
+	fmt.Print("  Ollama Status:     ")
+	models := ai.GetInstalledModels()
+	if models != nil {
+		color.Green("✓ CONNECTED (%d models available)", len(models))
+	} else {
+		color.Red("✗ DISCONNECTED")
+	}
+
+	fmt.Println("───────────────────────────────────────────────────────")
 }

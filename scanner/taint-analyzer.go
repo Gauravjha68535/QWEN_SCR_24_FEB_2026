@@ -126,7 +126,7 @@ func (ta *TaintAnalyzer) AnalyzeTaintFlow(filePath string) ([]reporter.Finding, 
 		return nil, err
 	}
 
-	lines := strings.Split(string(content), "\n")
+	lines := strings.Split(utils.NormalizeNewlines(string(content)), "\n")
 
 	var findings []reporter.Finding
 	srNo := 1
@@ -476,7 +476,8 @@ func getInjectionOWASP(sinkPattern string) string {
 
 // isTestFilePath returns true if the file path looks like a test/mock/fixture file
 func isTestFilePath(path string) bool {
-	lowerPath := strings.ToLower(path)
+	// Normalize to forward slashes so checks work on Windows too
+	lowerPath := strings.ToLower(strings.ReplaceAll(path, "\\", "/"))
 	testIndicators := []string{
 		"_test.go", "_test.py", "_test.js", "_test.ts", ".test.js", ".test.ts",
 		".spec.js", ".spec.ts", "test_", "/test/", "/tests/", "/__tests__/",

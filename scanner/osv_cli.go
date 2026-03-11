@@ -5,15 +5,24 @@ import (
 	"encoding/json"
 	"fmt"
 	"os/exec"
+	"runtime"
 	"strings"
 
 	"QWEN_SCR_24_FEB_2026/reporter"
 	"QWEN_SCR_24_FEB_2026/utils"
 )
 
+// getOSVBin returns the correct executable name based on OS
+func getOSVBin() string {
+	if runtime.GOOS == "windows" {
+		return "osv-scanner.exe"
+	}
+	return "osv-scanner"
+}
+
 // CheckOSVCliInstalled checks if the osv-scanner binary is available in the system PATH
 func CheckOSVCliInstalled() bool {
-	_, err := exec.LookPath("osv-scanner")
+	_, err := exec.LookPath(getOSVBin())
 	return err == nil
 }
 
@@ -87,7 +96,7 @@ func mapOSVCLISeverity(severities []struct {
 func RunOSVCli(targetDir string) ([]reporter.Finding, error) {
 	utils.LogInfo("🔍 Launching Google OSV-Scanner CLI...")
 
-	cmd := exec.Command("osv-scanner", "-r", "--json", targetDir)
+	cmd := exec.Command(getOSVBin(), "-r", "--json", targetDir)
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &stdout

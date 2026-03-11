@@ -76,7 +76,7 @@ func (ra *ReachabilityAnalyzer) BuildCallGraph(targetDir string) error {
 		}
 
 		source := string(content)
-		lines := strings.Split(source, "\n")
+		lines := strings.Split(utils.NormalizeNewlines(source), "\n")
 
 		var currentFunc string
 
@@ -163,7 +163,7 @@ func (ra *ReachabilityAnalyzer) GetFunctionAtLine(filePath string, lineNum int) 
 		return ""
 	}
 
-	lines := strings.Split(string(content), "\n")
+	lines := strings.Split(utils.NormalizeNewlines(string(content)), "\n")
 	funcDefPattern := regexp.MustCompile(`(?:func|def|function|fun)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(`)
 
 	lastFunc := ""

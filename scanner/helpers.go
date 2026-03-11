@@ -10,7 +10,8 @@ import (
 
 // IsTestFile checks if the filePath looks like a test or mock file
 func IsTestFile(filePath string) bool {
-	lowerPath := strings.ToLower(filePath)
+	// Normalize to forward slashes so checks work on Windows too
+	lowerPath := strings.ToLower(strings.ReplaceAll(filePath, "\\", "/"))
 	if strings.Contains(lowerPath, "_test.go") ||
 		strings.Contains(lowerPath, "/test/") ||
 		strings.Contains(lowerPath, "/tests/") ||

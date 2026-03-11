@@ -601,7 +601,7 @@ func populateCodeSnippets(findings []reporter.Finding) {
 			if err != nil {
 				continue
 			}
-			fileCache[filePath] = strings.Split(string(content), "\n")
+			fileCache[filePath] = strings.Split(utils.NormalizeNewlines(string(content)), "\n")
 		}
 
 		lines := fileCache[filePath]

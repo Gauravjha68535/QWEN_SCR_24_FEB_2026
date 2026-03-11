@@ -115,7 +115,7 @@ func ValidateFindingsBatch(modelName string, findings []reporter.Finding, fileCo
 
 			shortFile := filepath.Base(job.finding.FilePath)
 			parentDir := filepath.Base(filepath.Dir(job.finding.FilePath))
-			displayPath := fmt.Sprintf("%s/%s", parentDir, shortFile)
+			displayPath := filepath.Join(parentDir, shortFile)
 
 			issueName := job.finding.IssueName
 			if len(issueName) > 35 {
@@ -243,29 +243,29 @@ func ValidateFindingsBatch(modelName string, findings []reporter.Finding, fileCo
 
 // formatDuration formats a duration into human-readable form
 func formatDuration(d time.Duration) string {
-if d < time.Minute {
-return fmt.Sprintf("%.0fs", d.Seconds())
-}
-if d < time.Hour {
-mins := int(d.Minutes())
-secs := int(d.Seconds()) % 60
-return fmt.Sprintf("%dm%02ds", mins, secs)
-}
-hours := int(d.Hours())
-mins := int(d.Minutes()) % 60
-return fmt.Sprintf("%dh%02dm", hours, mins)
+	if d < time.Minute {
+		return fmt.Sprintf("%.0fs", d.Seconds())
+	}
+	if d < time.Hour {
+		mins := int(d.Minutes())
+		secs := int(d.Seconds()) % 60
+		return fmt.Sprintf("%dm%02ds", mins, secs)
+	}
+	hours := int(d.Hours())
+	mins := int(d.Minutes()) % 60
+	return fmt.Sprintf("%dh%02dm", hours, mins)
 }
 
 func max(a, b int) int {
-if a > b {
-return a
-}
-return b
+	if a > b {
+		return a
+	}
+	return b
 }
 
 func min(a, b int) int {
-if a < b {
-return a
-}
-return b
+	if a < b {
+		return a
+	}
+	return b
 }
