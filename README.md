@@ -161,25 +161,25 @@ go run ./cmd/scanner -d ./myapp -ai -model llama3
 
 ```
 ┌─────────────────┐
-│  Source Code     │
+│  Source Code    │
 └───────┬─────────┘
         ▼
 ┌─────────────────┐     ┌──────────────────┐
-│ Static Engine   │────▶│  Pattern Matching │ (928 YAML rules)
-│ (Pattern + AST  │     │  AST Analysis     │ (Tree-sitter)
-│  + Taint Flow)  │     │  Taint Tracking   │ (Source → Sink)
+│ Static Engine   │────▶│  Pattern Matching│(928 YAML rules)
+│ (Pattern + AST  │     │  AST Analysis    │(Tree-sitter)
+│  + Taint Flow)  │     │  Taint Tracking  │(Source → Sink)
 └───────┬─────────┘     └──────────────────┘
         ▼
 ┌─────────────────┐     ┌──────────────────┐
-│ Supplemental    │────▶│  OSV-Scanner      │ (SCA/Dependencies)
-│ Engines         │     │  Semgrep          │ (Community Rules)
-│                 │     │  Secret Detector  │ (Entropy Analysis)
+│ Supplemental    │────▶│  OSV-Scanner     │(SCA/Dependencies)
+│ Engines         │     │  Semgrep         │(Community Rules)
+│                 │     │  Secret Detector │(Entropy Analysis)
 └───────┬─────────┘     └──────────────────┘
         ▼
 ┌─────────────────┐     ┌──────────────────┐
-│ AI Layer        │────▶│  Discovery (CoT)  │ (Find new vulns)
-│ (Ollama LLM)    │     │  Validation       │ (Adversarial sim)
-│                 │     │  Merger           │ (Deduplication)
+│ AI Layer        │────▶│  Discovery (CoT) |(Find new vulns)
+│ (Ollama LLM)    │     │  Validation      |(Adversarial sim)
+│                 │     │  Merger          |(Deduplication)
 └───────┬─────────┘     └──────────────────┘
         ▼
 ┌─────────────────┐
