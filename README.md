@@ -115,7 +115,7 @@ The scanner generates multiple report formats so you can share results with any 
 | **HTML** | `report.html` | Interactive, styled report with filtering and charts. |
 | **PDF** | `report.pdf` | Printable executive summary for stakeholders. |
 | **CSV** | `report.csv` | Importable into Excel, Jira, or any ticketing system. |
-| **Web Dashboard** | `localhost:8080` | Live, auto-refreshing browser dashboard with Chart.js analytics. |
+| **Web Dashboard** | `localhost:<port>` | Live, auto-refreshing browser dashboard with Chart.js analytics (default 8080). |
 | **JSON (Stashed)** | `.findings_stashed.json` | Machine-readable local DB for consecutive scans. |
 
 ---
@@ -144,6 +144,7 @@ go run ./cmd/scanner -d /path/to/your/code -ai -semgrep -consolidated
 | `-consolidated` | `false` | Enable Consolidated AI + Static intelligence. |
 | `-model` | `qwen2.5-coder:7b` | AI model name (any Ollama model). |
 | `-ollama-host` | `localhost:11434` | Ollama host:port (for remote AI). |
+| `-port` | `8080` | Port to run the Web Dashboard on. |
 | `-csv` | `report.csv` | Output CSV report file path. |
 | `-html` | `report.html` | Output HTML report file path. |
 | `-pdf` | `report.pdf` | Output PDF report file path. |

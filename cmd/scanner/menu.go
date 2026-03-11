@@ -41,6 +41,7 @@ type ScanConfig struct {
 	OutputCSV             string
 	OutputHTML            string
 	OutputPDF             string
+	DashboardPort         int
 	ComplianceFrameworks  []string
 }
 
@@ -59,6 +60,7 @@ func ShowMainMenu() *ScanConfig {
 			OutputCSV:             "report.csv",
 			OutputHTML:            "report.html",
 			OutputPDF:             "report.pdf",
+			DashboardPort:         8080,
 			ComplianceFrameworks:  []string{},
 			ModelName:             ai.GetDefaultModel(),
 			OllamaHost:            "localhost:11434",
@@ -138,6 +140,21 @@ func ShowMainMenu() *ScanConfig {
 		case "11":
 			config.EnableWebDashboard = !config.EnableWebDashboard
 			color.Green("✓ Web Dashboard API: %v", config.EnableWebDashboard)
+			if config.EnableWebDashboard {
+				fmt.Print("  Enter port (default 8080): ")
+				portStr, _ := reader.ReadString('\n')
+				portStr = strings.TrimSpace(portStr)
+				if portStr != "" {
+					var port int
+					fmt.Sscanf(portStr, "%d", &port)
+					if port > 0 && port <= 65535 {
+						config.DashboardPort = port
+						color.Green("  ✓ Dashboard Port set to: %d", port)
+					} else {
+						color.Red("  ✗ Invalid port, keeping default %d", config.DashboardPort)
+					}
+				}
+			}
 		case "12":
 			config.EnableContainerScan = !config.EnableContainerScan
 			color.Green("✓ Container Image Scanning: %v", config.EnableContainerScan)
@@ -198,7 +215,7 @@ func showCurrentConfig(config *ScanConfig) {
 	fmt.Printf("  🌐 Threat Intelligence:  %s\n", enabledOrDisabled(config.EnableThreatIntel))
 	fmt.Printf("  🔮 Taint/Data Flow:      %s\n", enabledOrDisabled(config.EnableSymbolicExec))
 	fmt.Printf("  🧠 ML FP Reduction:      %s\n", enabledOrDisabled(config.EnableMLFPReduction))
-	fmt.Printf("  🌐 Web Dashboard API:    %s\n", enabledOrDisabled(config.EnableWebDashboard))
+	fmt.Printf("  🌐 Web Dashboard API:    %s (Port %d)\n", enabledOrDisabled(config.EnableWebDashboard), config.DashboardPort)
 	fmt.Printf("  🧠 AI Model:             %s\n", valueOrNotSet(config.ModelName))
 	fmt.Printf("  🌐 Ollama Host:          %s\n", valueOrNotSet(config.OllamaHost))
 	fmt.Printf("  📄 Output Files:         %s, %s, %s\n", config.OutputCSV, config.OutputHTML, config.OutputPDF)

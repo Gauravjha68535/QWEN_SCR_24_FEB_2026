@@ -53,6 +53,7 @@ func parseFlags() *ScanConfig {
 	outputCSV := flag.String("csv", "report.csv", "Output CSV report path")
 	outputHTML := flag.String("html", "report.html", "Output HTML report path")
 	outputPDF := flag.String("pdf", "report.pdf", "Output PDF report path")
+	dashPort := flag.Int("port", 8080, "Port for the Web Dashboard")
 	frameworks := flag.String("frameworks", "", "Comma-separated compliance frameworks (PCI-DSS,HIPAA,SOC2,ISO27001,GDPR)")
 
 	flag.Parse()
@@ -87,6 +88,7 @@ func parseFlags() *ScanConfig {
 		OutputCSV:             *outputCSV,
 		OutputHTML:            *outputHTML,
 		OutputPDF:             *outputPDF,
+		DashboardPort:         *dashPort,
 		ComplianceFrameworks:  []string{},
 	}
 
@@ -554,7 +556,13 @@ func main() {
 	// Step 16: Start Web Dashboard (if enabled)
 	if config.EnableWebDashboard {
 		UpdateDashboardFindings(allFindings)
-		StartWebDashboard(8080)
+
+		// Fallback if port was somehow set to 0
+		port := config.DashboardPort
+		if port <= 0 {
+			port = 8080
+		}
+		StartWebDashboard(port)
 	}
 }
 
