@@ -1,7 +1,7 @@
 - id: vhdl-hardcoded-key
   languages: [vhdl]
   patterns:
-    - regex: "(?i)constant\\s+.*(?:key|password|secret)\\s*:\\s*.*\\s*:=\\s*[xX]?\\""
+    - regex: '(?i)constant\\s+.*(?:key|password|secret)\\s*:\\s*.*\\s*:=\\s*[xX]?\"'
   severity: high
   description: "Hardcoded cryptographic key"
   remediation: "Provide keys dynamically or via secure storage"
@@ -11,7 +11,7 @@
 - id: vhdl-insecure-initial-state
   languages: [vhdl]
   patterns:
-    - regex: "(?i)signal\\s+\\w+\\s*:\\s*.*:=\\s*[xXuUzZ\\-W]"
+    - regex: '(?i)signal\\s+\\w+\\s*:\\s*.*:=\\s*[xXuUzZ\\-W]'
   severity: medium
   description: "Insecure or undefined initial state"
   remediation: "Explicitly initialize to secure zero state"
@@ -21,7 +21,7 @@
 - id: vhdl-unprotected-jtag
   languages: [vhdl]
   patterns:
-    - regex: "(?i)attribute\\s+jtag\\s*:\\s*boolean|port\\s*\\(\\s*tck|tms|tdi|tdo"
+    - regex: '(?i)attribute\\s+jtag\\s*:\\s*boolean|port\\s*\\(\\s*tck|tms|tdi|tdo'
   severity: medium
   description: "Exposed JTAG interface"
   remediation: "Disable or secure JTAG in production builds"
@@ -31,7 +31,7 @@
 - id: vhdl-infinite-loop
   languages: [vhdl]
   patterns:
-    - regex: "(?i)loop\s*(?!(.*exit.*|.*while.*))"
+    - regex: '(?i)loop\s*(?!(.*exit.*|.*while.*))'
   severity: low
   description: "Infinite loop in process"
   remediation: "Ensure there is an exit condition"
@@ -42,7 +42,7 @@
 - id: vhdl-command-injection
   languages: [vhdl]
   patterns:
-    - regex: "(?i)\\$system\\s*\\(|\\$fopen\\s*\\(.*user"
+    - regex: '(?i)\\$system\\s*\\(|\\$fopen\\s*\\(.*user'
   severity: critical
   description: "Command injection via system calls"
   remediation: "Validate all inputs to system calls"
@@ -53,7 +53,7 @@
 - id: vhdl-path-traversal
   languages: [vhdl]
   patterns:
-    - regex: "(?i)fopen\\s*\\([^)]*\\+\\s*[^)]+\\)"
+    - regex: '(?i)fopen\\s*\\([^)]*\\+\\s*[^)]+\\)'
   severity: high
   description: "Path traversal in file operations"
   remediation: "Validate and sanitize file paths"
@@ -64,7 +64,7 @@
 - id: vhdl-timing-attack
   languages: [vhdl]
   patterns:
-    - regex: "(?i)(?:=|/=)\\s*[^)]*(?:and|or)\\s*[^)]*\\bkey\\b"
+    - regex: '(?i)(?:=|/=)\\s*[^)]*(?:and|or)\\s*[^)]*\\bkey\\b'
   severity: medium
   description: "Potential timing attack in comparison"
   remediation: "Use constant-time comparison functions"
@@ -75,7 +75,7 @@
 - id: vhdl-weak-random
   languages: [vhdl]
   patterns:
-    - regex: "(?i)(random|urandom)\\s*\\("
+    - regex: '(?i)(random|urandom)\\s*\\('
   severity: medium
   description: "Non-cryptographic random in security context"
   remediation: "Use hardware random number generators for crypto"
@@ -86,7 +86,7 @@
 - id: vhdl-xxe
   languages: [vhdl]
   patterns:
-    - regex: "(?i)xmlParse|readXML|domParser"
+    - regex: '(?i)xmlParse|readXML|domParser'
   severity: high
   description: "XXE vulnerability in XML parsing"
   remediation: "Disable external entity processing in XML parser"
@@ -97,7 +97,7 @@
 - id: vhdl-stack-overflow
   languages: [vhdl]
   patterns:
-    - regex: "(?i)process\\s*\\([^)]*\\)\\s*begin.*process\\s*\\("
+    - regex: '(?i)process\\s*\\([^)]*\\)\\s*begin.*process\\s*\\('
   severity: high
   description: "Nested process instantiation - potential stack overflow"
   remediation: "Limit recursion depth in component instantiation"
@@ -108,7 +108,7 @@
 - id: vhdl-privilege-escalation
   languages: [vhdl]
   patterns:
-    - regex: "(?i)signal\\s+\\w+_priv\\s*:.*:=|process\\s*\\([^)]*admin"
+    - regex: '(?i)signal\\s+\\w+_priv\\s*:.*:=|process\\s*\\([^)]*admin'
   severity: high
   description: "Potential privilege management issue"
   remediation: "Implement proper privilege separation"
@@ -119,7 +119,7 @@
 - id: vhdl-weak-cipher
   languages: [vhdl]
   patterns:
-    - regex: "(?i)des\\s*\\(|rc4\\s*\\(|md5"
+    - regex: '(?i)des\\s*\\(|rc4\\s*\\(|md5'
   severity: medium
   description: "Weak cryptographic algorithm"
   remediation: "Use AES-256 or modern crypto primitives"
@@ -130,7 +130,7 @@
 - id: vhdl-test-bench
   languages: [vhdl]
   patterns:
-    - regex: "(?i)test\\s*bench|entity\\s+\\w+_tb"
+    - regex: '(?i)test\\s*bench|entity\\s+\\w+_tb'
   severity: low
   description: "Test bench in synthesis code"
   remediation: "Separate test benches from synthesis"
@@ -141,7 +141,7 @@
 - id: vhdl-clock-domain
   languages: [vhdl]
   patterns:
-    - regex: "(?i)process\\s*\\(.*clk.*\\)\\s*begin.*process\\s*\\(.*"
+    - regex: '(?i)process\\s*\\(.*clk.*\\)\\s*begin.*process\\s*\\(.*'
   severity: medium
   description: "Clock domain crossing issues"
   remediation: "Use proper CDC synchronization"
@@ -152,7 +152,7 @@
 - id: vhdl-latch
   languages: [vhdl]
   patterns:
-    - regex: "(?i)if\\s+.*\\s+then.*\\s+elsif|if\\s+.*\\s+then\\s+\\w+\\s*<="
+    - regex: '(?i)if\\s+.*\\s+then.*\\s+elsif|if\\s+.*\\s+then\\s+\\w+\\s*<='
   severity: medium
   description: "Potential latch inference"
   remediation: "Complete all if-else branches"
@@ -163,7 +163,7 @@
 - id: vhdl-async-reset
   languages: [vhdl]
   patterns:
-    - regex: "(?i)process\\s*\\(.*reset.*\\)\\s*begin.*if\\s+reset"
+    - regex: '(?i)process\\s*\\(.*reset.*\\)\\s*begin.*if\\s+reset'
   severity: medium
   description: "Async reset without synchronization"
   remediation: "Synchronize async reset"
@@ -174,7 +174,7 @@
 - id: vhdl-unsigned-compare
   languages: [vhdl]
   patterns:
-    - regex: "(?i)\\w+\\s*<\\s*\\w+\\s*(?!.*signed|.*unsigned)"
+    - regex: '(?i)\\w+\\s*<\\s*\\w+\\s*(?!.*signed|.*unsigned)'
   severity: medium
   description: "Unsigned comparison may overflow"
   remediation: "Use proper signed/unsigned types"
@@ -185,7 +185,7 @@
 - id: vhdl-generic-default
   languages: [vhdl]
   patterns:
-    - regex: "(?i)generic\\s*\\(\\s*\\)|generic\\s*map\\s*\\(\\s*\\)"
+    - regex: '(?i)generic\\s*\\(\\s*\\)|generic\\s*map\\s*\\(\\s*\\)'
   severity: low
   description: "Generic without default value"
   remediation: "Provide default values for generics"

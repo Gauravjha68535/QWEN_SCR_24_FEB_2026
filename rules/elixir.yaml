@@ -6,7 +6,7 @@
 - id: elixir-hardcoded-secret
   languages: [elixir]
   patterns:
-    - regex: "(?i)(secret_key_base|password|api_key|secret)\\s*[=:]\\s*\"[^\"]{8,}\""
+    - regex: '(?i)(secret_key_base|password|api_key|secret)\\s*[=:]\\s*\"[^\"]{8,}\"'
   severity: high
   description: "Hardcoded secret in Elixir source code"
   remediation: "Use System.get_env() or runtime config for secrets"
@@ -17,7 +17,7 @@
 - id: elixir-sql-injection-fragment
   languages: [elixir]
   patterns:
-    - regex: "(?i)fragment\\s*\\(\\s*\".*#\\{|Ecto\\.Adapters\\.SQL\\.query.*#\\{"
+    - regex: '(?i)fragment\\s*\\(\\s*\".*#\\{|Ecto\\.Adapters\\.SQL\\.query.*#\\{'
   severity: critical
   description: "SQL injection via string interpolation in Ecto fragment"
   remediation: "Use Ecto.Query placeholders: fragment(\"? = ?\", field, ^value)"
@@ -27,7 +27,7 @@
 - id: elixir-sql-injection-raw
   languages: [elixir]
   patterns:
-    - regex: "(?i)Ecto\\.Adapters\\.SQL\\.(query|query!)\\s*\\(.*<>"
+    - regex: '(?i)Ecto\\.Adapters\\.SQL\\.(query|query!)\\s*\\(.*<>'
   severity: critical
   description: "Raw SQL with string concatenation in Ecto"
   remediation: "Use parameterized queries: SQL.query(repo, \"SELECT * WHERE id = $1\", [id])"
@@ -38,7 +38,7 @@
 - id: elixir-command-injection
   languages: [elixir]
   patterns:
-    - regex: "System\\.cmd\\s*\\(.*#\\{|:os\\.cmd\\s*\\(.*#\\{"
+    - regex: 'System\\.cmd\\s*\\(.*#\\{|:os\\.cmd\\s*\\(.*#\\{'
   severity: critical
   description: "Command injection via string interpolation in System.cmd"
   remediation: "Use System.cmd/3 with separate argument list. Never interpolate user input"
@@ -49,7 +49,7 @@
 - id: elixir-code-injection-eval
   languages: [elixir]
   patterns:
-    - regex: "Code\\.eval_string\\s*\\(|Code\\.eval_file\\s*\\("
+    - regex: 'Code\\.eval_string\\s*\\(|Code\\.eval_file\\s*\\('
   severity: critical
   description: "Code.eval_string() can execute arbitrary Elixir code"
   remediation: "Avoid Code.eval_string with user input. Use AST-safe parsing"
@@ -60,7 +60,7 @@
 - id: elixir-phoenix-xss
   languages: [elixir]
   patterns:
-    - regex: "(?i)raw\\s*\\(.*conn\\.params|Phoenix\\.HTML\\.raw\\s*\\(.*params"
+    - regex: '(?i)raw\\s*\\(.*conn\\.params|Phoenix\\.HTML\\.raw\\s*\\(.*params'
   severity: high
   description: "XSS via raw() with user input in Phoenix template"
   remediation: "Avoid raw(). Phoenix auto-escapes by default — use <%= instead of raw"
@@ -71,7 +71,7 @@
 - id: elixir-phoenix-csrf-disabled
   languages: [elixir]
   patterns:
-    - regex: "(?i)protect_from_forgery\\s*false|:put_secure_browser_headers.*delete"
+    - regex: '(?i)protect_from_forgery\\s*false|:put_secure_browser_headers.*delete'
   severity: high
   description: "CSRF protection disabled in Phoenix"
   remediation: "Keep protect_from_forgery enabled and use csrf_meta_tag in templates"
@@ -82,7 +82,7 @@
 - id: elixir-sensitive-log
   languages: [elixir]
   patterns:
-    - regex: "(?i)Logger\\.(info|warn|error|debug)\\s*\\(.*(?:password|token|secret|credit_card)"
+    - regex: '(?i)Logger\\.(info|warn|error|debug)\\s*\\(.*(?:password|token|secret|credit_card)'
   severity: medium
   description: "Sensitive data in Logger output"
   remediation: "Filter sensitive data from logs. Use @derive {Inspect, except: [:password]}"
@@ -93,7 +93,7 @@
 - id: elixir-insecure-deserialization
   languages: [elixir]
   patterns:
-    - regex: ":erlang\\.binary_to_term\\s*\\(|:erlang\\.term_to_binary"
+    - regex: ':erlang\\.binary_to_term\\s*\\(|:erlang\\.term_to_binary'
   severity: high
   description: "Erlang term deserialization can execute arbitrary code"
   remediation: "Use :erlang.binary_to_term(data, [:safe]) or JSON for untrusted data"
@@ -104,7 +104,7 @@
 - id: elixir-insecure-http
   languages: [elixir]
   patterns:
-    - regex: "http://[^\"'\\s]+"
+    - regex: 'http://[^\"'\\s]+'
   severity: low
   description: "Insecure HTTP URL detected"
   remediation: "Use HTTPS for all external communications"
@@ -115,7 +115,7 @@
 - id: elixir-open-redirect
   languages: [elixir]
   patterns:
-    - regex: "redirect\\s*\\(\\s*conn\\s*,\\s*external:\\s*.*params"
+    - regex: 'redirect\\s*\\(\\s*conn\\s*,\\s*external:\\s*.*params'
   severity: high
   description: "Open redirect via user-controlled URL"
   remediation: "Validate redirect URLs against allowlist. Prefer internal redirects"
@@ -126,7 +126,7 @@
 - id: elixir-path-traversal
   languages: [elixir]
   patterns:
-    - regex: "File\\.(read|write|stream)\\s*\\(.*params|Path\\.join\\s*\\(.*params"
+    - regex: 'File\\.(read|write|stream)\\s*\\(.*params|Path\\.join\\s*\\(.*params'
   severity: high
   description: "Path traversal via user-controlled file path"
   remediation: "Validate paths with Path.expand and ensure they start within expected directory"
@@ -145,7 +145,7 @@
 - id: elixir-auth-guard-missing
   languages: [elixir]
   patterns:
-    - regex: "def\\s+\\w+\\s*\\(.*conn.*\\)\\s+when"
+    - regex: 'def\\s+\\w+\\s*\\(.*conn.*\\)\\s+when'
   severity: medium
   description: "Phoenix controller without auth guard"
   remediation: "Add :protect_from_forgery and authentication plugs"
@@ -155,7 +155,7 @@
 - id: elixir-session-store
   languages: [elixir]
   patterns:
-    - regex: "Plug\\.Session.*store:\\s*:ets"
+    - regex: 'Plug\\.Session.*store:\\s*:ets'
   severity: medium
   description: "Session stored in ETS (in-memory)"
   remediation: "Use persistent session store for production"
@@ -165,7 +165,7 @@
 - id: elixir-session-cookie-secure
   languages: [elixir]
   patterns:
-    - regex: "Plug\\.Session.*secure:\\s*false"
+    - regex: 'Plug\\.Session.*secure:\\s*false'
   severity: high
   description: "Session cookie without secure flag"
   remediation: "Set secure: true for session cookies"
@@ -175,7 +175,7 @@
 - id: elixir-session-httponly
   languages: [elixir]
   patterns:
-    - regex: "Plug\\.Session.*http_only:\\s*false"
+    - regex: 'Plug\\.Session.*http_only:\\s*false'
   severity: high
   description: "Session cookie without HttpOnly flag"
   remediation: "Set http_only: true for session cookies"
@@ -185,7 +185,7 @@
 - id: elixir-session-samesite
   languages: [elixir]
   patterns:
-    - regex: "Plug\\.Session.*same_site:\\s*\"None\""
+    - regex: 'Plug\\.Session.*same_site:\\s*\"None\"'
   severity: medium
   description: "Session cookie with SameSite=None"
   remediation: "Use SameSite=Lax or Strict"
@@ -195,7 +195,7 @@
 - id: elixir-auth-plug-missing
   languages: [elixir]
   patterns:
-    - regex: "pipeline\\s+:browser.*plug\\s+:fetch_session"
+    - regex: 'pipeline\\s+:browser.*plug\\s+:fetch_session'
   severity: medium
   description: "Browser pipeline without auth plug"
   remediation: "Add authentication plug to browser pipeline"
@@ -205,7 +205,7 @@
 - id: elixir-guardian-config
   languages: [elixir]
   patterns:
-    - regex: "Guardian\\.Config.*secret_key"
+    - regex: 'Guardian\\.Config.*secret_key'
   severity: high
   description: "Guardian secret key in config"
   remediation: "Use environment variable for secret key"
@@ -215,7 +215,7 @@
 - id: elixir-pow-assent-config
   languages: [elixir]
   patterns:
-    - regex: "PowAssent\\.Config.*client_secret"
+    - regex: 'PowAssent\\.Config.*client_secret'
   severity: high
   description: "OAuth client secret in config"
   remediation: "Use runtime environment variables"
@@ -225,7 +225,7 @@
 - id: elixir-ueberauth-config
   languages: [elixir]
   patterns:
-    - regex: "Ueberauth\\.Strategy.*client_id"
+    - regex: 'Ueberauth\\.Strategy.*client_id'
   severity: high
   description: "OAuth client ID in config"
   remediation: "Use environment variables"
@@ -235,7 +235,7 @@
 - id: elixir-token-expiry
   languages: [elixir]
   patterns:
-    - regex: "token_ttl:\\s*\\{\\s*999"
+    - regex: 'token_ttl:\\s*\\{\\s*999'
   severity: medium
   description: "Token TTL set very high"
   remediation: "Use reasonable token expiration (e.g., 1 hour)"
@@ -245,7 +245,7 @@
 - id: elixir-refresh-token
   languages: [elixir]
   patterns:
-    - regex: "refresh_token|refreshable"
+    - regex: 'refresh_token|refreshable'
   severity: low
   description: "Refresh token implementation"
   remediation: "Implement token rotation and revocation"
@@ -255,7 +255,7 @@
 - id: elixir-password-hasher
   languages: [elixir]
   patterns:
-    - regex: "Comeonin\\.|Bcrypt\\.|Argon2\\."
+    - regex: 'Comeonin\\.|Bcrypt\\.|Argon2\\.'
   severity: low
   description: "Password hashing library"
   remediation: "Use Argon2 or Bcrypt with appropriate cost"
@@ -265,7 +265,7 @@
 - id: elixir-password-cost
   languages: [elixir]
   patterns:
-    - regex: "bcrypt_log_rounds:\\s*[0-5]\\b"
+    - regex: 'bcrypt_log_rounds:\\s*[0-5]\\b'
   severity: medium
   description: "Bcrypt cost factor too low"
   remediation: "Use cost factor of 12 or higher"
@@ -275,7 +275,7 @@
 - id: elixir-argon2-params
   languages: [elixir]
   patterns:
-    - regex: "argon2.*m_cost:\\s*[0-9]{1,3}"
+    - regex: 'argon2.*m_cost:\\s*[0-9]{1,3}'
   severity: medium
   description: "Argon2 memory cost too low"
   remediation: "Use appropriate memory cost (64MB+)"
@@ -285,7 +285,7 @@
 - id: elixir-rate-limiter
   languages: [elixir]
   patterns:
-    - regex: "ExRated\\.|Hammer\\.|ExLimit\\."
+    - regex: 'ExRated\\.|Hammer\\.|ExLimit\\.'
   severity: low
   description: "Rate limiting library"
   remediation: "Configure appropriate rate limits"
@@ -295,7 +295,7 @@
 - id: elixir-brute-force
   languages: [elixir]
   patterns:
-    - regex: "login.*attempt|failed.*login"
+    - regex: 'login.*attempt|failed.*login'
   severity: low
   description: "Login attempt tracking"
   remediation: "Implement account lockout after failed attempts"
@@ -305,7 +305,7 @@
 - id: elixir-captcha
   languages: [elixir]
   patterns:
-    - regex: "recaptcha|hcaptcha|captcha"
+    - regex: 'recaptcha|hcaptcha|captcha'
   severity: low
   description: "CAPTCHA implementation"
   remediation: "Use CAPTCHA for sensitive operations"
@@ -315,7 +315,7 @@
 - id: elixir-2fa
   languages: [elixir]
   patterns:
-    - regex: "totp|two_factor|2fa"
+    - regex: 'totp|two_factor|2fa'
   severity: low
   description: "Two-factor authentication"
   remediation: "Enforce 2FA for sensitive accounts"
@@ -325,7 +325,7 @@
 - id: elixir-oauth-scope
   languages: [elixir]
   patterns:
-    - regex: "scope:|scopes:"
+    - regex: 'scope:|scopes:'
   severity: low
   description: "OAuth scope configuration"
   remediation: "Validate OAuth scopes on each request"
@@ -335,7 +335,7 @@
 - id: elixir-api-key-auth
   languages: [elixir]
   patterns:
-    - regex: "api_key|apikey|api-key"
+    - regex: 'api_key|apikey|api-key'
   severity: medium
   description: "API key authentication"
   remediation: "Rotate API keys regularly"
@@ -346,7 +346,7 @@
 - id: elixir-ecto-repo-config
   languages: [elixir]
   patterns:
-    - regex: "Ecto\\.Repo.*username.*password"
+    - regex: 'Ecto\\.Repo.*username.*password'
   severity: high
   description: "Database credentials in repo config"
   remediation: "Use environment variables for database credentials"
@@ -356,7 +356,7 @@
 - id: elixir-ecto-ssl
   languages: [elixir]
   patterns:
-    - regex: "ssl:\\s*false|ssl:\\s*nil"
+    - regex: 'ssl:\\s*false|ssl:\\s*nil'
   severity: high
   description: "Database SSL disabled"
   remediation: "Enable SSL for database connections"
@@ -366,7 +366,7 @@
 - id: elixir-ecto-pool-size
   languages: [elixir]
   patterns:
-    - regex: "pool_size:\\s*[0-9]{3,}"
+    - regex: 'pool_size:\\s*[0-9]{3,}'
   severity: low
   description: "Database pool size very high"
   remediation: "Set appropriate pool size for workload"
@@ -376,7 +376,7 @@
 - id: elixir-ecto-migration
   languages: [elixir]
   patterns:
-    - regex: "def\\s+change.*do.*execute"
+    - regex: 'def\\s+change.*do.*execute'
   severity: low
   description: "Ecto migration with execute"
   remediation: "Review raw SQL in migrations"
@@ -386,7 +386,7 @@
 - id: elixir-ecto-schema
   languages: [elixir]
   patterns:
-    - regex: "schema\\s+\"\\w+\".*do"
+    - regex: 'schema\\s+\"\\w+\".*do'
   severity: low
   description: "Ecto schema definition"
   remediation: "Don't expose sensitive fields in schemas"
@@ -396,7 +396,7 @@
 - id: elixir-ecto-changeset
   languages: [elixir]
   patterns:
-    - regex: "cast\\s*\\(.*\\[.*\\]\\)"
+    - regex: 'cast\\s*\\(.*\\[.*\\]\\)'
   severity: low
   description: "Ecto changeset cast"
   remediation: "Whitelist allowed fields in cast"
@@ -406,7 +406,7 @@
 - id: elixir-ecto-validate
   languages: [elixir]
   patterns:
-    - regex: "validate_\\w+\\s*\\("
+    - regex: 'validate_\\w+\\s*\\('
   severity: low
   description: "Ecto validation"
   remediation: "Implement comprehensive validations"
@@ -416,7 +416,7 @@
 - id: elixir-ecto-unique
   languages: [elixir]
   patterns:
-    - regex: "unique_constraint\\s*\\("
+    - regex: 'unique_constraint\\s*\\('
   severity: low
   description: "Unique constraint"
   remediation: "Handle unique constraint errors properly"
@@ -426,7 +426,7 @@
 - id: elixir-ecto-foreign-key
   languages: [elixir]
   patterns:
-    - regex: "foreign_key_constraint\\s*\\("
+    - regex: 'foreign_key_constraint\\s*\\('
   severity: low
   description: "Foreign key constraint"
   remediation: "Handle foreign key errors properly"
@@ -436,7 +436,7 @@
 - id: elixir-ecto-exclude
   languages: [elixir]
   patterns:
-    - regex: "select:\\s*\\[.*\\]|exclude:"
+    - regex: 'select:\\s*\\[.*\\]|exclude:'
   severity: low
   description: "Field selection/exclusion"
   remediation: "Exclude sensitive fields from queries"
@@ -446,7 +446,7 @@
 - id: elixir-ecto-preload
   languages: [elixir]
   patterns:
-    - regex: "preload:\\s*\\[|preload\\s*\\("
+    - regex: 'preload:\\s*\\[|preload\\s*\\('
   severity: low
   description: "Ecto preload"
   remediation: "Don't preload sensitive associations"
@@ -456,7 +456,7 @@
 - id: elixir-ecto-transaction
   languages: [elixir]
   patterns:
-    - regex: "Ecto\\.Multi\\.|transaction\\s*do"
+    - regex: 'Ecto\\.Multi\\.|transaction\\s*do'
   severity: low
   description: "Database transaction"
   remediation: "Handle transaction rollbacks properly"
@@ -466,7 +466,7 @@
 - id: elixir-ecto-lock
   languages: [elixir]
   patterns:
-    - regex: "lock:\\s*\"|SELECT.*FOR"
+    - regex: 'lock:\\s*\"|SELECT.*FOR'
   severity: low
   description: "Database row locking"
   remediation: "Use appropriate lock mode"
@@ -476,7 +476,7 @@
 - id: elixir-ecto-dynamic
   languages: [elixir]
   patterns:
-    - regex: "dynamic\\s*\\("
+    - regex: 'dynamic\\s*\\('
   severity: medium
   description: "Dynamic Ecto query"
   remediation: "Validate dynamic query parameters"
@@ -486,7 +486,7 @@
 - id: elixir-ecto-unsafe-unique
   languages: [elixir]
   patterns:
-    - regex: "unsafe_unique\\s*\\("
+    - regex: 'unsafe_unique\\s*\\('
   severity: medium
   description: "Unsafe unique constraint"
   remediation: "Use safe unique constraints"
@@ -496,7 +496,7 @@
 - id: elixir-ecto-all-records
   languages: [elixir]
   patterns:
-    - regex: "Repo\\.all\\s*\\(|all\\s*\\("
+    - regex: 'Repo\\.all\\s*\\(|all\\s*\\('
   severity: medium
   description: "Fetching all records"
   remediation: "Use pagination for large datasets"
@@ -506,7 +506,7 @@
 - id: elixir-ecto-count
   languages: [elixir]
   patterns:
-    - regex: "Repo\\.aggregate\\s*\\(.*:count"
+    - regex: 'Repo\\.aggregate\\s*\\(.*:count'
   severity: low
   description: "Count query"
   remediation: "Consider performance implications"
@@ -516,7 +516,7 @@
 - id: elixir-ecto-stream
   languages: [elixir]
   patterns:
-    - regex: "Repo\\.stream\\s*\\("
+    - regex: 'Repo\\.stream\\s*\\('
   severity: low
   description: "Stream query"
   remediation: "Close stream properly"
@@ -526,7 +526,7 @@
 - id: elixir-ecto-insert-all
   languages: [elixir]
   patterns:
-    - regex: "insert_all\\s*\\("
+    - regex: 'insert_all\\s*\\('
   severity: low
   description: "Bulk insert"
   remediation: "Validate bulk data before insert"
@@ -536,7 +536,7 @@
 - id: elixir-ecto-update-all
   languages: [elixir]
   patterns:
-    - regex: "update_all\\s*\\("
+    - regex: 'update_all\\s*\\('
   severity: medium
   description: "Bulk update"
   remediation: "Validate bulk update conditions"
@@ -547,7 +547,7 @@
 - id: elixir-phoenix-endpoint
   languages: [elixir]
   patterns:
-    - regex: "Phoenix\\.Endpoint.*http:\\s*\\[.*port:"
+    - regex: 'Phoenix\\.Endpoint.*http:\\s*\\[.*port:'
   severity: low
   description: "Phoenix endpoint HTTP config"
   remediation: "Use HTTPS in production"
@@ -557,7 +557,7 @@
 - id: elixir-phoenix-ssl
   languages: [elixir]
   patterns:
-    - regex: "https:\\s*\\[|ssl:\\s*true"
+    - regex: 'https:\\s*\\[|ssl:\\s*true'
   severity: low
   description: "Phoenix SSL configuration"
   remediation: "Ensure SSL is properly configured"
@@ -567,7 +567,7 @@
 - id: elixir-phoenix-cors
   languages: [elixir]
   patterns:
-    - regex: "plug\\s+CORSPlug|cors_plug"
+    - regex: 'plug\\s+CORSPlug|cors_plug'
   severity: medium
   description: "CORS plug configured"
   remediation: "Configure specific allowed origins"
@@ -577,7 +577,7 @@
 - id: elixir-phoenix-pubsub
   languages: [elixir]
   patterns:
-    - regex: "Phoenix\\.PubSub.*adapter"
+    - regex: 'Phoenix\\.PubSub.*adapter'
   severity: low
   description: "Phoenix PubSub adapter"
   remediation: "Secure PubSub for production"
@@ -587,7 +587,7 @@
 - id: elixir-phoenix-channel
   languages: [elixir]
   patterns:
-    - regex: "defmodule.*Channel.*do"
+    - regex: 'defmodule.*Channel.*do'
   severity: medium
   description: "Phoenix channel"
   remediation: "Authenticate channel connections"
@@ -597,7 +597,7 @@
 - id: elixir-phoenix-socket
   languages: [elixir]
   patterns:
-    - regex: "socket\\s+\"/.*\"|Socket.*do"
+    - regex: 'socket\\s+\"/.*\"|Socket.*do'
   severity: medium
   description: "Phoenix socket"
   remediation: "Authenticate socket connections"
@@ -607,7 +607,7 @@
 - id: elixir-phoenix-presence
   languages: [elixir]
   patterns:
-    - regex: "Phoenix\\.Presence|track.*presence"
+    - regex: 'Phoenix\\.Presence|track.*presence'
   severity: low
   description: "Phoenix Presence"
   remediation: "Don't expose sensitive presence data"
@@ -617,7 +617,7 @@
 - id: elixir-phoenix-liveview
   languages: [elixir]
   patterns:
-    - regex: "use\\s+Phoenix\\.LiveView|live_view"
+    - regex: 'use\\s+Phoenix\\.LiveView|live_view'
   severity: low
   description: "Phoenix LiveView"
   remediation: "Validate LiveView assigns"
@@ -627,7 +627,7 @@
 - id: elixir-phoenix-live-upload
   languages: [elixir]
   patterns:
-    - regex: "allow_upload|consume_uploaded"
+    - regex: 'allow_upload|consume_uploaded'
   severity: medium
   description: "LiveView file upload"
   remediation: "Validate uploaded files"
@@ -637,7 +637,7 @@
 - id: elixir-phoenix-router
   languages: [elixir]
   patterns:
-    - regex: "scope\\s+\"/api\"|pipeline\\s+:api"
+    - regex: 'scope\\s+\"/api\"|pipeline\\s+:api'
   severity: low
   description: "API router scope"
   remediation: "Secure API routes with authentication"
@@ -647,7 +647,7 @@
 - id: elixir-phoenix-plug
   languages: [elixir]
   patterns:
-    - regex: "plug\\s+\\w+.*do|def\\s+call"
+    - regex: 'plug\\s+\\w+.*do|def\\s+call'
   severity: low
   description: "Custom plug"
   remediation: "Review custom plug security"
@@ -657,7 +657,7 @@
 - id: elixir-phoenix-controller
   languages: [elixir]
   patterns:
-    - regex: "use\\s+Phoenix\\.Controller|defmodule.*Controller"
+    - regex: 'use\\s+Phoenix\\.Controller|defmodule.*Controller'
   severity: low
   description: "Phoenix controller"
   remediation: "Implement authorization in controllers"
@@ -667,7 +667,7 @@
 - id: elixir-phoenix-view
   languages: [elixir]
   patterns:
-    - regex: "use\\s+Phoenix\\.View|defmodule.*View"
+    - regex: 'use\\s+Phoenix\\.View|defmodule.*View'
   severity: low
   description: "Phoenix view"
   remediation: "Don't expose sensitive data in views"
@@ -677,7 +677,7 @@
 - id: elixir-phoenix-template
   languages: [elixir]
   patterns:
-    - regex: "\\.eex|\\.heex|\\.leex"
+    - regex: '\\.eex|\\.heex|\\.leex'
   severity: low
   description: "Phoenix template"
   remediation: "Use auto-escaping in templates"
@@ -687,7 +687,7 @@
 - id: elixir-phoenix-layout
   languages: [elixir]
   patterns:
-    - regex: "render\\s+\"layout\"|layout:"
+    - regex: 'render\\s+\"layout\"|layout:'
   severity: low
   description: "Phoenix layout"
   remediation: "Secure layout templates"
@@ -697,7 +697,7 @@
 - id: elixir-phoenix-error
   languages: [elixir]
   patterns:
-    - regex: "ErrorView|error\\.html"
+    - regex: 'ErrorView|error\\.html'
   severity: low
   description: "Error view"
   remediation: "Don't expose stack traces in errors"
@@ -707,7 +707,7 @@
 - id: elixir-phoenix-changeset-view
   languages: [elixir]
   patterns:
-    - regex: "ChangesetView|changeset.*error"
+    - regex: 'ChangesetView|changeset.*error'
   severity: low
   description: "Changeset error view"
   remediation: "Don't expose internal error details"
@@ -717,7 +717,7 @@
 - id: elixir-phoenix-fallback
   languages: [elixir]
   patterns:
-    - regex: "fallback_controller|FallbackController"
+    - regex: 'fallback_controller|FallbackController'
   severity: low
   description: "Fallback controller"
   remediation: "Handle errors securely"
@@ -727,7 +727,7 @@
 - id: elixir-phoenix-action
   languages: [elixir]
   patterns:
-    - regex: "action_fallback|action:"
+    - regex: 'action_fallback|action:'
   severity: low
   description: "Action fallback"
   remediation: "Handle action errors securely"
@@ -737,7 +737,7 @@
 - id: elixir-phoenix-telemetry
   languages: [elixir]
   patterns:
-    - regex: "Phoenix\\.Telemetry|telemetry_handler"
+    - regex: 'Phoenix\\.Telemetry|telemetry_handler'
   severity: low
   description: "Phoenix telemetry"
   remediation: "Don't log sensitive data in telemetry"
@@ -748,7 +748,7 @@
 - id: elixir-genserver-start
   languages: [elixir]
   patterns:
-    - regex: "GenServer\\.start|GenServer\\.start_link"
+    - regex: 'GenServer\\.start|GenServer\\.start_link'
   severity: low
   description: "GenServer start"
   remediation: "Validate GenServer arguments"
@@ -758,7 +758,7 @@
 - id: elixir-genserver-call
   languages: [elixir]
   patterns:
-    - regex: "GenServer\\.call\\s*\\("
+    - regex: 'GenServer\\.call\\s*\\('
   severity: low
   description: "GenServer synchronous call"
   remediation: "Set appropriate timeout"
@@ -768,7 +768,7 @@
 - id: elixir-genserver-cast
   languages: [elixir]
   patterns:
-    - regex: "GenServer\\.cast\\s*\\("
+    - regex: 'GenServer\\.cast\\s*\\('
   severity: low
   description: "GenServer async cast"
   remediation: "Validate cast messages"
@@ -778,7 +778,7 @@
 - id: elixir-genserver-reply
   languages: [elixir]
   patterns:
-    - regex: "\\{:reply,|:noreply"
+    - regex: '\\{:reply,|:noreply'
   severity: low
   description: "GenServer reply"
   remediation: "Don't expose internal state in replies"
@@ -788,7 +788,7 @@
 - id: elixir-genserver-state
   languages: [elixir]
   patterns:
-    - regex: "def\\s+handle_call.*state|def\\s+handle_cast.*state"
+    - regex: 'def\\s+handle_call.*state|def\\s+handle_cast.*state'
   severity: low
   description: "GenServer state handling"
   remediation: "Don't store sensitive data in state"
@@ -798,7 +798,7 @@
 - id: elixir-supervisor-start
   languages: [elixir]
   patterns:
-    - regex: "Supervisor\\.start_link|use\\s+Supervisor"
+    - regex: 'Supervisor\\.start_link|use\\s+Supervisor'
   severity: low
   description: "Supervisor configuration"
   remediation: "Configure appropriate restart strategy"
@@ -808,7 +808,7 @@
 - id: elixir-supervisor-strategy
   languages: [elixir]
   patterns:
-    - regex: "strategy:\\s*:one_for_all|strategy:\\s*:rest_for_one"
+    - regex: 'strategy:\\s*:one_for_all|strategy:\\s*:rest_for_one'
   severity: low
   description: "Supervisor strategy"
   remediation: "Choose appropriate restart strategy"
@@ -818,7 +818,7 @@
 - id: elixir-supervisor-intensity
   languages: [elixir]
   patterns:
-    - regex: "max_restarts:\\s*[0-9]|max_seconds:\\s*[0-9]"
+    - regex: 'max_restarts:\\s*[0-9]|max_seconds:\\s*[0-9]'
   severity: low
   description: "Supervisor intensity"
   remediation: "Set appropriate restart intensity"
@@ -828,7 +828,7 @@
 - id: elixir-agent
   languages: [elixir]
   patterns:
-    - regex: "Agent\\.start|Agent\\.update"
+    - regex: 'Agent\\.start|Agent\\.update'
   severity: medium
   description: "Agent for shared state"
   remediation: "Don't store sensitive data in Agent"
@@ -838,7 +838,7 @@
 - id: elixir-registry
   languages: [elixir]
   patterns:
-    - regex: "Registry\\.start_link|Registry\\.register"
+    - regex: 'Registry\\.start_link|Registry\\.register'
   severity: low
   description: "Registry for process registration"
   remediation: "Don't expose sensitive process info"
@@ -848,7 +848,7 @@
 - id: elixir-task
   languages: [elixir]
   patterns:
-    - regex: "Task\\.start|Task\\.async"
+    - regex: 'Task\\.start|Task\\.async'
   severity: low
   description: "Task for async work"
   remediation: "Handle task errors properly"
@@ -858,7 +858,7 @@
 - id: elixir-task-supervisor
   languages: [elixir]
   patterns:
-    - regex: "Task\\.Supervisor|Task\\.Supervisor\\.start_link"
+    - regex: 'Task\\.Supervisor|Task\\.Supervisor\\.start_link'
   severity: low
   description: "Task supervisor"
   remediation: "Configure appropriate max restarts"
@@ -868,7 +868,7 @@
 - id: elixir-dynamic-supervisor
   languages: [elixir]
   patterns:
-    - regex: "DynamicSupervisor|dynamic_supervisor"
+    - regex: 'DynamicSupervisor|dynamic_supervisor'
   severity: low
   description: "Dynamic supervisor"
   remediation: "Configure appropriate max children"
@@ -878,7 +878,7 @@
 - id: elixir-event-handler
   languages: [elixir]
   patterns:
-    - regex: ":gen_event|GenEvent\\."
+    - regex: ':gen_event|GenEvent\\.'
   severity: low
   description: "Event handler (legacy)"
   remediation: "Use :gen_event carefully (deprecated)"
@@ -888,7 +888,7 @@
 - id: elixir-logger-config
   languages: [elixir]
   patterns:
-    - regex: "config\\s+:logger|Logger\\.configure"
+    - regex: 'config\\s+:logger|Logger\\.configure'
   severity: low
   description: "Logger configuration"
   remediation: "Set appropriate log level for production"
@@ -898,7 +898,7 @@
 - id: elixir-logger-backend
   languages: [elixir]
   patterns:
-    - regex: "Logger\\.add_backend|logger_backend"
+    - regex: 'Logger\\.add_backend|logger_backend'
   severity: low
   description: "Logger backend"
   remediation: "Secure logger backend configuration"
@@ -908,7 +908,7 @@
 - id: elixir-logger-metadata
   languages: [elixir]
   patterns:
-    - regex: "Logger\\.metadata|metadata:"
+    - regex: 'Logger\\.metadata|metadata:'
   severity: low
   description: "Logger metadata"
   remediation: "Don't include sensitive data in metadata"
@@ -918,7 +918,7 @@
 - id: elixir-application-start
   languages: [elixir]
   patterns:
-    - regex: "def\\s+start.*type.*args|Application\\.start"
+    - regex: 'def\\s+start.*type.*args|Application\\.start'
   severity: low
   description: "Application start"
   remediation: "Validate application arguments"
@@ -928,7 +928,7 @@
 - id: elixir-application-stop
   languages: [elixir]
   patterns:
-    - regex: "def\\s+stop.*state|Application\\.stop"
+    - regex: 'def\\s+stop.*state|Application\\.stop'
   severity: low
   description: "Application stop"
   remediation: "Clean up resources properly"
@@ -938,7 +938,7 @@
 - id: elixir-app-config
   languages: [elixir]
   patterns:
-    - regex: "Application\\.get_env|Application\\.put_env"
+    - regex: 'Application\\.get_env|Application\\.put_env'
   severity: low
   description: "Application config"
   remediation: "Don't store secrets in app config"
@@ -949,7 +949,7 @@
 - id: elixir-mix-dep
   languages: [elixir]
   patterns:
-    - regex: "mix\\.exs.*deps.*do"
+    - regex: 'mix\\.exs.*deps.*do'
   severity: low
   description: "Mix dependencies"
   remediation: "Pin dependency versions"
@@ -959,7 +959,7 @@
 - id: elixir-mix-dep-git
   languages: [elixir]
   patterns:
-    - regex: "git:\\s*\"https?://"
+    - regex: 'git:\\s*\"https?://'
   severity: medium
   description: "Dependency from Git"
   remediation: "Pin to specific commit"
@@ -969,7 +969,7 @@
 - id: elixir-mix-dep-path
   languages: [elixir]
   patterns:
-    - regex: "path:\\s*\""
+    - regex: 'path:\\s*\"'
   severity: low
   description: "Local path dependency"
   remediation: "Ensure path dependency is secure"
@@ -979,7 +979,7 @@
 - id: elixir-mix-dep-override
   languages: [elixir]
   patterns:
-    - regex: "override:\\s*true"
+    - regex: 'override:\\s*true'
   severity: medium
   description: "Dependency override"
   remediation: "Review override necessity"
@@ -989,7 +989,7 @@
 - id: elixir-mix-dep-only
   languages: [elixir]
   patterns:
-    - regex: "only:\\s*\\[\\s*:dev|only:\\s*\\[\\s*:test"
+    - regex: 'only:\\s*\\[\\s*:dev|only:\\s*\\[\\s*:test'
   severity: low
   description: "Environment-specific dependency"
   remediation: "Don't include dev/test deps in production"
@@ -999,7 +999,7 @@
 - id: elixir-mix-dep-runtime
   languages: [elixir]
   patterns:
-    - regex: "runtime:\\s*false"
+    - regex: 'runtime:\\s*false'
   severity: low
   description: "Non-runtime dependency"
   remediation: "Ensure non-runtime deps don't leak to production"
@@ -1009,7 +1009,7 @@
 - id: elixir-mix-config
   languages: [elixir]
   patterns:
-    - regex: "config\\s+:elixir|config\\.exs"
+    - regex: 'config\\s+:elixir|config\\.exs'
   severity: low
   description: "Mix config"
   remediation: "Don't store secrets in config files"
@@ -1019,7 +1019,7 @@
 - id: elixir-mix-release
   languages: [elixir]
   patterns:
-    - regex: "release\\s+do|Mix\\.Releases"
+    - regex: 'release\\s+do|Mix\\.Releases'
   severity: low
   description: "Mix release"
   remediation: "Secure release configuration"
@@ -1029,7 +1029,7 @@
 - id: elixir-mix-archive
   languages: [elixir]
   patterns:
-    - regex: "mix\\s+archive|archive:"
+    - regex: 'mix\\s+archive|archive:'
   severity: low
   description: "Mix archive"
   remediation: "Verify archive integrity"
@@ -1039,7 +1039,7 @@
 - id: elixir-mix-hex
   languages: [elixir]
   patterns:
-    - regex: "hex\\.pm|{:hex"
+    - regex: 'hex\\.pm|{:hex'
   severity: low
   description: "Hex package manager"
   remediation: "Verify package signatures"
@@ -1049,7 +1049,7 @@
 - id: elixir-credo
   languages: [elixir]
   patterns:
-    - regex: "credo|Credo\\."
+    - regex: 'credo|Credo\\.'
   severity: low
   description: "Credo linting"
   remediation: "Include security checks in Credo"
@@ -1059,7 +1059,7 @@
 - id: elixir-dialyzer
   languages: [elixir]
   patterns:
-    - regex: "dialyzer|Dialyzer\\."
+    - regex: 'dialyzer|Dialyzer\\.'
   severity: low
   description: "Dialyzer type checking"
   remediation: "Run Dialyzer for type safety"
@@ -1069,7 +1069,7 @@
 - id: elixir-excoveralls
   languages: [elixir]
   patterns:
-    - regex: "excoveralls|ExCoveralls\\."
+    - regex: 'excoveralls|ExCoveralls\\.'
   severity: low
   description: "Test coverage"
   remediation: "Maintain good test coverage"
@@ -1079,7 +1079,7 @@
 - id: elixir-exunit
   languages: [elixir]
   patterns:
-    - regex: "ExUnit\\.|ex_unit"
+    - regex: 'ExUnit\\.|ex_unit'
   severity: low
   description: "ExUnit testing"
   remediation: "Include security tests"
@@ -1089,7 +1089,7 @@
 - id: elixir-wallaby
   languages: [elixir]
   patterns:
-    - regex: "Wallaby|wallaby"
+    - regex: 'Wallaby|wallaby'
   severity: low
   description: "Wallaby browser testing"
   remediation: "Include security in browser tests"
@@ -1099,7 +1099,7 @@
 - id: elixir-floki
   languages: [elixir]
   patterns:
-    - regex: "Floki|floki"
+    - regex: 'Floki|floki'
   severity: low
   description: "Floki HTML parsing"
   remediation: "Don't parse untrusted HTML"
@@ -1109,7 +1109,7 @@
 - id: elixir-jason
   languages: [elixir]
   patterns:
-    - regex: "Jason\\.|jason"
+    - regex: 'Jason\\.|jason'
   severity: low
   description: "Jason JSON encoding"
   remediation: "Configure safe encoding options"
@@ -1119,7 +1119,7 @@
 - id: elixir-poison
   languages: [elixir]
   patterns:
-    - regex: "Poison\\.|poison"
+    - regex: 'Poison\\.|poison'
   severity: low
   description: "Poison JSON (legacy)"
   remediation: "Migrate to Jason"
@@ -1129,7 +1129,7 @@
 - id: elixir-httpoison
   languages: [elixir]
   patterns:
-    - regex: "HTTPoison\\.|httpoison"
+    - regex: 'HTTPoison\\.|httpoison'
   severity: low
   description: "HTTPoison HTTP client"
   remediation: "Validate HTTP responses"
@@ -1139,7 +1139,7 @@
 - id: elixir-hackney
   languages: [elixir]
   patterns:
-    - regex: "hackney|:hackney"
+    - regex: 'hackney|:hackney'
   severity: low
   description: "Hackney HTTP client"
   remediation: "Validate HTTP responses"
@@ -1150,7 +1150,7 @@
 - id: elixir-crypto-hash
   languages: [elixir]
   patterns:
-    - regex: ":crypto\\.hash\\s*\\(\\s*:md5|:crypto\\.hash\\s*\\(\\s*:sha"
+    - regex: ':crypto\\.hash\\s*\\(\\s*:md5|:crypto\\.hash\\s*\\(\\s*:sha'
   severity: medium
   description: "Weak hash algorithm"
   remediation: "Use :sha256 or :sha512"
@@ -1160,7 +1160,7 @@
 - id: elixir-crypto-aes
   languages: [elixir]
   patterns:
-    - regex: ":crypto\\.crypto_one_time.*aes"
+    - regex: ':crypto\\.crypto_one_time.*aes'
   severity: low
   description: "AES encryption"
   remediation: "Use AES-GCM for authenticated encryption"
@@ -1170,7 +1170,7 @@
 - id: elixir-crypto-rand
   languages: [elixir]
   patterns:
-    - regex: ":crypto\\.strong_rand_bytes|:rand\\.uniform"
+    - regex: ':crypto\\.strong_rand_bytes|:rand\\.uniform'
   severity: low
   description: "Random generation"
   remediation: "Use strong_rand_bytes for crypto"
@@ -1180,7 +1180,7 @@
 - id: elixir-crypto-base
   languages: [elixir]
   patterns:
-    - regex: "Base\\.encode64|Base\\.decode64"
+    - regex: 'Base\\.encode64|Base\\.decode64'
   severity: low
   description: "Base64 encoding"
   remediation: "Base64 is not encryption"
@@ -1190,7 +1190,7 @@
 - id: elixir-crypto-bcrypt
   languages: [elixir]
   patterns:
-    - regex: "Bcrypt\\.hash_pwd_salt|Bcrypt\\.verify_pass"
+    - regex: 'Bcrypt\\.hash_pwd_salt|Bcrypt\\.verify_pass'
   severity: low
   description: "Bcrypt password hashing"
   remediation: "Use appropriate cost factor"
@@ -1200,7 +1200,7 @@
 - id: elixir-crypto-argon2
   languages: [elixir]
   patterns:
-    - regex: "Argon2\\.hash_pwd_salt|Argon2\\.verify_pass"
+    - regex: 'Argon2\\.hash_pwd_salt|Argon2\\.verify_pass'
   severity: low
   description: "Argon2 password hashing"
   remediation: "Use appropriate parameters"
@@ -1210,7 +1210,7 @@
 - id: elixir-crypto-pbkdf2
   languages: [elixir]
   patterns:
-    - regex: "Pbkdf2\\.hash_pwd_salt|pbkdf2"
+    - regex: 'Pbkdf2\\.hash_pwd_salt|pbkdf2'
   severity: low
   description: "PBKDF2 key derivation"
   remediation: "Use sufficient iterations"
@@ -1220,7 +1220,7 @@
 - id: elixir-crypto-hmac
   languages: [elixir]
   patterns:
-    - regex: ":crypto\\.mac\\s*\\(\\s*:hmac"
+    - regex: ':crypto\\.mac\\s*\\(\\s*:hmac'
   severity: low
   description: "HMAC authentication"
   remediation: "Use HMAC-SHA256 or higher"
@@ -1230,7 +1230,7 @@
 - id: elixir-crypto-sign
   languages: [elixir]
   patterns:
-    - regex: ":crypto\\.sign\\s*\\(|:crypto\\.verify"
+    - regex: ':crypto\\.sign\\s*\\(|:crypto\\.verify'
   severity: low
   description: "Digital signature"
   remediation: "Use strong algorithms (Ed25519)"
@@ -1240,7 +1240,7 @@
 - id: elixir-crypto-generate-key
   languages: [elixir]
   patterns:
-    - regex: ":crypto\\.generate_key|ExPublicKey\\."
+    - regex: ':crypto\\.generate_key|ExPublicKey\\.'
   severity: low
   description: "Key generation"
   remediation: "Use secure key generation"
@@ -1250,7 +1250,7 @@
 - id: elixir-jose
   languages: [elixir]
   patterns:
-    - regex: "JOSE\\.|jose"
+    - regex: 'JOSE\\.|jose'
   severity: low
   description: "JOSE JWT library"
   remediation: "Validate JWT properly"
@@ -1260,7 +1260,7 @@
 - id: elixir-guardian-token
   languages: [elixir]
   patterns:
-    - regex: "Guardian\\.encode_and_sign|Guardian\\.decode_and_verify"
+    - regex: 'Guardian\\.encode_and_sign|Guardian\\.decode_and_verify'
   severity: low
   description: "Guardian JWT"
   remediation: "Validate JWT claims"
@@ -1270,7 +1270,7 @@
 - id: elixir-phx-token
   languages: [elixir]
   patterns:
-    - regex: "Phoenix\\.Token|phoenix_token"
+    - regex: 'Phoenix\\.Token|phoenix_token'
   severity: low
   description: "Phoenix Token"
   remediation: "Set appropriate token TTL"
@@ -1280,7 +1280,7 @@
 - id: elixir-key-exchange
   languages: [elixir]
   patterns:
-    - regex: ":crypto\\.generate_key.*ecdh|:crypto\\.compute_key"
+    - regex: ':crypto\\.generate_key.*ecdh|:crypto\\.compute_key'
   severity: low
   description: "Key exchange"
   remediation: "Use secure key exchange"
@@ -1290,7 +1290,7 @@
 - id: elixir-ssl-config
   languages: [elixir]
   patterns:
-    - regex: "ssl_options|:ssl\\.ssl_option"
+    - regex: 'ssl_options|:ssl\\.ssl_option'
   severity: low
   description: "SSL configuration"
   remediation: "Configure secure SSL options"
@@ -1300,7 +1300,7 @@
 - id: elixir-certfile
   languages: [elixir]
   patterns:
-    - regex: "certfile:|keyfile:"
+    - regex: 'certfile:|keyfile:'
   severity: low
   description: "Certificate file"
   remediation: "Protect certificate files"
@@ -1310,7 +1310,7 @@
 - id: elixir-cacertfile
   languages: [elixir]
   patterns:
-    - regex: "cacertfile:|verify:\\s*:verify_peer"
+    - regex: 'cacertfile:|verify:\\s*:verify_peer'
   severity: low
   description: "CA certificate"
   remediation: "Use trusted CA certificates"
@@ -1320,7 +1320,7 @@
 - id: elixir-secure-random
   languages: [elixir]
   patterns:
-    - regex: ":crypto\\.strong_rand_bytes|:rand\\.bytes"
+    - regex: ':crypto\\.strong_rand_bytes|:rand\\.bytes'
   severity: low
   description: "Secure random"
   remediation: "Good for cryptographic purposes"
@@ -1330,7 +1330,7 @@
 - id: elixir-nacl
   languages: [elixir]
   patterns:
-    - regex: "ENaCl|enacl"
+    - regex: 'ENaCl|enacl'
   severity: low
   description: "NaCl cryptography"
   remediation: "Good choice for modern crypto"
@@ -1340,7 +1340,7 @@
 - id: elixir-libsignal
   languages: [elixir]
   patterns:
-    - regex: "libsignal|SignalProtocol"
+    - regex: 'libsignal|SignalProtocol'
   severity: low
   description: "Signal Protocol"
   remediation: "Good for end-to-end encryption"
@@ -1351,7 +1351,7 @@
 - id: elixir-io-puts
   languages: [elixir]
   patterns:
-    - regex: "IO\\.puts\\s*\\(|IO\\.inspect\\s*\\("
+    - regex: 'IO\\.puts\\s*\\(|IO\\.inspect\\s*\\('
   severity: medium
   description: "IO output in code"
   remediation: "Remove IO.puts in production"
@@ -1361,7 +1361,7 @@
 - id: elixir-io-write
   languages: [elixir]
   patterns:
-    - regex: "IO\\.write\\s*\\(|IO\\.read\\s*\\("
+    - regex: 'IO\\.write\\s*\\(|IO\\.read\\s*\\('
   severity: low
   description: "IO write/read"
   remediation: "Validate IO operations"
@@ -1371,7 +1371,7 @@
 - id: elixir-logger-debug
   languages: [elixir]
   patterns:
-    - regex: "Logger\\.debug\\s*\\("
+    - regex: 'Logger\\.debug\\s*\\('
   severity: low
   description: "Debug logging"
   remediation: "Disable debug logging in production"
@@ -1381,7 +1381,7 @@
 - id: elixir-logger-info
   languages: [elixir]
   patterns:
-    - regex: "Logger\\.info\\s*\\("
+    - regex: 'Logger\\.info\\s*\\('
   severity: low
   description: "Info logging"
   remediation: "Don't log sensitive data"
@@ -1391,7 +1391,7 @@
 - id: elixir-logger-warn
   languages: [elixir]
   patterns:
-    - regex: "Logger\\.warn\\s*\\(|Logger\\.warning"
+    - regex: 'Logger\\.warn\\s*\\(|Logger\\.warning'
   severity: low
   description: "Warning logging"
   remediation: "Don't log sensitive data"
@@ -1401,7 +1401,7 @@
 - id: elixir-logger-error
   languages: [elixir]
   patterns:
-    - regex: "Logger\\.error\\s*\\("
+    - regex: 'Logger\\.error\\s*\\('
   severity: low
   description: "Error logging"
   remediation: "Don't log stack traces to users"
@@ -1411,7 +1411,7 @@
 - id: elixir-logger-level
   languages: [elixir]
   patterns:
-    - regex: "level:\\s*:debug|level:\\s*:all"
+    - regex: 'level:\\s*:debug|level:\\s*:all'
   severity: medium
   description: "Verbose log level"
   remediation: "Set level to :info or :warn in production"
@@ -1421,7 +1421,7 @@
 - id: elixir-logger-format
   languages: [elixir]
   patterns:
-    - regex: "format:\\s*\"|:logger_formatter"
+    - regex: 'format:\\s*\"|:logger_formatter'
   severity: low
   description: "Logger format"
   remediation: "Don't include sensitive data in format"
@@ -1431,7 +1431,7 @@
 - id: elixir-logger-metadata
   languages: [elixir]
   patterns:
-    - regex: "Logger\\.metadata\\s*\\("
+    - regex: 'Logger\\.metadata\\s*\\('
   severity: low
   description: "Logger metadata"
   remediation: "Don't include sensitive metadata"
@@ -1441,7 +1441,7 @@
 - id: elixir-logger-translate
   languages: [elixir]
   patterns:
-    - regex: "translate:\\s*false|:logger_translator"
+    - regex: 'translate:\\s*false|:logger_translator'
   severity: low
   description: "Logger translator"
   remediation: "Review translator configuration"
@@ -1451,7 +1451,7 @@
 - id: elixir-logger-handler
   languages: [elixir]
   patterns:
-    - regex: "Logger\\.add_handler|:logger_handler"
+    - regex: 'Logger\\.add_handler|:logger_handler'
   severity: low
   description: "Logger handler"
   remediation: "Secure logger handler"
@@ -1461,7 +1461,7 @@
 - id: elixir-logger-console
   languages: [elixir]
   patterns:
-    - regex: ":logger_handler_console|console:"
+    - regex: ':logger_handler_console|console:'
   severity: low
   description: "Console logging"
   remediation: "Disable console logging in production"
@@ -1471,7 +1471,7 @@
 - id: elixir-logger-file
   languages: [elixir]
   patterns:
-    - regex: ":logger_handler_watcher|file:"
+    - regex: ':logger_handler_watcher|file:'
   severity: low
   description: "File logging"
   remediation: "Protect log files"
@@ -1481,7 +1481,7 @@
 - id: elixir-logger-sasl
   languages: [elixir]
   patterns:
-    - regex: ":sasl|sasl_error_logger"
+    - regex: ':sasl|sasl_error_logger'
   severity: low
   description: "SASL logging (legacy)"
   remediation: "Migrate to new Logger"
@@ -1491,7 +1491,7 @@
 - id: elixir-logger-report
   languages: [elixir]
   patterns:
-    - regex: ":error_logger|error_logger"
+    - regex: ':error_logger|error_logger'
   severity: low
   description: "Error logger (legacy)"
   remediation: "Migrate to new Logger"
@@ -1502,7 +1502,7 @@
 - id: elixir-config-prod
   languages: [elixir]
   patterns:
-    - regex: "config/prod\\.exs|prod\\.secret\\.exs"
+    - regex: 'config/prod\\.exs|prod\\.secret\\.exs'
   severity: medium
   description: "Production config file"
   remediation: "Don't commit prod.secret.exs"
@@ -1512,7 +1512,7 @@
 - id: elixir-config-runtime
   languages: [elixir]
   patterns:
-    - regex: "runtime\\.exs|config_runtime"
+    - regex: 'runtime\\.exs|config_runtime'
   severity: low
   description: "Runtime config"
   remediation: "Load secrets at runtime"
@@ -1522,7 +1522,7 @@
 - id: elixir-config-release
   languages: [elixir]
   patterns:
-    - regex: "releases\\.exs|release:"
+    - regex: 'releases\\.exs|release:'
   severity: low
   description: "Release config"
   remediation: "Secure release configuration"
@@ -1532,7 +1532,7 @@
 - id: elixir-config-distillery
   languages: [elixir]
   patterns:
-    - regex: "distillery|exrm"
+    - regex: 'distillery|exrm'
   severity: low
   description: "Distillery release (legacy)"
   remediation: "Migrate to Mix releases"
@@ -1542,7 +1542,7 @@
 - id: elixir-config-edeliver
   languages: [elixir]
   patterns:
-    - regex: "edeliver|.deliver"
+    - regex: 'edeliver|.deliver'
   severity: low
   description: "Edeliver deployment"
   remediation: "Secure deployment configuration"
@@ -1552,7 +1552,7 @@
 - id: elixir-config-gigalixir
   languages: [elixir]
   patterns:
-    - regex: "gigalixir|Gigalixir"
+    - regex: 'gigalixir|Gigalixir'
   severity: low
   description: "Gigalixir deployment"
   remediation: "Secure deployment configuration"
@@ -1562,7 +1562,7 @@
 - id: elixir-config-flyio
   languages: [elixir]
   patterns:
-    - regex: "fly\\.toml|flyctl"
+    - regex: 'fly\\.toml|flyctl'
   severity: low
   description: "Fly.io deployment"
   remediation: "Secure fly.toml configuration"
@@ -1572,7 +1572,7 @@
 - id: elixir-config-heroku
   languages: [elixir]
   patterns:
-    - regex: "Procfile|heroku"
+    - regex: 'Procfile|heroku'
   severity: low
   description: "Heroku deployment"
   remediation: "Secure Procfile"
@@ -1582,7 +1582,7 @@
 - id: elixir-config-docker
   languages: [elixir]
   patterns:
-    - regex: "Dockerfile|docker-compose"
+    - regex: 'Dockerfile|docker-compose'
   severity: low
   description: "Docker deployment"
   remediation: "Follow Docker security best practices"
@@ -1592,7 +1592,7 @@
 - id: elixir-config-kubernetes
   languages: [elixir]
   patterns:
-    - regex: "kubernetes|k8s|\\.yaml.*deployment"
+    - regex: 'kubernetes|k8s|\\.yaml.*deployment'
   severity: low
   description: "Kubernetes deployment"
   remediation: "Follow Kubernetes security best practices"
@@ -1602,7 +1602,7 @@
 - id: elixir-config-aws
   languages: [elixir]
   patterns:
-    - regex: "aws|ex_aws"
+    - regex: 'aws|ex_aws'
   severity: low
   description: "AWS integration"
   remediation: "Use IAM roles, not credentials"
@@ -1612,7 +1612,7 @@
 - id: elixir-config-azure
   languages: [elixir]
   patterns:
-    - regex: "azure|ex_azure"
+    - regex: 'azure|ex_azure'
   severity: low
   description: "Azure integration"
   remediation: "Use managed identities"
@@ -1622,7 +1622,7 @@
 - id: elixir-config-gcp
   languages: [elixir]
   patterns:
-    - regex: "gcp|google_cloud"
+    - regex: 'gcp|google_cloud'
   severity: low
   description: "GCP integration"
   remediation: "Use service accounts"
@@ -1632,7 +1632,7 @@
 - id: elixir-gitignore
   languages: [elixir]
   patterns:
-    - regex: "\\.gitignore|_build|deps"
+    - regex: '\\.gitignore|_build|deps'
   severity: low
   description: "Git ignore configuration"
   remediation: "Ensure secrets are gitignored"
@@ -1642,7 +1642,7 @@
 - id: elixir-env-file
   languages: [elixir]
   patterns:
-    - regex: "\\.env|\\.env\\.sample"
+    - regex: '\\.env|\\.env\\.sample'
   severity: medium
   description: "Environment file"
   remediation: "Don't commit .env files"
@@ -1652,7 +1652,7 @@
 - id: elixir-eval-unsafe
   languages: [elixir]
   patterns:
-    - regex: "(?i)Code\\.eval_string|Code\\.eval_file"
+    - regex: '(?i)Code\\.eval_string|Code\\.eval_file'
   severity: critical
   description: "Dynamic code evaluation"
   remediation: "Never eval untrusted code"
@@ -1663,7 +1663,7 @@
 - id: elixir-ecto-injection
   languages: [elixir]
   patterns:
-    - regex: "(?i)Ecto\\.Adapters\\.SQL\\.query.*\\#\\{"
+    - regex: '(?i)Ecto\\.Adapters\\.SQL\\.query.*\\#\\{'
   severity: critical
   description: "SQL injection via Ecto interpolation"
   remediation: "Use parameterized queries"
@@ -1674,7 +1674,7 @@
 - id: elixir-plug-params
   languages: [elixir]
   patterns:
-    - regex: "(?i)Plug\\.Params\\.init.*false"
+    - regex: '(?i)Plug\\.Params\\.init.*false'
   severity: high
   description: "Plug.Params validation disabled"
   remediation: "Enable parameter validation"
@@ -1685,7 +1685,7 @@
 - id: elixir-crypto-weak
   languages: [elixir]
   patterns:
-    - regex: "(?i):crypto\\.hash\\s*:md5|:crypto\\.hash\\s*:sha"
+    - regex: '(?i):crypto\\.hash\\s*:md5|:crypto\\.hash\\s*:sha'
   severity: medium
   description: "Weak cryptographic hash"
   remediation: "Use SHA-256 or better"
@@ -1696,7 +1696,7 @@
 - id: elixir-guardian-weak
   languages: [elixir]
   patterns:
-    - regex: "(?i)Guardian\\.decode_and_verify.*algorithm.*HS"
+    - regex: '(?i)Guardian\\.decode_and_verify.*algorithm.*HS'
   severity: high
   description: "JWT algorithm confusion risk"
   remediation: "Use RS256 algorithm"

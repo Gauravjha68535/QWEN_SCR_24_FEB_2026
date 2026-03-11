@@ -155,9 +155,22 @@ func RunOSVCli(targetDir string) ([]reporter.Finding, error) {
 				description := fmt.Sprintf("Known vulnerability %s in %s@%s: %s",
 					vuln.ID, pkg.Package.Name, pkg.Package.Version, summary)
 
+				// Analyze Reachability via AST
+				analyzer := NewASTAnalyzer()
+				isReachable := analyzer.IsFunctionReachable(targetDir, pkg.Package.Name)
+
+				issueName := fmt.Sprintf("SCA: %s in %s", vuln.ID, pkg.Package.Name)
+				if !isReachable {
+					issueName = "[UNREACHABLE] " + issueName
+					severity = "low"
+					description += "\n\nREACHABILITY: The AST Analyzer could not find any active invocations of this library in your codebase. It may be a false positive or an unused transitive dependency."
+				} else {
+					description += "\n\nREACHABILITY: Verified active usage of this library in the source code."
+				}
+
 				findings = append(findings, reporter.Finding{
 					SrNo:        srNo,
-					IssueName:   fmt.Sprintf("SCA: %s in %s", vuln.ID, pkg.Package.Name),
+					IssueName:   issueName,
 					FilePath:    filePath,
 					Description: description,
 					Severity:    severity,

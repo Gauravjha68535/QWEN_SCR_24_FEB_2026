@@ -6,7 +6,7 @@
 - id: lua-code-injection-loadstring
   languages: [lua]
   patterns:
-    - regex: "loadstring\\s*\\(|load\\s*\\(\\s*['\"]"
+    - regex: 'loadstring\\s*\\(|load\\s*\\(\\s*['\"]'
   severity: critical
   description: "loadstring()/load() can execute arbitrary Lua code"
   remediation: "Avoid loadstring with user input. Use a sandboxed environment if needed"
@@ -16,7 +16,7 @@
 - id: lua-code-injection-dofile
   languages: [lua]
   patterns:
-    - regex: "dofile\\s*\\(|loadfile\\s*\\("
+    - regex: 'dofile\\s*\\(|loadfile\\s*\\('
   severity: high
   description: "dofile/loadfile executes Lua from external file"
   remediation: "Validate file paths. Never load user-controlled file paths"
@@ -27,7 +27,7 @@
 - id: lua-command-injection-execute
   languages: [lua]
   patterns:
-    - regex: "os\\.execute\\s*\\(|io\\.popen\\s*\\("
+    - regex: 'os\\.execute\\s*\\(|io\\.popen\\s*\\('
   severity: critical
   description: "Command injection via os.execute() or io.popen()"
   remediation: "Avoid os.execute with user input. Validate and sanitize commands"
@@ -38,7 +38,7 @@
 - id: lua-sql-injection
   languages: [lua]
   patterns:
-    - regex: "(?i)(execute|query)\\s*\\(\\s*['\"].*\\.\\.\\s*"
+    - regex: '(?i)(execute|query)\\s*\\(\\s*['\"].*\\.\\.\\s*'
   severity: critical
   description: "SQL injection via string concatenation in Lua"
   remediation: "Use parameterized queries or prepared statements"
@@ -49,7 +49,7 @@
 - id: lua-hardcoded-password
   languages: [lua]
   patterns:
-    - regex: "(?i)(password|passwd|secret|api_key)\\s*=\\s*['\"][^'\"]{8,}['\"]"
+    - regex: '(?i)(password|passwd|secret|api_key)\\s*=\\s*['\"][^'\"]{8,}['\"]'
   severity: high
   description: "Hardcoded password or secret in Lua code"
   remediation: "Use environment variables or configuration files with restricted access"
@@ -60,7 +60,7 @@
 - id: lua-path-traversal
   languages: [lua]
   patterns:
-    - regex: "io\\.open\\s*\\([^)]*\\.\\."
+    - regex: 'io\\.open\\s*\\([^)]*\\.\\.'
   severity: high
   description: "Path traversal via string concatenation in file open"
   remediation: "Validate file paths against base directory"
@@ -71,7 +71,7 @@
 - id: lua-insecure-deserialize
   languages: [lua]
   patterns:
-    - regex: "loadstring\\s*\\(.*recv|load\\s*\\(.*socket"
+    - regex: 'loadstring\\s*\\(.*recv|load\\s*\\(.*socket'
   severity: critical
   description: "Deserializing network data as Lua code"
   remediation: "Use JSON or MessagePack for data serialization, not Lua code"
@@ -82,7 +82,7 @@
 - id: lua-insecure-random
   languages: [lua]
   patterns:
-    - regex: "math\\.random\\s*\\("
+    - regex: 'math\\.random\\s*\\('
   severity: medium
   description: "math.random is not cryptographically secure"
   remediation: "Use /dev/urandom or a crypto library for security-sensitive random"
@@ -93,7 +93,7 @@
 - id: lua-redis-injection
   languages: [lua]
   patterns:
-    - regex: "redis\\.call\\s*\\([^)]*\\.\\."
+    - regex: 'redis\\.call\\s*\\([^)]*\\.\\.'
   severity: high
   description: "Redis command injection via string concatenation"
   remediation: "Use redis.call with separate arguments, not concatenated strings"
@@ -104,7 +104,7 @@
 - id: lua-ngx-xss
   languages: [lua]
   patterns:
-    - regex: "ngx\\.say\\s*\\(.*ngx\\.var|ngx\\.print\\s*\\(.*ngx\\.req\\.get_uri_args"
+    - regex: 'ngx\\.say\\s*\\(.*ngx\\.var|ngx\\.print\\s*\\(.*ngx\\.req\\.get_uri_args'
   severity: high
   description: "XSS via direct output of request variables in OpenResty"
   remediation: "Escape user input before output: ngx.escape_uri() or htmlspecialchars"
@@ -123,7 +123,7 @@
 - id: lua-ngx-location-capture
   languages: [lua]
   patterns:
-    - regex: "(?i)ngx\\.location\\.capture\\s*\\("
+    - regex: '(?i)ngx\\.location\\.capture\\s*\\('
   severity: medium
   description: "Internal subrequest via ngx.location.capture"
   remediation: "Validate subrequest paths and parameters"
@@ -133,7 +133,7 @@
 - id: lua-ngx-redirect
   languages: [lua]
   patterns:
-    - regex: "(?i)ngx\\.redirect\\s*\\("
+    - regex: '(?i)ngx\\.redirect\\s*\\('
   severity: medium
   description: "HTTP redirect in OpenResty"
   remediation: "Validate redirect URLs against allowlist"
@@ -143,7 +143,7 @@
 - id: lua-ngx-header-set
   languages: [lua]
   patterns:
-    - regex: "(?i)ngx\\.header\\[.*\\]\\s*="
+    - regex: '(?i)ngx\\.header\\[.*\\]\\s*='
   severity: low
   description: "HTTP header modification"
   remediation: "Validate header values before setting"
@@ -153,7 +153,7 @@
 - id: lua-ngx-cookie-get
   languages: [lua]
   patterns:
-    - regex: "(?i)ngx\\.req\\.get_headers\\s*\\("
+    - regex: '(?i)ngx\\.req\\.get_headers\\s*\\('
   severity: low
   description: "Request header access"
   remediation: "Validate header values"
@@ -163,7 +163,7 @@
 - id: lua-ngx-cookie-set
   languages: [lua]
   patterns:
-    - regex: "(?i)ngx\\.req\\.set_header\\s*\\("
+    - regex: '(?i)ngx\\.req\\.set_header\\s*\\('
   severity: low
   description: "Request header modification"
   remediation: "Validate header modifications"
@@ -173,7 +173,7 @@
 - id: lua-ngx-body-read
   languages: [lua]
   patterns:
-    - regex: "(?i)ngx\\.req\\.get_body_data\\s*\\("
+    - regex: '(?i)ngx\\.req\\.get_body_data\\s*\\('
   severity: low
   description: "Request body reading"
   remediation: "Validate and limit body size"
@@ -183,7 +183,7 @@
 - id: lua-ngx-body-file
   languages: [lua]
   patterns:
-    - regex: "(?i)ngx\\.req\\.get_body_file\\s*\\("
+    - regex: '(?i)ngx\\.req\\.get_body_file\\s*\\('
   severity: medium
   description: "Request body file access"
   remediation: "Validate body file paths"
@@ -193,7 +193,7 @@
 - id: lua-ngx-socket-tcp
   languages: [lua]
   patterns:
-    - regex: "(?i)ngx\\.socket\\.tcp\\s*\\("
+    - regex: '(?i)ngx\\.socket\\.tcp\\s*\\('
   severity: low
   description: "TCP socket creation"
   remediation: "Validate socket connection targets"
@@ -203,7 +203,7 @@
 - id: lua-ngx-socket-connect
   languages: [lua]
   patterns:
-    - regex: "(?i):connect\\s*\\("
+    - regex: '(?i):connect\\s*\\('
   severity: low
   description: "Socket connection"
   remediation: "Validate connection parameters"
@@ -213,7 +213,7 @@
 - id: lua-ngx-socket-send
   languages: [lua]
   patterns:
-    - regex: "(?i):send\\s*\\("
+    - regex: '(?i):send\\s*\\('
   severity: low
   description: "Socket send operation"
   remediation: "Validate send data"
@@ -223,7 +223,7 @@
 - id: lua-ngx-socket-receive
   languages: [lua]
   patterns:
-    - regex: "(?i):receive\\s*\\("
+    - regex: '(?i):receive\\s*\\('
   severity: low
   description: "Socket receive operation"
   remediation: "Validate received data"
@@ -233,7 +233,7 @@
 - id: lua-ngx-socket-close
   languages: [lua]
   patterns:
-    - regex: "(?i):close\\s*\\("
+    - regex: '(?i):close\\s*\\('
   severity: low
   description: "Socket close operation"
   remediation: "Ensure proper socket cleanup"
@@ -243,7 +243,7 @@
 - id: lua-ngx-socket-udp
   languages: [lua]
   patterns:
-    - regex: "(?i)ngx\\.socket\\.udp\\s*\\("
+    - regex: '(?i)ngx\\.socket\\.udp\\s*\\('
   severity: low
   description: "UDP socket creation"
   remediation: "Validate UDP targets"
@@ -253,7 +253,7 @@
 - id: lua-ngx-shared-dict
   languages: [lua]
   patterns:
-    - regex: "(?i)ngx\\.shared\\[.*\\]"
+    - regex: '(?i)ngx\\.shared\\[.*\\]'
   severity: low
   description: "Shared dictionary access"
   remediation: "Validate shared data"
@@ -263,7 +263,7 @@
 - id: lua-ngx-log-level
   languages: [lua]
   patterns:
-    - regex: "(?i)ngx\\.log\\s*\\(\\s*ngx\\.ERR"
+    - regex: '(?i)ngx\\.log\\s*\\(\\s*ngx\\.ERR'
   severity: low
   description: "Error logging"
   remediation: "Don't log sensitive data"
@@ -273,7 +273,7 @@
 - id: lua-ngx-print
   languages: [lua]
   patterns:
-    - regex: "(?i)ngx\\.print\\s*\\("
+    - regex: '(?i)ngx\\.print\\s*\\('
   severity: low
   description: "Output printing"
   remediation: "Escape output properly"
@@ -283,7 +283,7 @@
 - id: lua-ngx-say
   languages: [lua]
   patterns:
-    - regex: "(?i)ngx\\.say\\s*\\("
+    - regex: '(?i)ngx\\.say\\s*\\('
   severity: low
   description: "Output with newline"
   remediation: "Escape output properly"
@@ -293,7 +293,7 @@
 - id: lua-ngx-escape-uri
   languages: [lua]
   patterns:
-    - regex: "(?i)ngx\\.escape_uri\\s*\\("
+    - regex: '(?i)ngx\\.escape_uri\\s*\\('
   severity: low
   description: "URI escaping"
   remediation: "Use for proper URI encoding"
@@ -303,7 +303,7 @@
 - id: lua-ngx-unescape-uri
   languages: [lua]
   patterns:
-    - regex: "(?i)ngx\\.unescape_uri\\s*\\("
+    - regex: '(?i)ngx\\.unescape_uri\\s*\\('
   severity: low
   description: "URI unescaping"
   remediation: "Validate unescaped URIs"
@@ -313,7 +313,7 @@
 - id: lua-ngx-encode-args
   languages: [lua]
   patterns:
-    - regex: "(?i)ngx\\.encode_args\\s*\\("
+    - regex: '(?i)ngx\\.encode_args\\s*\\('
   severity: low
   description: "Query argument encoding"
   remediation: "Validate encoded arguments"
@@ -324,7 +324,7 @@
 - id: lua-redis-connect
   languages: [lua]
   patterns:
-    - regex: "(?i)redis:connect\\s*\\("
+    - regex: '(?i)redis:connect\\s*\\('
   severity: low
   description: "Redis connection"
   remediation: "Use authentication for Redis"
@@ -334,7 +334,7 @@
 - id: lua-redis-auth
   languages: [lua]
   patterns:
-    - regex: "(?i)redis:auth\\s*\\("
+    - regex: '(?i)redis:auth\\s*\\('
   severity: low
   description: "Redis authentication"
   remediation: "Store Redis password securely"
@@ -344,7 +344,7 @@
 - id: lua-redis-set
   languages: [lua]
   patterns:
-    - regex: "(?i)redis:set\\s*\\("
+    - regex: '(?i)redis:set\\s*\\('
   severity: low
   description: "Redis SET operation"
   remediation: "Validate keys and values"
@@ -354,7 +354,7 @@
 - id: lua-redis-get
   languages: [lua]
   patterns:
-    - regex: "(?i)redis:get\\s*\\("
+    - regex: '(?i)redis:get\\s*\\('
   severity: low
   description: "Redis GET operation"
   remediation: "Validate retrieved data"
@@ -364,7 +364,7 @@
 - id: lua-redis-del
   languages: [lua]
   patterns:
-    - regex: "(?i)redis:del\\s*\\("
+    - regex: '(?i)redis:del\\s*\\('
   severity: low
   description: "Redis DEL operation"
   remediation: "Validate keys before deletion"
@@ -374,7 +374,7 @@
 - id: lua-redis-hset
   languages: [lua]
   patterns:
-    - regex: "(?i)redis:hset\\s*\\("
+    - regex: '(?i)redis:hset\\s*\\('
   severity: low
   description: "Redis HSET operation"
   remediation: "Validate hash keys and values"
@@ -384,7 +384,7 @@
 - id: lua-redis-hget
   languages: [lua]
   patterns:
-    - regex: "(?i)redis:hget\\s*\\("
+    - regex: '(?i)redis:hget\\s*\\('
   severity: low
   description: "Redis HGET operation"
   remediation: "Validate hash data"
@@ -394,7 +394,7 @@
 - id: lua-redis-hgetall
   languages: [lua]
   patterns:
-    - regex: "(?i)redis:hgetall\\s*\\("
+    - regex: '(?i)redis:hgetall\\s*\\('
   severity: low
   description: "Redis HGETALL operation"
   remediation: "Validate hash data"
@@ -404,7 +404,7 @@
 - id: lua-redis-lpush
   languages: [lua]
   patterns:
-    - regex: "(?i)redis:lpush\\s*\\("
+    - regex: '(?i)redis:lpush\\s*\\('
   severity: low
   description: "Redis LPUSH operation"
   remediation: "Validate list data"
@@ -414,7 +414,7 @@
 - id: lua-redis-rpush
   languages: [lua]
   patterns:
-    - regex: "(?i)redis:rpush\\s*\\("
+    - regex: '(?i)redis:rpush\\s*\\('
   severity: low
   description: "Redis RPUSH operation"
   remediation: "Validate list data"
@@ -424,7 +424,7 @@
 - id: lua-redis-lrange
   languages: [lua]
   patterns:
-    - regex: "(?i)redis:lrange\\s*\\("
+    - regex: '(?i)redis:lrange\\s*\\('
   severity: low
   description: "Redis LRANGE operation"
   remediation: "Validate list range"
@@ -434,7 +434,7 @@
 - id: lua-redis-sadd
   languages: [lua]
   patterns:
-    - regex: "(?i)redis:sadd\\s*\\("
+    - regex: '(?i)redis:sadd\\s*\\('
   severity: low
   description: "Redis SADD operation"
   remediation: "Validate set data"
@@ -444,7 +444,7 @@
 - id: lua-redis-smembers
   languages: [lua]
   patterns:
-    - regex: "(?i)redis:smembers\\s*\\("
+    - regex: '(?i)redis:smembers\\s*\\('
   severity: low
   description: "Redis SMEMBERS operation"
   remediation: "Validate set data"
@@ -454,7 +454,7 @@
 - id: lua-redis-zadd
   languages: [lua]
   patterns:
-    - regex: "(?i)redis:zadd\\s*\\("
+    - regex: '(?i)redis:zadd\\s*\\('
   severity: low
   description: "Redis ZADD operation"
   remediation: "Validate sorted set data"
@@ -464,7 +464,7 @@
 - id: lua-redis-zrange
   languages: [lua]
   patterns:
-    - regex: "(?i)redis:zrange\\s*\\("
+    - regex: '(?i)redis:zrange\\s*\\('
   severity: low
   description: "Redis ZRANGE operation"
   remediation: "Validate sorted set range"
@@ -474,7 +474,7 @@
 - id: lua-redis-expire
   languages: [lua]
   patterns:
-    - regex: "(?i)redis:expire\\s*\\("
+    - regex: '(?i)redis:expire\\s*\\('
   severity: low
   description: "Redis EXPIRE operation"
   remediation: "Set appropriate expiration"
@@ -484,7 +484,7 @@
 - id: lua-redis-ttl
   languages: [lua]
   patterns:
-    - regex: "(?i)redis:ttl\\s*\\("
+    - regex: '(?i)redis:ttl\\s*\\('
   severity: low
   description: "Redis TTL operation"
   remediation: "Monitor key expiration"
@@ -494,7 +494,7 @@
 - id: lua-redis-keys
   languages: [lua]
   patterns:
-    - regex: "(?i)redis:keys\\s*\\("
+    - regex: '(?i)redis:keys\\s*\\('
   severity: medium
   description: "Redis KEYS operation (performance risk)"
   remediation: "Use SCAN instead of KEYS in production"
@@ -504,7 +504,7 @@
 - id: lua-redis-scan
   languages: [lua]
   patterns:
-    - regex: "(?i)redis:scan\\s*\\("
+    - regex: '(?i)redis:scan\\s*\\('
   severity: low
   description: "Redis SCAN operation"
   remediation: "Use SCAN with appropriate count"
@@ -514,7 +514,7 @@
 - id: lua-redis-pipeline
   languages: [lua]
   patterns:
-    - regex: "(?i)redis:init_pipeline\\s*\\("
+    - regex: '(?i)redis:init_pipeline\\s*\\('
   severity: low
   description: "Redis pipeline usage"
   remediation: "Validate pipeline commands"
@@ -525,7 +525,7 @@
 - id: lua-file-open
   languages: [lua]
   patterns:
-    - regex: "(?i)io\\.open\\s*\\("
+    - regex: '(?i)io\\.open\\s*\\('
   severity: medium
   description: "File open operation"
   remediation: "Validate file paths"
@@ -535,7 +535,7 @@
 - id: lua-file-read
   languages: [lua]
   patterns:
-    - regex: "(?i)file:read\\s*\\("
+    - regex: '(?i)file:read\\s*\\('
   severity: low
   description: "File read operation"
   remediation: "Validate file content"
@@ -545,7 +545,7 @@
 - id: lua-file-write
   languages: [lua]
   patterns:
-    - regex: "(?i)file:write\\s*\\("
+    - regex: '(?i)file:write\\s*\\('
   severity: medium
   description: "File write operation"
   remediation: "Validate write paths and content"
@@ -555,7 +555,7 @@
 - id: lua-file-close
   languages: [lua]
   patterns:
-    - regex: "(?i)file:close\\s*\\("
+    - regex: '(?i)file:close\\s*\\('
   severity: low
   description: "File close operation"
   remediation: "Ensure proper file cleanup"
@@ -565,7 +565,7 @@
 - id: lua-file-lines
   languages: [lua]
   patterns:
-    - regex: "(?i)file:lines\\s*\\("
+    - regex: '(?i)file:lines\\s*\\('
   severity: low
   description: "File line iteration"
   remediation: "Validate file content"
@@ -575,7 +575,7 @@
 - id: lua-file-seek
   languages: [lua]
   patterns:
-    - regex: "(?i)file:seek\\s*\\("
+    - regex: '(?i)file:seek\\s*\\('
   severity: low
   description: "File seek operation"
   remediation: "Validate seek positions"
@@ -585,7 +585,7 @@
 - id: lua-file-flush
   languages: [lua]
   patterns:
-    - regex: "(?i)file:flush\\s*\\("
+    - regex: '(?i)file:flush\\s*\\('
   severity: low
   description: "File flush operation"
   remediation: "Ensure proper flushing"
@@ -595,7 +595,7 @@
 - id: lua-file-setvbuf
   languages: [lua]
   patterns:
-    - regex: "(?i)file:setvbuf\\s*\\("
+    - regex: '(?i)file:setvbuf\\s*\\('
   severity: low
   description: "File buffer configuration"
   remediation: "Configure buffering appropriately"
@@ -605,7 +605,7 @@
 - id: lua-io-input
   languages: [lua]
   patterns:
-    - regex: "(?i)io\\.input\\s*\\("
+    - regex: '(?i)io\\.input\\s*\\('
   severity: low
   description: "Default input file"
   remediation: "Validate input file"
@@ -615,7 +615,7 @@
 - id: lua-io-output
   languages: [lua]
   patterns:
-    - regex: "(?i)io\\.output\\s*\\("
+    - regex: '(?i)io\\.output\\s*\\('
   severity: low
   description: "Default output file"
   remediation: "Validate output file"
@@ -625,7 +625,7 @@
 - id: lua-io-popen
   languages: [lua]
   patterns:
-    - regex: "(?i)io\\.popen\\s*\\("
+    - regex: '(?i)io\\.popen\\s*\\('
   severity: high
   description: "Process pipe creation"
   remediation: "Avoid popen with user input"
@@ -635,7 +635,7 @@
 - id: lua-io-type
   languages: [lua]
   patterns:
-    - regex: "(?i)io\\.type\\s*\\("
+    - regex: '(?i)io\\.type\\s*\\('
   severity: low
   description: "File type check"
   remediation: "Validate file type"
@@ -645,7 +645,7 @@
 - id: lua-io-read
   languages: [lua]
   patterns:
-    - regex: "(?i)io\\.read\\s*\\("
+    - regex: '(?i)io\\.read\\s*\\('
   severity: low
   description: "Default input read"
   remediation: "Validate input data"
@@ -655,7 +655,7 @@
 - id: lua-io-write
   languages: [lua]
   patterns:
-    - regex: "(?i)io\\.write\\s*\\("
+    - regex: '(?i)io\\.write\\s*\\('
   severity: low
   description: "Default output write"
   remediation: "Validate output data"
@@ -665,7 +665,7 @@
 - id: lua-io-lines
   languages: [lua]
   patterns:
-    - regex: "(?i)io\\.lines\\s*\\("
+    - regex: '(?i)io\\.lines\\s*\\('
   severity: low
   description: "Default input lines"
   remediation: "Validate input content"
@@ -675,7 +675,7 @@
 - id: lua-lfs-attributes
   languages: [lua]
   patterns:
-    - regex: "(?i)lfs\\.attributes\\s*\\("
+    - regex: '(?i)lfs\\.attributes\\s*\\('
   severity: low
   description: "File attributes access"
   remediation: "Validate file paths"
@@ -685,7 +685,7 @@
 - id: lua-lfs-chdir
   languages: [lua]
   patterns:
-    - regex: "(?i)lfs\\.chdir\\s*\\("
+    - regex: '(?i)lfs\\.chdir\\s*\\('
   severity: medium
   description: "Directory change"
   remediation: "Validate directory paths"
@@ -695,7 +695,7 @@
 - id: lua-lfs-currentdir
   languages: [lua]
   patterns:
-    - regex: "(?i)lfs\\.currentdir\\s*\\("
+    - regex: '(?i)lfs\\.currentdir\\s*\\('
   severity: low
   description: "Current directory access"
   remediation: "Monitor current directory"
@@ -705,7 +705,7 @@
 - id: lua-lfs-dir
   languages: [lua]
   patterns:
-    - regex: "(?i)lfs\\.dir\\s*\\("
+    - regex: '(?i)lfs\\.dir\\s*\\('
   severity: low
   description: "Directory iteration"
   remediation: "Validate directory content"
@@ -715,7 +715,7 @@
 - id: lua-lfs-lock
   languages: [lua]
   patterns:
-    - regex: "(?i)lfs\\.lock\\s*\\("
+    - regex: '(?i)lfs\\.lock\\s*\\('
   severity: low
   description: "File locking"
   remediation: "Handle lock failures"
@@ -726,7 +726,7 @@
 - id: lua-http-request
   languages: [lua]
   patterns:
-    - regex: "(?i)http\\.request\\s*\\("
+    - regex: '(?i)http\\.request\\s*\\('
   severity: medium
   description: "HTTP request"
   remediation: "Validate request URLs"
@@ -736,7 +736,7 @@
 - id: lua-http-get
   languages: [lua]
   patterns:
-    - regex: "(?i)http\\.get\\s*\\("
+    - regex: '(?i)http\\.get\\s*\\('
   severity: medium
   description: "HTTP GET request"
   remediation: "Validate GET URLs"
@@ -746,7 +746,7 @@
 - id: lua-http-post
   languages: [lua]
   patterns:
-    - regex: "(?i)http\\.post\\s*\\("
+    - regex: '(?i)http\\.post\\s*\\('
   severity: medium
   description: "HTTP POST request"
   remediation: "Validate POST data"
@@ -756,7 +756,7 @@
 - id: lua-socket-connect
   languages: [lua]
   patterns:
-    - regex: "(?i)socket\\.connect\\s*\\("
+    - regex: '(?i)socket\\.connect\\s*\\('
   severity: low
   description: "Socket connection"
   remediation: "Validate connection targets"
@@ -766,7 +766,7 @@
 - id: lua-socket-bind
   languages: [lua]
   patterns:
-    - regex: "(?i):bind\\s*\\("
+    - regex: '(?i):bind\\s*\\('
   severity: low
   description: "Socket bind"
   remediation: "Bind to appropriate interfaces"
@@ -776,7 +776,7 @@
 - id: lua-socket-listen
   languages: [lua]
   patterns:
-    - regex: "(?i):listen\\s*\\("
+    - regex: '(?i):listen\\s*\\('
   severity: low
   description: "Socket listen"
   remediation: "Set appropriate backlog"
@@ -786,7 +786,7 @@
 - id: lua-socket-accept
   languages: [lua]
   patterns:
-    - regex: "(?i):accept\\s*\\("
+    - regex: '(?i):accept\\s*\\('
   severity: low
   description: "Socket accept"
   remediation: "Validate accepted connections"
@@ -796,7 +796,7 @@
 - id: lua-socket-send
   languages: [lua]
   patterns:
-    - regex: "(?i):send\\s*\\("
+    - regex: '(?i):send\\s*\\('
   severity: low
   description: "Socket send"
   remediation: "Validate send data"
@@ -806,7 +806,7 @@
 - id: lua-socket-receive
   languages: [lua]
   patterns:
-    - regex: "(?i):receive\\s*\\("
+    - regex: '(?i):receive\\s*\\('
   severity: low
   description: "Socket receive"
   remediation: "Validate received data"
@@ -816,7 +816,7 @@
 - id: lua-socket-close
   languages: [lua]
   patterns:
-    - regex: "(?i):close\\s*\\("
+    - regex: '(?i):close\\s*\\('
   severity: low
   description: "Socket close"
   remediation: "Ensure proper cleanup"
@@ -826,7 +826,7 @@
 - id: lua-socket-settimeout
   languages: [lua]
   patterns:
-    - regex: "(?i):settimeout\\s*\\("
+    - regex: '(?i):settimeout\\s*\\('
   severity: low
   description: "Socket timeout"
   remediation: "Set appropriate timeouts"
@@ -836,7 +836,7 @@
 - id: lua-socket-setoption
   languages: [lua]
   patterns:
-    - regex: "(?i):setoption\\s*\\("
+    - regex: '(?i):setoption\\s*\\('
   severity: low
   description: "Socket option"
   remediation: "Configure options securely"
@@ -846,7 +846,7 @@
 - id: lua-socket-getsockname
   languages: [lua]
   patterns:
-    - regex: "(?i):getsockname\\s*\\("
+    - regex: '(?i):getsockname\\s*\\('
   severity: low
   description: "Socket name retrieval"
   remediation: "Monitor socket names"
@@ -856,7 +856,7 @@
 - id: lua-socket-getpeername
   languages: [lua]
   patterns:
-    - regex: "(?i):getpeername\\s*\\("
+    - regex: '(?i):getpeername\\s*\\('
   severity: low
   description: "Peer name retrieval"
   remediation: "Validate peer information"
@@ -866,7 +866,7 @@
 - id: lua-socket-dns-lookup
   languages: [lua]
   patterns:
-    - regex: "(?i)socket\\.dns\\.toip\\s*\\("
+    - regex: '(?i)socket\\.dns\\.toip\\s*\\('
   severity: low
   description: "DNS lookup"
   remediation: "Validate DNS results"
@@ -876,7 +876,7 @@
 - id: lua-socket-dns-reverse
   languages: [lua]
   patterns:
-    - regex: "(?i)socket\\.dns\\.tohostname\\s*\\("
+    - regex: '(?i)socket\\.dns\\.tohostname\\s*\\('
   severity: low
   description: "Reverse DNS lookup"
   remediation: "Validate reverse DNS"
@@ -886,7 +886,7 @@
 - id: lua-ssl-connect
   languages: [lua]
   patterns:
-    - regex: "(?i)ssl:connect\\s*\\("
+    - regex: '(?i)ssl:connect\\s*\\('
   severity: low
   description: "SSL connection"
   remediation: "Validate SSL certificates"
@@ -896,7 +896,7 @@
 - id: lua-ssl-setverify
   languages: [lua]
   patterns:
-    - regex: "(?i)ssl:setverify\\s*\\("
+    - regex: '(?i)ssl:setverify\\s*\\('
   severity: low
   description: "SSL verification"
   remediation: "Enable certificate verification"
@@ -906,7 +906,7 @@
 - id: lua-ssl-sethostname
   languages: [lua]
   patterns:
-    - regex: "(?i)ssl:sethostname\\s*\\("
+    - regex: '(?i)ssl:sethostname\\s*\\('
   severity: low
   description: "SSL hostname"
   remediation: "Validate hostname"
@@ -916,7 +916,7 @@
 - id: lua-ssl-getpeercert
   languages: [lua]
   patterns:
-    - regex: "(?i)ssl:getpeercert\\s*\\("
+    - regex: '(?i)ssl:getpeercert\\s*\\('
   severity: low
   description: "Peer certificate"
   remediation: "Validate peer certificate"
@@ -927,7 +927,7 @@
 - id: lua-require-variable
   languages: [lua]
   patterns:
-    - regex: "(?i)require\\s*\\(\\s*\\$"
+    - regex: '(?i)require\\s*\\(\\s*\\$'
   severity: high
   description: "Dynamic module loading"
   remediation: "Use static require statements"
@@ -937,7 +937,7 @@
 - id: lua-require-string
   languages: [lua]
   patterns:
-    - regex: "(?i)require\\s*\\(\\s*['\"]"
+    - regex: '(?i)require\\s*\\(\\s*['\"]'
   severity: low
   description: "Module loading"
   remediation: "Verify module authenticity"
@@ -947,7 +947,7 @@
 - id: lua-dofile
   languages: [lua]
   patterns:
-    - regex: "(?i)dofile\\s*\\("
+    - regex: '(?i)dofile\\s*\\('
   severity: medium
   description: "File execution"
   remediation: "Validate file paths"
@@ -957,7 +957,7 @@
 - id: lua-loadfile
   languages: [lua]
   patterns:
-    - regex: "(?i)loadfile\\s*\\("
+    - regex: '(?i)loadfile\\s*\\('
   severity: medium
   description: "File loading"
   remediation: "Validate file paths"
@@ -967,7 +967,7 @@
 - id: lua-load
   languages: [lua]
   patterns:
-    - regex: "(?i)load\\s*\\("
+    - regex: '(?i)load\\s*\\('
   severity: high
   description: "Code loading"
   remediation: "Avoid loading untrusted code"
@@ -977,7 +977,7 @@
 - id: lua-loadstring
   languages: [lua]
   patterns:
-    - regex: "(?i)loadstring\\s*\\("
+    - regex: '(?i)loadstring\\s*\\('
   severity: high
   description: "String code execution"
   remediation: "Avoid loadstring with user input"
@@ -987,7 +987,7 @@
 - id: lua-package-path
   languages: [lua]
   patterns:
-    - regex: "(?i)package\\.path\\s*="
+    - regex: '(?i)package\\.path\\s*='
   severity: low
   description: "Package path modification"
   remediation: "Validate package paths"
@@ -997,7 +997,7 @@
 - id: lua-package-cpath
   languages: [lua]
   patterns:
-    - regex: "(?i)package\\.cpath\\s*="
+    - regex: '(?i)package\\.cpath\\s*='
   severity: low
   description: "C library path modification"
   remediation: "Validate C library paths"
@@ -1007,7 +1007,7 @@
 - id: lua-package-preload
   languages: [lua]
   patterns:
-    - regex: "(?i)package\\.preload\\["
+    - regex: '(?i)package\\.preload\\['
   severity: low
   description: "Package preload"
   remediation: "Validate preloaded modules"
@@ -1017,7 +1017,7 @@
 - id: lua-package-loaded
   languages: [lua]
   patterns:
-    - regex: "(?i)package\\.loaded\\["
+    - regex: '(?i)package\\.loaded\\['
   severity: low
   description: "Loaded package access"
   remediation: "Monitor loaded packages"
@@ -1027,7 +1027,7 @@
 - id: lua-package-config
   languages: [lua]
   patterns:
-    - regex: "(?i)package\\.config"
+    - regex: '(?i)package\\.config'
   severity: low
   description: "Package configuration"
   remediation: "Review package config"
@@ -1037,7 +1037,7 @@
 - id: lua-package-searchers
   languages: [lua]
   patterns:
-    - regex: "(?i)package\\.searchers"
+    - regex: '(?i)package\\.searchers'
   severity: low
   description: "Package searchers"
   remediation: "Review searchers"
@@ -1047,7 +1047,7 @@
 - id: lua-module-return
   languages: [lua]
   patterns:
-    - regex: "(?i)return\\s+module"
+    - regex: '(?i)return\\s+module'
   severity: low
   description: "Module return"
   remediation: "Validate module exports"
@@ -1057,7 +1057,7 @@
 - id: lua-module-require
   languages: [lua]
   patterns:
-    - regex: "(?i)module\\s*\\("
+    - regex: '(?i)module\\s*\\('
   severity: low
   description: "Module declaration"
   remediation: "Validate module name"
@@ -1067,7 +1067,7 @@
 - id: lua-luapath
   languages: [lua]
   patterns:
-    - regex: "(?i)LUA_PATH|LUA_CPATH"
+    - regex: '(?i)LUA_PATH|LUA_CPATH'
   severity: low
   description: "Lua path environment"
   remediation: "Secure environment variables"
@@ -1077,7 +1077,7 @@
 - id: lua-luainit
   languages: [lua]
   patterns:
-    - regex: "(?i)LUA_INIT"
+    - regex: '(?i)LUA_INIT'
   severity: medium
   description: "Lua init environment"
   remediation: "Don't set LUA_INIT from user input"
@@ -1087,7 +1087,7 @@
 - id: lua-luapath-separator
   languages: [lua]
   patterns:
-    - regex: "(?i);\\\\?;\\."
+    - regex: '(?i);\\\\?;\\.'
   severity: low
   description: "Path separator in package path"
   remediation: "Review path configuration"
@@ -1097,7 +1097,7 @@
 - id: lua-cmodule-load
   languages: [lua]
   patterns:
-    - regex: "(?i)package\\.loadlib\\s*\\("
+    - regex: '(?i)package\\.loadlib\\s*\\('
   severity: high
   description: "C library loading"
   remediation: "Validate C library paths"
@@ -1107,7 +1107,7 @@
 - id: lua-ffi-load
   languages: [lua]
   patterns:
-    - regex: "(?i)ffi\\.load\\s*\\("
+    - regex: '(?i)ffi\\.load\\s*\\('
   severity: high
   description: "FFI library loading"
   remediation: "Validate FFI library paths"
@@ -1117,7 +1117,7 @@
 - id: lua-ffi-cdef
   languages: [lua]
   patterns:
-    - regex: "(?i)ffi\\.cdef\\s*\\("
+    - regex: '(?i)ffi\\.cdef\\s*\\('
   severity: medium
   description: "FFI C definition"
   remediation: "Validate C definitions"
@@ -1128,7 +1128,7 @@
 - id: lua-env-get
   languages: [lua]
   patterns:
-    - regex: "(?i)os\\.getenv\\s*\\("
+    - regex: '(?i)os\\.getenv\\s*\\('
   severity: low
   description: "Environment variable access"
   remediation: "Don't expose env var values"
@@ -1138,7 +1138,7 @@
 - id: lua-env-set
   languages: [lua]
   patterns:
-    - regex: "(?i)os\\.setenv\\s*\\("
+    - regex: '(?i)os\\.setenv\\s*\\('
   severity: medium
   description: "Environment variable modification"
   remediation: "Validate env var names and values"
@@ -1148,7 +1148,7 @@
 - id: lua-env-password
   languages: [lua]
   patterns:
-    - regex: "(?i)os\\.getenv\\s*\\(\\s*['\"](?:PASSWORD|SECRET|KEY)"
+    - regex: '(?i)os\\.getenv\\s*\\(\\s*['\"](?:PASSWORD|SECRET|KEY)'
   severity: medium
   description: "Sensitive env var access"
   remediation: "Use secure secret management"
@@ -1158,7 +1158,7 @@
 - id: lua-env-path
   languages: [lua]
   patterns:
-    - regex: "(?i)os\\.getenv\\s*\\(\\s*['\"]PATH"
+    - regex: '(?i)os\\.getenv\\s*\\(\\s*['\"]PATH'
   severity: low
   description: "PATH environment access"
   remediation: "Validate PATH value"
@@ -1168,7 +1168,7 @@
 - id: lua-env-home
   languages: [lua]
   patterns:
-    - regex: "(?i)os\\.getenv\\s*\\(\\s*['\"]HOME"
+    - regex: '(?i)os\\.getenv\\s*\\(\\s*['\"]HOME'
   severity: low
   description: "HOME environment access"
   remediation: "Validate HOME value"
@@ -1178,7 +1178,7 @@
 - id: lua-env-temp
   languages: [lua]
   patterns:
-    - regex: "(?i)os\\.getenv\\s*\\(\\s*['\"]TMP|TEMP"
+    - regex: '(?i)os\\.getenv\\s*\\(\\s*['\"]TMP|TEMP'
   severity: low
   description: "Temp directory access"
   remediation: "Use secure temp directories"
@@ -1188,7 +1188,7 @@
 - id: lua-env-user
   languages: [lua]
   patterns:
-    - regex: "(?i)os\\.getenv\\s*\\(\\s*['\"]USER|USERNAME"
+    - regex: '(?i)os\\.getenv\\s*\\(\\s*['\"]USER|USERNAME'
   severity: low
   description: "User environment access"
   remediation: "Don't trust user env vars"
@@ -1198,7 +1198,7 @@
 - id: lua-env-shell
   languages: [lua]
   patterns:
-    - regex: "(?i)os\\.getenv\\s*\\(\\s*['\"]SHELL"
+    - regex: '(?i)os\\.getenv\\s*\\(\\s*['\"]SHELL'
   severity: low
   description: "Shell environment access"
   remediation: "Validate shell value"
@@ -1208,7 +1208,7 @@
 - id: lua-env-lang
   languages: [lua]
   patterns:
-    - regex: "(?i)os\\.getenv\\s*\\(\\s*['\"]LANG|LC_"
+    - regex: '(?i)os\\.getenv\\s*\\(\\s*['\"]LANG|LC_'
   severity: low
   description: "Locale environment access"
   remediation: "Validate locale settings"
@@ -1218,7 +1218,7 @@
 - id: lua-env-display
   languages: [lua]
   patterns:
-    - regex: "(?i)os\\.getenv\\s*\\(\\s*['\"]DISPLAY"
+    - regex: '(?i)os\\.getenv\\s*\\(\\s*['\"]DISPLAY'
   severity: low
   description: "Display environment access"
   remediation: "Validate display value"
@@ -1228,7 +1228,7 @@
 - id: lua-env-ld-preload
   languages: [lua]
   patterns:
-    - regex: "(?i)os\\.getenv\\s*\\(\\s*['\"]LD_PRELOAD"
+    - regex: '(?i)os\\.getenv\\s*\\(\\s*['\"]LD_PRELOAD'
   severity: high
   description: "LD_PRELOAD access"
   remediation: "Don't trust LD_PRELOAD"
@@ -1238,7 +1238,7 @@
 - id: lua-env-ld-library
   languages: [lua]
   patterns:
-    - regex: "(?i)os\\.getenv\\s*\\(\\s*['\"]LD_LIBRARY_PATH"
+    - regex: '(?i)os\\.getenv\\s*\\(\\s*['\"]LD_LIBRARY_PATH'
   severity: high
   description: "LD_LIBRARY_PATH access"
   remediation: "Don't trust LD_LIBRARY_PATH"
@@ -1248,7 +1248,7 @@
 - id: lua-env-pythonpath
   languages: [lua]
   patterns:
-    - regex: "(?i)os\\.getenv\\s*\\(\\s*['\"]PYTHONPATH"
+    - regex: '(?i)os\\.getenv\\s*\\(\\s*['\"]PYTHONPATH'
   severity: medium
   description: "PYTHONPATH access"
   remediation: "Validate PYTHONPATH"
@@ -1258,7 +1258,7 @@
 - id: lua-env-java-home
   languages: [lua]
   patterns:
-    - regex: "(?i)os\\.getenv\\s*\\(\\s*['\"]JAVA_HOME"
+    - regex: '(?i)os\\.getenv\\s*\\(\\s*['\"]JAVA_HOME'
   severity: low
   description: "JAVA_HOME access"
   remediation: "Validate JAVA_HOME"
@@ -1268,7 +1268,7 @@
 - id: lua-env-node-path
   languages: [lua]
   patterns:
-    - regex: "(?i)os\\.getenv\\s*\\(\\s*['\"]NODE_PATH"
+    - regex: '(?i)os\\.getenv\\s*\\(\\s*['\"]NODE_PATH'
   severity: medium
   description: "NODE_PATH access"
   remediation: "Validate NODE_PATH"
@@ -1278,7 +1278,7 @@
 - id: lua-env-gopath
   languages: [lua]
   patterns:
-    - regex: "(?i)os\\.getenv\\s*\\(\\s*['\"]GOPATH"
+    - regex: '(?i)os\\.getenv\\s*\\(\\s*['\"]GOPATH'
   severity: low
   description: "GOPATH access"
   remediation: "Validate GOPATH"
@@ -1288,7 +1288,7 @@
 - id: lua-env-ruby-path
   languages: [lua]
   patterns:
-    - regex: "(?i)os\\.getenv\\s*\\(\\s*['\"]RUBY"
+    - regex: '(?i)os\\.getenv\\s*\\(\\s*['\"]RUBY'
   severity: low
   description: "Ruby environment access"
   remediation: "Validate Ruby env vars"
@@ -1298,7 +1298,7 @@
 - id: lua-env-perl5lib
   languages: [lua]
   patterns:
-    - regex: "(?i)os\\.getenv\\s*\\(\\s*['\"]PERL5LIB"
+    - regex: '(?i)os\\.getenv\\s*\\(\\s*['\"]PERL5LIB'
   severity: medium
   description: "PERL5LIB access"
   remediation: "Validate PERL5LIB"
@@ -1308,7 +1308,7 @@
 - id: lua-env-proxy
   languages: [lua]
   patterns:
-    - regex: "(?i)os\\.getenv\\s*\\(\\s*['\"](?:HTTP|HTTPS|FTP)_PROXY"
+    - regex: '(?i)os\\.getenv\\s*\\(\\s*['\"](?:HTTP|HTTPS|FTP)_PROXY'
   severity: medium
   description: "Proxy environment access"
   remediation: "Validate proxy settings"
@@ -1318,7 +1318,7 @@
 - id: lua-env-no-proxy
   languages: [lua]
   patterns:
-    - regex: "(?i)os\\.getenv\\s*\\(\\s*['\"]NO_PROXY"
+    - regex: '(?i)os\\.getenv\\s*\\(\\s*['\"]NO_PROXY'
   severity: low
   description: "NO_PROXY access"
   remediation: "Validate NO_PROXY"
@@ -1329,7 +1329,7 @@
 - id: lua-pcall
   languages: [lua]
   patterns:
-    - regex: "(?i)pcall\\s*\\("
+    - regex: '(?i)pcall\\s*\\('
   severity: low
   description: "Protected call"
   remediation: "Handle errors properly"
@@ -1339,7 +1339,7 @@
 - id: lua-xpcall
   languages: [lua]
   patterns:
-    - regex: "(?i)xpcall\\s*\\("
+    - regex: '(?i)xpcall\\s*\\('
   severity: low
   description: "Protected call with handler"
   remediation: "Implement error handler"
@@ -1349,7 +1349,7 @@
 - id: lua-error
   languages: [lua]
   patterns:
-    - regex: "(?i)error\\s*\\("
+    - regex: '(?i)error\\s*\\('
   severity: low
   description: "Error raising"
   remediation: "Use appropriate error messages"
@@ -1359,7 +1359,7 @@
 - id: lua-assert
   languages: [lua]
   patterns:
-    - regex: "(?i)assert\\s*\\("
+    - regex: '(?i)assert\\s*\\('
   severity: low
   description: "Assertion"
   remediation: "Use assertions appropriately"
@@ -1369,7 +1369,7 @@
 - id: lua-error-message
   languages: [lua]
   patterns:
-    - regex: "(?i)error\\s*\\(\\s*['\"]"
+    - regex: '(?i)error\\s*\\(\\s*['\"]'
   severity: low
   description: "Error message"
   remediation: "Don't expose internal details"
@@ -1379,7 +1379,7 @@
 - id: lua-traceback
   languages: [lua]
   patterns:
-    - regex: "(?i)debug\\.traceback\\s*\\("
+    - regex: '(?i)debug\\.traceback\\s*\\('
   severity: low
   description: "Stack traceback"
   remediation: "Don't expose stack traces"
@@ -1389,7 +1389,7 @@
 - id: lua-debug-info
   languages: [lua]
   patterns:
-    - regex: "(?i)debug\\.getinfo\\s*\\("
+    - regex: '(?i)debug\\.getinfo\\s*\\('
   severity: low
   description: "Debug info access"
   remediation: "Don't expose debug info"
@@ -1399,7 +1399,7 @@
 - id: lua-debug-local
   languages: [lua]
   patterns:
-    - regex: "(?i)debug\\.getlocal\\s*\\("
+    - regex: '(?i)debug\\.getlocal\\s*\\('
   severity: medium
   description: "Local variable access"
   remediation: "Don't expose local variables"
@@ -1409,7 +1409,7 @@
 - id: lua-debug-upvalue
   languages: [lua]
   patterns:
-    - regex: "(?i)debug\\.getupvalue\\s*\\("
+    - regex: '(?i)debug\\.getupvalue\\s*\\('
   severity: medium
   description: "Upvalue access"
   remediation: "Don't expose upvalues"
@@ -1419,7 +1419,7 @@
 - id: lua-debug-setlocal
   languages: [lua]
   patterns:
-    - regex: "(?i)debug\\.setlocal\\s*\\("
+    - regex: '(?i)debug\\.setlocal\\s*\\('
   severity: high
   description: "Local variable modification"
   remediation: "Don't allow local modification"
@@ -1429,7 +1429,7 @@
 - id: lua-debug-setupvalue
   languages: [lua]
   patterns:
-    - regex: "(?i)debug\\.setupvalue\\s*\\("
+    - regex: '(?i)debug\\.setupvalue\\s*\\('
   severity: high
   description: "Upvalue modification"
   remediation: "Don't allow upvalue modification"
@@ -1439,7 +1439,7 @@
 - id: lua-debug-setmetatable
   languages: [lua]
   patterns:
-    - regex: "(?i)debug\\.setmetatable\\s*\\("
+    - regex: '(?i)debug\\.setmetatable\\s*\\('
   severity: high
   description: "Metatable modification"
   remediation: "Don't allow metatable modification"
@@ -1449,7 +1449,7 @@
 - id: lua-debug-setfenv
   languages: [lua]
   patterns:
-    - regex: "(?i)debug\\.setfenv\\s*\\("
+    - regex: '(?i)debug\\.setfenv\\s*\\('
   severity: high
   description: "Environment modification"
   remediation: "Don't allow environment modification"
@@ -1459,7 +1459,7 @@
 - id: lua-debug-getfenv
   languages: [lua]
   patterns:
-    - regex: "(?i)debug\\.getfenv\\s*\\("
+    - regex: '(?i)debug\\.getfenv\\s*\\('
   severity: low
   description: "Environment access"
   remediation: "Don't expose environment"
@@ -1469,7 +1469,7 @@
 - id: lua-debug-registry
   languages: [lua]
   patterns:
-    - regex: "(?i)debug\\.registry"
+    - regex: '(?i)debug\\.registry'
   severity: medium
   description: "Debug registry access"
   remediation: "Don't expose debug registry"
@@ -1480,7 +1480,7 @@
 - id: lua-print
   languages: [lua]
   patterns:
-    - regex: "(?i)print\\s*\\("
+    - regex: '(?i)print\\s*\\('
   severity: low
   description: "Print statement"
   remediation: "Remove print in production"
@@ -1490,7 +1490,7 @@
 - id: lua-print-sensitive
   languages: [lua]
   patterns:
-    - regex: "(?i)print\\s*\\(.*(?:password|secret|token|key)"
+    - regex: '(?i)print\\s*\\(.*(?:password|secret|token|key)'
   severity: medium
   description: "Sensitive data in print"
   remediation: "Don't print sensitive data"
@@ -1500,7 +1500,7 @@
 - id: lua-io-write-sensitive
   languages: [lua]
   patterns:
-    - regex: "(?i)io\\.write\\s*\\(.*(?:password|secret|token)"
+    - regex: '(?i)io\\.write\\s*\\(.*(?:password|secret|token)'
   severity: medium
   description: "Sensitive data in io.write"
   remediation: "Don't write sensitive data"
@@ -1510,7 +1510,7 @@
 - id: lua-file-write-sensitive
   languages: [lua]
   patterns:
-    - regex: "(?i)file:write\\s*\\(.*(?:password|secret)"
+    - regex: '(?i)file:write\\s*\\(.*(?:password|secret)'
   severity: medium
   description: "Sensitive data in file write"
   remediation: "Don't write sensitive data to files"
@@ -1520,7 +1520,7 @@
 - id: lua-ngx-log-sensitive
   languages: [lua]
   patterns:
-    - regex: "(?i)ngx\\.log.*(?:password|secret|token|key)"
+    - regex: '(?i)ngx\\.log.*(?:password|secret|token|key)'
   severity: medium
   description: "Sensitive data in ngx.log"
   remediation: "Don't log sensitive data"
@@ -1530,7 +1530,7 @@
 - id: lua-log-level-debug
   languages: [lua]
   patterns:
-    - regex: "(?i)ngx\\.log\\s*\\(\\s*ngx\\.DEBUG"
+    - regex: '(?i)ngx\\.log\\s*\\(\\s*ngx\\.DEBUG'
   severity: low
   description: "Debug logging"
   remediation: "Disable debug logging in production"
@@ -1540,7 +1540,7 @@
 - id: lua-log-format
   languages: [lua]
   patterns:
-    - regex: "(?i)string\\.format.*log"
+    - regex: '(?i)string\\.format.*log'
   severity: low
   description: "Log formatting"
   remediation: "Validate log format"
@@ -1550,7 +1550,7 @@
 - id: lua-log-injection
   languages: [lua]
   patterns:
-    - regex: "(?i)log\\s*\\(.*params"
+    - regex: '(?i)log\\s*\\(.*params'
   severity: medium
   description: "Log injection risk"
   remediation: "Sanitize log input"
@@ -1560,7 +1560,7 @@
 - id: lua-log-newline
   languages: [lua]
   patterns:
-    - regex: "(?i)log\\s*\\(.*\\\\n"
+    - regex: '(?i)log\\s*\\(.*\\\\n'
   severity: medium
   description: "Newline in log"
   remediation: "Remove newlines from log input"
@@ -1570,7 +1570,7 @@
 - id: lua-log-carriage
   languages: [lua]
   patterns:
-    - regex: "(?i)log\\s*\\(.*\\\\r"
+    - regex: '(?i)log\\s*\\(.*\\\\r'
   severity: medium
   description: "Carriage return in log"
   remediation: "Remove carriage returns from log input"
@@ -1580,7 +1580,7 @@
 - id: lua-log-crlf
   languages: [lua]
   patterns:
-    - regex: "(?i)log\\s*\\(.*\\\\r\\\\n"
+    - regex: '(?i)log\\s*\\(.*\\\\r\\\\n'
   severity: medium
   description: "CRLF in log"
   remediation: "Remove CRLF from log input"
@@ -1590,7 +1590,7 @@
 - id: lua-log-user-input
   languages: [lua]
   patterns:
-    - regex: "(?i)log\\s*\\(.*req\\."
+    - regex: '(?i)log\\s*\\(.*req\\.'
   severity: medium
   description: "User input in log"
   remediation: "Sanitize user input before logging"
@@ -1600,7 +1600,7 @@
 - id: lua-log-query
   languages: [lua]
   patterns:
-    - regex: "(?i)log\\s*\\(.*query"
+    - regex: '(?i)log\\s*\\(.*query'
   severity: medium
   description: "Query in log"
   remediation: "Sanitize query before logging"
@@ -1610,7 +1610,7 @@
 - id: lua-log-body
   languages: [lua]
   patterns:
-    - regex: "(?i)log\\s*\\(.*body"
+    - regex: '(?i)log\\s*\\(.*body'
   severity: medium
   description: "Request body in log"
   remediation: "Sanitize body before logging"
@@ -1620,7 +1620,7 @@
 - id: lua-log-header
   languages: [lua]
   patterns:
-    - regex: "(?i)log\\s*\\(.*header"
+    - regex: '(?i)log\\s*\\(.*header'
   severity: medium
   description: "Header in log"
   remediation: "Sanitize headers before logging"
@@ -1630,7 +1630,7 @@
 - id: lua-openresty-unsafe
   languages: [lua]
   patterns:
-    - regex: "(?i)resty\\.http.*request_uri"
+    - regex: '(?i)resty\\.http.*request_uri'
   severity: high
   description: "OpenResty HTTP without validation"
   remediation: "Validate URLs before requests"
@@ -1641,7 +1641,7 @@
 - id: lua-ffi-unsafe
   languages: [lua]
   patterns:
-    - regex: "(?i)ffi\\.load|ffi\\.cdef"
+    - regex: '(?i)ffi\\.load|ffi\\.cdef'
   severity: high
   description: "FFI loads external libraries"
   remediation: "Validate FFI calls"

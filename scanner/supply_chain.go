@@ -87,9 +87,8 @@ func (scs *SupplyChainScanner) GenerateSBOMFile(outputPath string) error {
 }
 
 func (scs *SupplyChainScanner) collectAllDependencies(targetDir string) []Dependency {
-	// Note: Manual dependency parsing is currently disabled in favor of using OSV-Scanner natively.
-	// OSV-Scanner directly reads package files and returns vulnerabilities.
-	return []Dependency{}
+	// Re-enable manual parsing to feed our Typosquatting engine
+	return collectDependencies(targetDir)
 }
 
 func (scs *SupplyChainScanner) generateSBOM() {
@@ -152,38 +151,54 @@ func (scs *SupplyChainScanner) checkTyposquatting() []reporter.Finding {
 	var findings []reporter.Finding
 	srNo := 1
 
-	// Known typosquatting patterns
-	typosquatPatterns := map[string][]string{
-		"requests": {"reqeusts", "requets", "requestss"},
-		"numpy":    {"numpi", "nunpy", "nmpy"},
-		"pandas":   {"panda", "pandass", "pandad"},
-		"lodash":   {"l0dash", "1odash", "lodahs"},
-		"express":  {"expess", "expresss", "exress"},
-		"react":    {"reacct", "rect", "raect"},
-		"axios":    {"axois", "aixos", "axiox"},
-		"moment":   {"momnet", "mome nt", "mmoment"},
-		"webpack":  {"webpakc", "webpak", "weback"},
-		"babel":    {"bab el", "bael", "babeljs"},
+	// Known highly-targeted packages for Typosquatting
+	topPackages := []string{
+		"requests", "numpy", "pandas", "lodash", "express", "react", "axios",
+		"moment", "webpack", "babel", "django", "flask", "spring", "urllib3",
+		"beautifulsoup4", "boto3", "cors", "body-parser", "async", "chalk",
+		"react-dom", "mongoose", "typescript", "eslint", "prettier", "jest",
 	}
 
 	for _, dep := range scs.dependencies {
-		for legitimate, typos := range typosquatPatterns {
-			for _, typo := range typos {
-				if strings.EqualFold(dep.Name, typo) {
-					findings = append(findings, reporter.Finding{
-						SrNo:        srNo,
-						IssueName:   "Typosquatting Detected",
-						FilePath:    dep.SourceFile,
-						Description: fmt.Sprintf("Potential typosquatting package: %s (did you mean %s?)", dep.Name, legitimate),
-						Severity:    "critical",
-						LineNumber:  "1",
-						AiValidated: "No",
-						Remediation: fmt.Sprintf("Replace %s with %s in your dependencies", dep.Name, legitimate),
-						RuleID:      "typosquatting-" + legitimate,
-						Source:      "supply-chain",
-					})
-					srNo++
-				}
+		depName := strings.ToLower(dep.Name)
+
+		for _, legitimate := range topPackages {
+			// Don't flag exact matches
+			if depName == legitimate {
+				continue
+			}
+
+			// If length difference is too large, skip expensive check
+			if len(depName) > len(legitimate)+2 || len(legitimate) > len(depName)+2 {
+				continue
+			}
+
+			distance := computeLevenshteinDistance(depName, legitimate)
+
+			// If distance is exactly 1 (e.g. react vs reacct, lodash vs l0dash)
+			// OR distance is 2 but lengths are > 6, it's highly suspicious
+			suspicious := distance == 1 || (distance == 2 && len(legitimate) > 6)
+
+			// Fast-pass for known good prefixes that naturally look similar
+			// e.g. react-dom vs react
+			if strings.HasPrefix(depName, legitimate+"-") || strings.HasPrefix(legitimate, depName+"-") {
+				suspicious = false
+			}
+
+			if suspicious {
+				findings = append(findings, reporter.Finding{
+					SrNo:        srNo,
+					IssueName:   "Typosquatting Detected",
+					FilePath:    dep.SourceFile,
+					Description: fmt.Sprintf("Potential typosquatting package: %s (Levenshtein distance to '%s' is %d)", dep.Name, legitimate, distance),
+					Severity:    "critical",
+					LineNumber:  fmt.Sprintf("%d", dep.LineNumber),
+					AiValidated: "No",
+					Remediation: fmt.Sprintf("Verify if '%s' is intentional. If malicious, replace with '%s' immediately.", dep.Name, legitimate),
+					RuleID:      "typosquatting-" + legitimate,
+					Source:      "supply-chain",
+				})
+				srNo++
 			}
 		}
 	}
@@ -260,4 +275,47 @@ func (scs *SupplyChainScanner) checkOutdatedDependencies() []reporter.Finding {
 func isVersionOutdated(version string) bool {
 	// Simple heuristic: versions starting with 0. or 1. may be outdated
 	return strings.HasPrefix(version, "0.") || strings.HasPrefix(version, "1.0")
+}
+
+// computeLevenshteinDistance calculates the minimum number of single-character edits to change word1 into word2
+func computeLevenshteinDistance(s1, s2 string) int {
+	if len(s1) == 0 {
+		return len(s2)
+	}
+	if len(s2) == 0 {
+		return len(s1)
+	}
+
+	// Create a 2D slice
+	d := make([][]int, len(s1)+1)
+	for i := range d {
+		d[i] = make([]int, len(s2)+1)
+	}
+
+	for i := 0; i <= len(s1); i++ {
+		d[i][0] = i
+	}
+	for j := 0; j <= len(s2); j++ {
+		d[0][j] = j
+	}
+
+	for j := 1; j <= len(s2); j++ {
+		for i := 1; i <= len(s1); i++ {
+			cost := 1
+			if s1[i-1] == s2[j-1] {
+				cost = 0
+			}
+			// Min of deletion, insertion, substitution
+			d[i][j] = min(d[i-1][j]+1, min(d[i][j-1]+1, d[i-1][j-1]+cost))
+		}
+	}
+
+	return d[len(s1)][len(s2)]
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

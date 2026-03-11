@@ -1,7 +1,7 @@
 - id: haskell-unsafe-perform-io
   languages: [haskell]
   patterns:
-    - regex: "(?i)unsafePerformIO"
+    - regex: '(?i)unsafePerformIO'
   severity: high
   description: "Unsafe IO operation"
   remediation: "Avoid unsafePerformIO"
@@ -12,7 +12,7 @@
 - id: haskell-system-cmd
   languages: [haskell]
   patterns:
-    - regex: "(?i)System\\.Process\\.callCommand|System\\.Cmd\\.system"
+    - regex: '(?i)System\\.Process\\.callCommand|System\\.Cmd\\.system'
   severity: critical
   description: "OS command execution"
   remediation: "Validate arguments or use callProcess"
@@ -23,7 +23,7 @@
 - id: haskell-sql-concat
   languages: [haskell]
   patterns:
-    - regex: "(?i)execute.*\\+\\+|query.*\\+\\+"
+    - regex: '(?i)execute.*\\+\\+|query.*\\+\\+'
   severity: critical
   description: "SQL injection via concatenation"
   remediation: "Use prepared statements (? placeholders)"
@@ -34,7 +34,7 @@
 - id: haskell-hardcoded-secret
   languages: [haskell]
   patterns:
-    - regex: "(?i)(?:password|secret|key)\\s*=\\s*\\"[a-zA-Z0-9_-]{12,}\\""
+    - regex: '(?i)(?:password|secret|key)\\s*=\\s*\"[a-zA-Z0-9_-]{12,}\"'
   severity: high
   description: "Hardcoded secret"
   remediation: "Use environment variables"
@@ -45,7 +45,7 @@
 - id: haskell-read-file
   languages: [haskell]
   patterns:
-    - regex: "(?i)readFile|ByteString\\.readFile"
+    - regex: '(?i)readFile|ByteString\\.readFile'
   severity: medium
   description: "File read"
   remediation: "Validate file paths"
@@ -56,7 +56,7 @@
 - id: haskell-unsafe-coerce
   languages: [haskell]
   patterns:
-    - regex: "(?i)unsafeCoerce"
+    - regex: '(?i)unsafeCoerce'
   severity: medium
   description: "Unsafe type coercion"
   remediation: "Avoid unsafeCoerce"
@@ -67,7 +67,7 @@
 - id: haskell-network-tls-insecure
   languages: [haskell]
   patterns:
-    - regex: "(?i)settingDisableCertificateValidation\\s*=\\s*True"
+    - regex: '(?i)settingDisableCertificateValidation\\s*=\\s*True'
   severity: high
   description: "SSL validation disabled"
   remediation: "Enable SSL validation"
@@ -78,7 +78,7 @@
 - id: haskell-md5
   languages: [haskell]
   patterns:
-    - regex: "(?i)hash.*MD5|import.*Crypto\\.Hash\\.MD5"
+    - regex: '(?i)hash.*MD5|import.*Crypto\\.Hash\\.MD5'
   severity: medium
   description: "Weak MD5 hash"
   remediation: "Use SHA256"
@@ -89,7 +89,7 @@
 - id: haskell-yaml-decode-throw
   languages: [haskell]
   patterns:
-    - regex: "(?i)Data\\.Yaml\\.decodeThrow"
+    - regex: '(?i)Data\\.Yaml\\.decodeThrow'
   severity: medium
   description: "YAML decode throw"
   remediation: "Handle parse errors safely"
@@ -100,7 +100,7 @@
 - id: haskell-random-io
   languages: [haskell]
   patterns:
-    - regex: "(?i)randomIO|randomRIO"
+    - regex: '(?i)randomIO|randomRIO'
   severity: low
   description: "Weak PRNG"
   remediation: "Use cryptographically secure PRNG for secrets"
@@ -111,7 +111,7 @@
 - id: haskell-template-injection
   languages: [haskell]
   patterns:
-    - regex: "(?i)templateHaskell|TH\\.runQ"
+    - regex: '(?i)templateHaskell|TH\\.runQ'
   severity: high
   description: "Template Haskell code execution"
   remediation: "Avoid TH with untrusted input"
@@ -122,7 +122,7 @@
 - id: haskell-ssrf
   languages: [haskell]
   patterns:
-    - regex: "(?i)httpLBS\\s*\\(.*\\$|simpleHttp\\s*\\(.*url"
+    - regex: '(?i)httpLBS\\s*\\(.*\\$|simpleHttp\\s*\\(.*url'
   severity: high
   description: "Potential SSRF via HTTP request"
   remediation: "Validate URLs against allowlist"
@@ -133,7 +133,7 @@
 - id: haskell-path-traversal
   languages: [haskell]
   patterns:
-    - regex: "(?i)writeFile\\s*\\(.*\\$|readFile\\s*\\(.*\\$"
+    - regex: '(?i)writeFile\\s*\\(.*\\$|readFile\\s*\\(.*\\$'
   severity: high
   description: "Path traversal in file operations"
   remediation: "Validate and sanitize file paths"
@@ -144,7 +144,7 @@
 - id: haskell-weak-cipher
   languages: [haskell]
   patterns:
-    - regex: "(?i)cipher.*DES|encrypt.*DES|crypto.*MD5"
+    - regex: '(?i)cipher.*DES|encrypt.*DES|crypto.*MD5'
   severity: medium
   description: "Weak cryptographic algorithm"
   remediation: "Use AES-256 or modern ciphers"
@@ -155,7 +155,7 @@
 - id: haskell-command-injection
   languages: [haskell]
   patterns:
-    - regex: "(?i)callCommand\\s*\\(.*\\$|shellCmd\\s*\\(.*\\$"
+    - regex: '(?i)callCommand\\s*\\(.*\\$|shellCmd\\s*\\(.*\\$'
   severity: critical
   description: "Command injection via shell command"
   remediation: "Use callProcess with separate arguments"
@@ -166,7 +166,7 @@
 - id: haskell-serialization
   languages: [haskell]
   patterns:
-    - regex: "(?i)Data\\.Serialize\\.decode|read\\s*\\(.*deriving"
+    - regex: '(?i)Data\\.Serialize\\.decode|read\\s*\\(.*deriving'
   severity: high
   description: "Unsafe deserialization"
   remediation: "Use JSON or safe serializers"
@@ -177,7 +177,7 @@
 - id: haskell-xss
   languages: [haskell]
   patterns:
-    - regex: "(?i)blaze-html.*unsafe|String.*toHtml.*\\$"
+    - regex: '(?i)blaze-html.*unsafe|String.*toHtml.*\\$'
   severity: high
   description: "Potential XSS via HTML rendering"
   remediation: "Sanitize HTML output"
@@ -188,7 +188,7 @@
 - id: haskell-ldap
   languages: [haskell]
   patterns:
-    - regex: "(?i)ldapSearch\\s*\\(.*\\$|ldapFilter\\s*\\(.*\\$"
+    - regex: '(?i)ldapSearch\\s*\\(.*\\$|ldapFilter\\s*\\(.*\\$'
   severity: high
   description: "LDAP injection vulnerability"
   remediation: "Sanitize LDAP inputs"
@@ -199,7 +199,7 @@
 - id: haskell-path-traversal
   languages: [haskell]
   patterns:
-    - regex: "(?i)writeFile\\s*\\(.*\\$|readFile\\s*\\(.*\\$"
+    - regex: '(?i)writeFile\\s*\\(.*\\$|readFile\\s*\\(.*\\$'
   severity: high
   description: "Path traversal in file operations"
   remediation: "Validate and sanitize file paths"
@@ -210,7 +210,7 @@
 - id: haskell-xxe
   languages: [haskell]
   patterns:
-    - regex: "(?i)Text\\.XML\\.parseLBS.*dtd|Xeno\\.parse.*dtd"
+    - regex: '(?i)Text\\.XML\\.parseLBS.*dtd|Xeno\\.parse.*dtd'
   severity: high
   description: "XXE vulnerability in XML parsing"
   remediation: "Disable DTD processing"
@@ -221,7 +221,7 @@
 - id: haskell-hardcoded-creds
   languages: [haskell]
   patterns:
-    - regex: "(?i)(?:db|password|secret)\\s*=\\s*\\\"[^\"]{4,}\\\""
+    - regex: '(?i)(?:db|password|secret)\\s*=\\s*\\"[^"]{4,}\\"'
   severity: high
   description: "Hardcoded credentials"
   remediation: "Use environment variables"

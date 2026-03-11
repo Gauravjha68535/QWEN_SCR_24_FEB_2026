@@ -3,8 +3,8 @@ package scanner
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -80,6 +80,8 @@ func scanDependenciesFallback(targetDir string) ([]reporter.Finding, error) {
 	utils.LogInfo(fmt.Sprintf("Found %d dependencies to scan (Manual Fallback)", len(dependencies)))
 
 	// Query OSV API for each dependency
+	analyzer := NewASTAnalyzer()
+
 	for _, dep := range dependencies {
 		vulns, err := queryOSV(dep)
 		if err != nil {
@@ -91,11 +93,33 @@ func scanDependenciesFallback(targetDir string) ([]reporter.Finding, error) {
 			severity := mapOSVSeverity(vuln.Severity)
 			fixedVersion := getFixedVersion(vuln, dep.Ecosystem)
 
+			summary := vuln.Summary
+			if summary == "" {
+				summary = vuln.Details
+			}
+			if len(summary) > 200 {
+				summary = summary[:200] + "..."
+			}
+
+			description := fmt.Sprintf("Vulnerable dependency: %s@%s - %s", dep.Name, dep.Version, summary)
+
+			// Reachability Analysis
+			isReachable := analyzer.IsFunctionReachable(targetDir, dep.Name)
+			issueName := fmt.Sprintf("CVE: %s - %s", vuln.ID, dep.Name)
+
+			if !isReachable {
+				issueName = "[UNREACHABLE] " + issueName
+				severity = "low"
+				description += "\n\nREACHABILITY: The AST Analyzer could not find any active invocations of this library in your codebase. It may be a false positive or an unused transitive dependency."
+			} else {
+				description += "\n\nREACHABILITY: Verified active usage of this library in the source code."
+			}
+
 			findings = append(findings, reporter.Finding{
 				SrNo:        srNo,
-				IssueName:   fmt.Sprintf("CVE: %s - %s", vuln.ID, dep.Name),
+				IssueName:   issueName,
 				FilePath:    dep.SourceFile,
-				Description: fmt.Sprintf("Vulnerable dependency: %s@%s - %s", dep.Name, dep.Version, vuln.Summary),
+				Description: description,
 				Severity:    severity,
 				LineNumber:  fmt.Sprintf("%d", dep.LineNumber),
 				AiValidated: "No",
@@ -115,27 +139,27 @@ func collectDependencies(targetDir string) []Dependency {
 	var deps []Dependency
 
 	// package.json (Node.js/npm)
-	if data, err := ioutil.ReadFile(filepath.Join(targetDir, "package.json")); err == nil {
+	if data, err := os.ReadFile(filepath.Join(targetDir, "package.json")); err == nil {
 		deps = append(deps, parsePackageJSON(data, filepath.Join(targetDir, "package.json"))...)
 	}
 
 	// requirements.txt (Python/PyPI)
-	if data, err := ioutil.ReadFile(filepath.Join(targetDir, "requirements.txt")); err == nil {
+	if data, err := os.ReadFile(filepath.Join(targetDir, "requirements.txt")); err == nil {
 		deps = append(deps, parseRequirementsTXT(data, filepath.Join(targetDir, "requirements.txt"))...)
 	}
 
 	// go.mod (Go)
-	if data, err := ioutil.ReadFile(filepath.Join(targetDir, "go.mod")); err == nil {
+	if data, err := os.ReadFile(filepath.Join(targetDir, "go.mod")); err == nil {
 		deps = append(deps, parseGoMod(data, filepath.Join(targetDir, "go.mod"))...)
 	}
 
 	// pom.xml (Java/Maven) - simplified parsing
-	if data, err := ioutil.ReadFile(filepath.Join(targetDir, "pom.xml")); err == nil {
+	if data, err := os.ReadFile(filepath.Join(targetDir, "pom.xml")); err == nil {
 		deps = append(deps, parsePomXML(data, filepath.Join(targetDir, "pom.xml"))...)
 	}
 
 	// Gemfile.lock (Ruby)
-	if data, err := ioutil.ReadFile(filepath.Join(targetDir, "Gemfile.lock")); err == nil {
+	if data, err := os.ReadFile(filepath.Join(targetDir, "Gemfile.lock")); err == nil {
 		deps = append(deps, parseGemfileLock(data, filepath.Join(targetDir, "Gemfile.lock"))...)
 	}
 

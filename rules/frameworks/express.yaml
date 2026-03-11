@@ -3,7 +3,8 @@
   name: "Express: Missing Helmet HTTP Headers"
   description: "Helmet helps secure Express apps by setting various HTTP headers. Not using it leaves the app vulnerable to XSS and clickjacking."
   severity: "medium"
-  pattern: "(?!.*helmet)app\\.use\\("
+  patterns:
+    - regex: '(?!.*helmet)app\\.use\\('
   cwe: "CWE-693"
   owasp: "A05:2021-Security Misconfiguration"
 
@@ -11,7 +12,8 @@
   name: "Express: Missing Rate Limiting"
   description: "Lack of rate limiting exposes the API to brute force and DoS attacks."
   severity: "high"
-  pattern: "(?!.*rateLimit)app\\.post\\("
+  patterns:
+    - regex: '(?!.*rateLimit)app\\.post\\('
   cwe: "CWE-799"
   owasp: "A04:2021-Insecure Design"
 
@@ -19,7 +21,8 @@
   name: "Express: Unsafe Regular Expression (ReDoS)"
   description: "Using user input directly in RegExp can lead to Regular Expression Denial of Service."
   severity: "high"
-  pattern: "new\\s*RegExp\\s*\\(.*req\\..*\\)"
+  patterns:
+    - regex: 'new\\s*RegExp\\s*\\(.*req\\..*\\)'
   cwe: "CWE-1333"
   owasp: "A04:2021-Insecure Design"
 
@@ -34,7 +37,7 @@
 - id: flask-sqlalchemy-filter-interpolation
   languages: [python]
   patterns:
-    regex: "(?i)\\.filter\\s*\\(.*f['\"].*\\{.*\\}"
+    - regex: '(?i)\\.filter\\s*\\(.*f['\"].*\\{.*\\}'
   severity: critical
   description: "SQL injection via SQLAlchemy filter with f-string"
   remediation: "Use parameterized queries: Model.query.filter_by(id=user_id)"
@@ -44,7 +47,7 @@
 - id: flask-sqlalchemy-filter-string-format
   languages: [python]
   patterns:
-    regex: "(?i)\\.filter\\s*\\(.*\\.format\\s*\\("
+    - regex: '(?i)\\.filter\\s*\\(.*\\.format\\s*\\('
   severity: critical
   description: "SQL injection via SQLAlchemy filter with format"
   remediation: "Use parameterized queries"
@@ -54,7 +57,7 @@
 - id: flask-sqlalchemy-filter-percent
   languages: [python]
   patterns:
-    regex: "(?i)\\.filter\\s*\\(.*%\\s*%"
+    - regex: '(?i)\\.filter\\s*\\(.*%\\s*%'
   severity: critical
   description: "SQL injection via SQLAlchemy filter with % formatting"
   remediation: "Use parameterized queries"
@@ -64,7 +67,7 @@
 - id: flask-sqlalchemy-from-statement
   languages: [python]
   patterns:
-    regex: "(?i)\\.from_statement\\s*\\(.*f['\"].*\\{"
+    - regex: '(?i)\\.from_statement\\s*\\(.*f['\"].*\\{'
   severity: critical
   description: "SQL injection via from_statement with f-string"
   remediation: "Use parameterized queries"
@@ -74,7 +77,7 @@
 - id: flask-sqlalchemy-text-interpolation
   languages: [python]
   patterns:
-    regex: "(?i)text\\s*\\(\\s*f['\"].*\\{"
+    - regex: '(?i)text\\s*\\(\\s*f['\"].*\\{'
   severity: critical
   description: "SQL injection via text() with f-string"
   remediation: "Use bind parameters: text('SELECT * WHERE id = :id')"
@@ -84,7 +87,7 @@
 - id: flask-sqlalchemy-text-format
   languages: [python]
   patterns:
-    regex: "(?i)text\\s*\\(.*\\.format\\s*\\("
+    - regex: '(?i)text\\s*\\(.*\\.format\\s*\\('
   severity: critical
   description: "SQL injection via text() with format"
   remediation: "Use bind parameters"
@@ -94,7 +97,7 @@
 - id: flask-sqlalchemy-execute-interpolation
   languages: [python]
   patterns:
-    regex: "(?i)db\\.session\\.execute\\s*\\(.*f['\"].*\\{"
+    - regex: '(?i)db\\.session\\.execute\\s*\\(.*f['\"].*\\{'
   severity: critical
   description: "SQL injection via execute with f-string"
   remediation: "Use parameterized queries"
@@ -104,7 +107,7 @@
 - id: flask-sqlalchemy-order-by-dynamic
   languages: [python]
   patterns:
-    regex: "(?i)\\.order_by\\s*\\(\\s*\\$\\w+|\\.order_by\\s*\\(\\s*request"
+    - regex: '(?i)\\.order_by\\s*\\(\\s*\\$\\w+|\\.order_by\\s*\\(\\s*request'
   severity: high
   description: "SQL injection via dynamic order_by"
   remediation: "Validate order by column names"
@@ -114,7 +117,7 @@
 - id: flask-sqlalchemy-group-by-dynamic
   languages: [python]
   patterns:
-    regex: "(?i)\\.group_by\\s*\\(\\s*request"
+    - regex: '(?i)\\.group_by\\s*\\(\\s*request'
   severity: high
   description: "SQL injection via dynamic group_by"
   remediation: "Validate group by columns"
@@ -124,7 +127,7 @@
 - id: flask-sqlalchemy-having-interpolation
   languages: [python]
   patterns:
-    regex: "(?i)\\.having\\s*\\(.*f['\"].*\\{"
+    - regex: '(?i)\\.having\\s*\\(.*f['\"].*\\{'
   severity: critical
   description: "SQL injection via having with f-string"
   remediation: "Use parameterized queries"
@@ -134,7 +137,7 @@
 - id: flask-sqlalchemy-join-dynamic
   languages: [python]
   patterns:
-    regex: "(?i)\\.join\\s*\\(\\s*\\$\\w+"
+    - regex: '(?i)\\.join\\s*\\(\\s*\\$\\w+'
   severity: high
   description: "SQL injection via dynamic join"
   remediation: "Validate join conditions"
@@ -144,7 +147,7 @@
 - id: flask-sqlalchemy-with-entities
   languages: [python]
   patterns:
-    regex: "(?i)\\.with_entities\\s*\\(\\s*\\$\\w+"
+    - regex: '(?i)\\.with_entities\\s*\\(\\s*\\$\\w+'
   severity: high
   description: "SQL injection via with_entities"
   remediation: "Validate entity names"
@@ -154,7 +157,7 @@
 - id: flask-sqlalchemy-add-column
   languages: [python]
   patterns:
-    regex: "(?i)\\.add_column\\s*\\(\\s*\\$\\w+"
+    - regex: '(?i)\\.add_column\\s*\\(\\s*\\$\\w+'
   severity: high
   description: "SQL injection via add_column"
   remediation: "Validate column names"
@@ -164,7 +167,7 @@
 - id: flask-sqlalchemy-from-self
   languages: [python]
   patterns:
-    regex: "(?i)\\.from_self\\s*\\(.*f['\"].*\\{"
+    - regex: '(?i)\\.from_self\\s*\\(.*f['\"].*\\{'
   severity: critical
   description: "SQL injection via from_self with f-string"
   remediation: "Use parameterized queries"
@@ -174,7 +177,7 @@
 - id: flask-sqlalchemy-scalar-subquery
   languages: [python]
   patterns:
-    regex: "(?i)\\.scalar_subquery\\s*\\(.*f['\"].*\\{"
+    - regex: '(?i)\\.scalar_subquery\\s*\\(.*f['\"].*\\{'
   severity: critical
   description: "SQL injection via scalar_subquery"
   remediation: "Use parameterized queries"
@@ -185,7 +188,7 @@
 - id: flask-render-template-string-user-input
   languages: [python]
   patterns:
-    regex: "(?i)render_template_string\\s*\\(.*request\\.args|render_template_string\\s*\\(.*request\\.form"
+    - regex: '(?i)render_template_string\\s*\\(.*request\\.args|render_template_string\\s*\\(.*request\\.form'
   severity: critical
   description: "SSTI via render_template_string with user input"
   remediation: "Use render_template with template files"
@@ -195,7 +198,7 @@
 - id: flask-render-template-string-format
   languages: [python]
   patterns:
-    regex: "(?i)render_template_string\\s*\\(.*\\.format\\s*\\("
+    - regex: '(?i)render_template_string\\s*\\(.*\\.format\\s*\\('
   severity: critical
   description: "SSTI via render_template_string with format"
   remediation: "Use render_template with template files"
@@ -205,7 +208,7 @@
 - id: flask-render-template-string-percent
   languages: [python]
   patterns:
-    regex: "(?i)render_template_string\\s*\\(.*%\\s*%"
+    - regex: '(?i)render_template_string\\s*\\(.*%\\s*%'
   severity: critical
   description: "SSTI via render_template_string with % formatting"
   remediation: "Use render_template with template files"
@@ -215,7 +218,7 @@
 - id: flask-markup-unsafe
   languages: [python]
   patterns:
-    regex: "(?i)Markup\\s*\\(\\s*request"
+    - regex: '(?i)Markup\\s*\\(\\s*request'
   severity: high
   description: "XSS via Markup with user input"
   remediation: "Don't use Markup with user input"
@@ -225,7 +228,7 @@
 - id: flask-escape-missing
   languages: [python]
   patterns:
-    regex: "(?i)from\\s+markupsafe\\s+import\\s+escape(?!.*request)"
+    - regex: '(?i)from\\s+markupsafe\\s+import\\s+escape(?!.*request)'
   severity: low
   description: "escape imported but may not be used"
   remediation: "Use escape() for user input"
@@ -235,7 +238,7 @@
 - id: flask-response-html-content-type
   languages: [python]
   patterns:
-    regex: "(?i)Response\\s*\\(.*content_type\\s*=\\s*['\"]text/html['\"].*request"
+    - regex: '(?i)Response\\s*\\(.*content_type\\s*=\\s*['\"]text/html['\"].*request'
   severity: high
   description: "HTML response with user input"
   remediation: "Use JSON or escape HTML"
@@ -245,7 +248,7 @@
 - id: flask-make-response-html
   languages: [python]
   patterns:
-    regex: "(?i)make_response\\s*\\(.*request.*'text/html'"
+    - regex: '(?i)make_response\\s*\\(.*request.*'text/html''
   severity: high
   description: "make_response with HTML content type"
   remediation: "Use JSON or escape HTML"
@@ -255,7 +258,7 @@
 - id: flask-send-file-filename-user
   languages: [python]
   patterns:
-    regex: "(?i)send_file\\s*\\(.*request\\.args\\[|send_file\\s*\\(.*request\\.form\\["
+    - regex: '(?i)send_file\\s*\\(.*request\\.args\\[|send_file\\s*\\(.*request\\.form\\['
   severity: high
   description: "send_file with user-controlled filename"
   remediation: "Validate file paths"
@@ -265,7 +268,7 @@
 - id: flask-send-from-directory-user
   languages: [python]
   patterns:
-    regex: "(?i)send_from_directory\\s*\\(.*request\\.args"
+    - regex: '(?i)send_from_directory\\s*\\(.*request\\.args'
   severity: high
   description: "send_from_directory with user input"
   remediation: "Validate file paths"
@@ -275,7 +278,7 @@
 - id: flask-redirect-user-url
   languages: [python]
   patterns:
-    regex: "(?i)redirect\\s*\\(\\s*request\\.args\\[|redirect\\s*\\(\\s*request\\.form\\["
+    - regex: '(?i)redirect\\s*\\(\\s*request\\.args\\[|redirect\\s*\\(\\s*request\\.form\\['
   severity: high
   description: "redirect with user-controlled URL"
   remediation: "Validate redirect URLs"
@@ -285,7 +288,7 @@
 - id: flask-redirect-next-param
   languages: [python]
   patterns:
-    regex: "(?i)redirect\\s*\\(.*next\\s*=\\s*request"
+    - regex: '(?i)redirect\\s*\\(.*next\\s*=\\s*request'
   severity: high
   description: "redirect with next parameter"
   remediation: "Validate next parameter"
@@ -295,7 +298,7 @@
 - id: flask-url-for-endpoint-user
   languages: [python]
   patterns:
-    regex: "(?i)url_for\\s*\\(\\s*request\\.args"
+    - regex: '(?i)url_for\\s*\\(\\s*request\\.args'
   severity: medium
   description: "url_for with user-controlled endpoint"
   remediation: "Validate endpoint names"
@@ -305,7 +308,7 @@
 - id: flask-jsonify-user-input
   languages: [python]
   patterns:
-    regex: "(?i)jsonify\\s*\\(.*request\\.args"
+    - regex: '(?i)jsonify\\s*\\(.*request\\.args'
   severity: medium
   description: "jsonify with user input"
   remediation: "Validate and sanitize input"
@@ -315,7 +318,7 @@
 - id: flask-render-template-user-vars
   languages: [python]
   patterns:
-    regex: "(?i)render_template\\s*\\(.*\\*\\*request\\.args"
+    - regex: '(?i)render_template\\s*\\(.*\\*\\*request\\.args'
   severity: high
   description: "render_template with user variables"
   remediation: "Don't pass user input as template variables"
@@ -325,7 +328,7 @@
 - id: flask-render-template-dynamic
   languages: [python]
   patterns:
-    regex: "(?i)render_template\\s*\\(\\s*request\\.args\\["
+    - regex: '(?i)render_template\\s*\\(\\s*request\\.args\\['
   severity: high
   description: "render_template with dynamic template name"
   remediation: "Use static template names"
@@ -336,7 +339,7 @@
 - id: flask-csrf-protect-disabled
   languages: [python]
   patterns:
-    regex: "(?i)CSRFProtect\\s*\\(\\s*app\\s*\\).*#|CSRFProtect.*#.*disable"
+    - regex: '(?i)CSRFProtect\\s*\\(\\s*app\\s*\\).*#|CSRFProtect.*#.*disable'
   severity: high
   description: "CSRF protection commented out or disabled"
   remediation: "Enable CSRFProtect"
@@ -346,7 +349,7 @@
 - id: flask-csrf-exempt-decorator
   languages: [python]
   patterns:
-    regex: "(?i)@csrf\\.exempt"
+    - regex: '(?i)@csrf\\.exempt'
   severity: high
   description: "CSRF exemption decorator"
   remediation: "Only exempt API endpoints"
@@ -356,7 +359,7 @@
 - id: flask-csrf-exempt-method
   languages: [python]
   patterns:
-    regex: "(?i)csrf\\.exempt\\s*\\("
+    - regex: '(?i)csrf\\.exempt\\s*\\('
   severity: high
   description: "CSRF exempt method call"
   remediation: "Only exempt API endpoints"
@@ -366,7 +369,7 @@
 - id: flask-csrf-token-not-in-form
   languages: [python]
   patterns:
-    regex: "(?i)<form.*method=['\"]POST['\"](?!.*csrf_token)"
+    - regex: '(?i)<form.*method=['\"]POST['\"](?!.*csrf_token)'
   severity: high
   description: "POST form without CSRF token"
   remediation: "Add {{ csrf_token() }} to forms"
@@ -376,7 +379,7 @@
 - id: flask-csrf-token-ajax-missing
   languages: [python]
   patterns:
-    regex: "(?i)\\$.ajax\\s*\\(.*type:\\s*['\"]POST['\"](?!.*X-CSRFToken)"
+    - regex: '(?i)\\$.ajax\\s*\\(.*type:\\s*['\"]POST['\"](?!.*X-CSRFToken)'
   severity: high
   description: "AJAX POST without CSRF token"
   remediation: "Include CSRF token in AJAX headers"
@@ -386,7 +389,7 @@
 - id: flask-csrf-time-limit-disabled
   languages: [python]
   patterns:
-    regex: "(?i)WTF_CSRF_TIME_LIMIT\\s*=\\s*False"
+    - regex: '(?i)WTF_CSRF_TIME_LIMIT\\s*=\\s*False'
   severity: medium
   description: "CSRF time limit disabled"
   remediation: "Enable CSRF time limit"
@@ -396,7 +399,7 @@
 - id: flask-csrf-ssl-strict-disabled
   languages: [python]
   patterns:
-    regex: "(?i)WTF_CSRF_SSL_STRICT\\s*=\\s*False"
+    - regex: '(?i)WTF_CSRF_SSL_STRICT\\s*=\\s*False'
   severity: medium
   description: "CSRF SSL strict mode disabled"
   remediation: "Enable SSL strict mode"
@@ -406,7 +409,7 @@
 - id: flask-csrf-headers-disabled
   languages: [python]
   patterns:
-    regex: "(?i)WTF_CSRF_HEADERS\\s*=\\s*\\[\\s*\\]"
+    - regex: '(?i)WTF_CSRF_HEADERS\\s*=\\s*\\[\\s*\\]'
   severity: medium
   description: "CSRF headers list empty"
   remediation: "Configure CSRF headers"
@@ -416,7 +419,7 @@
 - id: flask-csrf-secret-key-none
   languages: [python]
   patterns:
-    regex: "(?i)WTF_CSRF_SECRET_KEY\\s*=\\s*None"
+    - regex: '(?i)WTF_CSRF_SECRET_KEY\\s*=\\s*None'
   severity: high
   description: "CSRF secret key set to None"
   remediation: "Set proper CSRF secret key"
@@ -426,7 +429,7 @@
 - id: flask-csrf-field-name-custom
   languages: [python]
   patterns:
-    regex: "(?i)WTF_CSRF_FIELD_NAME\\s*=\\s*['\"]"
+    - regex: '(?i)WTF_CSRF_FIELD_NAME\\s*=\\s*['\"]'
   severity: low
   description: "Custom CSRF field name"
   remediation: "Ensure consistency across forms"
@@ -436,7 +439,7 @@
 - id: flask-csrf-checks-disabled
   languages: [python]
   patterns:
-    regex: "(?i)WTF_CSRF_CHECK_DEFAULT\\s*=\\s*False"
+    - regex: '(?i)WTF_CSRF_CHECK_DEFAULT\\s*=\\s*False'
   severity: high
   description: "CSRF checks disabled by default"
   remediation: "Enable CSRF checks"
@@ -446,7 +449,7 @@
 - id: flask-csrf-ssl-exceptions
   languages: [python]
   patterns:
-    regex: "(?i)WTF_CSRF_SSL_ALLOW\\s*="
+    - regex: '(?i)WTF_CSRF_SSL_ALLOW\\s*='
   severity: medium
   description: "CSRF SSL exceptions configured"
   remediation: "Review SSL exceptions"
@@ -456,7 +459,7 @@
 - id: flask-csrf-time-limit-custom
   languages: [python]
   patterns:
-    regex: "(?i)WTF_CSRF_TIME_LIMIT\\s*=\\s*[0-9]{6,}"
+    - regex: '(?i)WTF_CSRF_TIME_LIMIT\\s*=\\s*[0-9]{6,}'
   severity: medium
   description: "CSRF time limit too long"
   remediation: "Set reasonable time limit"
@@ -466,7 +469,7 @@
 - id: flask-csrf-field-class-custom
   languages: [python]
   patterns:
-    regex: "(?i)WTF_CSRF_FIELD_CLASS\\s*=\\s*['\"]"
+    - regex: '(?i)WTF_CSRF_FIELD_CLASS\\s*=\\s*['\"]'
   severity: low
   description: "Custom CSRF field class"
   remediation: "Ensure proper CSRF field rendering"
@@ -476,7 +479,7 @@
 - id: flask-csrf-error-handler-custom
   languages: [python]
   patterns:
-    regex: "(?i)@app\\.errorhandler\\s*\\(\\s*CSRFError"
+    - regex: '(?i)@app\\.errorhandler\\s*\\(\\s*CSRFError'
   severity: low
   description: "Custom CSRF error handler"
   remediation: "Review error handler"
@@ -487,7 +490,7 @@
 - id: flask-login-user-loader-dynamic
   languages: [python]
   patterns:
-    regex: "(?i)@login\\.user_loader\\s*\\(.*request"
+    - regex: '(?i)@login\\.user_loader\\s*\\(.*request'
   severity: medium
   description: "User loader with request data"
   remediation: "Use user_id parameter only"
@@ -497,7 +500,7 @@
 - id: flask-login-remember-me-true
   languages: [python]
   patterns:
-    regex: "(?i)login_user\\s*\\(.*remember\\s*=\\s*True"
+    - regex: '(?i)login_user\\s*\\(.*remember\\s*=\\s*True'
   severity: medium
   description: "Remember me enabled by default"
   remediation: "Let user choose remember me"
@@ -507,7 +510,7 @@
 - id: flask-login-remember-me-duration
   languages: [python]
   patterns:
-    regex: "(?i)remember_me_duration\\s*=\\s*[0-9]{7,}"
+    - regex: '(?i)remember_me_duration\\s*=\\s*[0-9]{7,}'
   severity: medium
   description: "Remember me duration too long"
   remediation: "Set reasonable duration"
@@ -517,7 +520,7 @@
 - id: flask-login-login-view-dynamic
   languages: [python]
   patterns:
-    regex: "(?i)login_view\\s*=\\s*request"
+    - regex: '(?i)login_view\\s*=\\s*request'
   severity: medium
   description: "Dynamic login view"
   remediation: "Use static login view"
@@ -527,7 +530,7 @@
 - id: flask-login-next-param-unsafe
   languages: [python]
   patterns:
-    regex: "(?i)next\\s*=\\s*request\\.args\\.get\\s*\\(\\s*['\"]next['\"]"
+    - regex: '(?i)next\\s*=\\s*request\\.args\\.get\\s*\\(\\s*['\"]next['\"]'
   severity: high
   description: "Next parameter from request"
   remediation: "Validate next parameter"
@@ -537,7 +540,7 @@
 - id: flask-login-unauthorized-handler-dynamic
   languages: [python]
   patterns:
-    regex: "(?i)unauthorized_handler\\s*\\(.*request"
+    - regex: '(?i)unauthorized_handler\\s*\\(.*request'
   severity: medium
   description: "Dynamic unauthorized handler"
   remediation: "Use static unauthorized handler"
@@ -547,7 +550,7 @@
 - id: flask-login-session-protection-off
   languages: [python]
   patterns:
-    regex: "(?i)session_protection\\s*=\\s*None"
+    - regex: '(?i)session_protection\\s*=\\s*None'
   severity: high
   description: "Session protection disabled"
   remediation: "Enable session protection"
@@ -557,7 +560,7 @@
 - id: flask-login-session-protection-basic
   languages: [python]
   patterns:
-    regex: "(?i)session_protection\\s*=\\s*['\"]basic['\"]"
+    - regex: '(?i)session_protection\\s*=\\s*['\"]basic['\"]'
   severity: medium
   description: "Session protection set to basic"
   remediation: "Use strong session protection"
@@ -567,7 +570,7 @@
 - id: flask-login-remember-cookie-name-default
   languages: [python]
   patterns:
-    - regex: "(?i)remember_cookie_name\\s*=\\s*['\"]remember_token['\"]"
+    - regex: '(?i)remember_cookie_name\\s*=\\s*['\"]remember_token['\"]'
   severity: low
   description: "Default remember cookie name"
   remediation: "Use custom cookie name"
@@ -577,7 +580,7 @@
 - id: flask-login-session-cookie-name-default
   languages: [python]
   patterns:
-    regex: "(?i)session_cookie_name\\s*=\\s*['\"]session['\"]"
+    - regex: '(?i)session_cookie_name\\s*=\\s*['\"]session['\"]'
   severity: low
   description: "Default session cookie name"
   remediation: "Use custom session cookie name"
@@ -587,7 +590,7 @@
 - id: flask-login-id-cookie-name-default
   languages: [python]
   patterns:
-    regex: "(?i)id_cookie_name\\s*=\\s*['\"]user_id['\"]"
+    - regex: '(?i)id_cookie_name\\s*=\\s*['\"]user_id['\"]'
   severity: low
   description: "Default ID cookie name"
   remediation: "Use custom ID cookie name"
@@ -597,7 +600,7 @@
 - id: flask-login-fresh-login-dynamic
   languages: [python]
   patterns:
-    regex: "(?i)fresh_login\\s*=\\s*request"
+    - regex: '(?i)fresh_login\\s*=\\s*request'
   severity: medium
   description: "Dynamic fresh login"
   remediation: "Use static fresh login"
@@ -607,7 +610,7 @@
 - id: flask-login-confirm-login-dynamic
   languages: [python]
   patterns:
-    regex: "(?i)confirm_login\\s*\\(.*request"
+    - regex: '(?i)confirm_login\\s*\\(.*request'
   severity: medium
   description: "Confirm login with request data"
   remediation: "Validate confirm login"
@@ -617,7 +620,7 @@
 - id: flask-login-forgot-password-dynamic
   languages: [python]
   patterns:
-    regex: "(?i)forgot_password\\s*\\(.*request"
+    - regex: '(?i)forgot_password\\s*\\(.*request'
   severity: medium
   description: "Forgot password with request data"
   remediation: "Validate forgot password"
@@ -627,7 +630,7 @@
 - id: flask-login-change-password-dynamic
   languages: [python]
   patterns:
-    regex: "(?i)change_password\\s*\\(.*request"
+    - regex: '(?i)change_password\\s*\\(.*request'
   severity: medium
   description: "Change password with request data"
   remediation: "Validate change password"
@@ -638,7 +641,7 @@
 - id: flask-session-secret-key-weak
   languages: [python]
   patterns:
-    regex: "(?i)SECRET_KEY\\s*=\\s*['\"][a-zA-Z0-9]{8,16}['\"]"
+    - regex: '(?i)SECRET_KEY\\s*=\\s*['\"][a-zA-Z0-9]{8,16}['\"]'
   severity: high
   description: "Weak session secret key"
   remediation: "Use strong random secret key"
@@ -648,7 +651,7 @@
 - id: flask-session-secret-key-hardcoded
   languages: [python]
   patterns:
-    regex: "(?i)SECRET_KEY\\s*=\\s*['\"][^'\"]{16,}['\"]"
+    - regex: '(?i)SECRET_KEY\\s*=\\s*['\"][^'\"]{16,}['\"]'
   severity: high
   description: "Hardcoded session secret key"
   remediation: "Use environment variable for SECRET_KEY"
@@ -658,7 +661,7 @@
 - id: flask-session-cookie-secure-false
   languages: [python]
   patterns:
-    regex: "(?i)SESSION_COOKIE_SECURE\\s*=\\s*False"
+    - regex: '(?i)SESSION_COOKIE_SECURE\\s*=\\s*False'
   severity: high
   description: "Session cookie secure flag disabled"
   remediation: "Enable secure cookie flag"
@@ -668,7 +671,7 @@
 - id: flask-session-cookie-httponly-false
   languages: [python]
   patterns:
-    regex: "(?i)SESSION_COOKIE_HTTPONLY\\s*=\\s*False"
+    - regex: '(?i)SESSION_COOKIE_HTTPONLY\\s*=\\s*False'
   severity: high
   description: "Session cookie HttpOnly flag disabled"
   remediation: "Enable HttpOnly flag"
@@ -678,7 +681,7 @@
 - id: flask-session-cookie-samesite-none
   languages: [python]
   patterns:
-    regex: "(?i)SESSION_COOKIE_SAMESITE\\s*=\\s*['\"]None['\"]"
+    - regex: '(?i)SESSION_COOKIE_SAMESITE\\s*=\\s*['\"]None['\"]'
   severity: medium
   description: "Session cookie SameSite set to None"
   remediation: "Use SameSite=Lax or Strict"
@@ -688,7 +691,7 @@
 - id: flask-session-cookie-path-root
   languages: [python]
   patterns:
-    regex: "(?i)SESSION_COOKIE_PATH\\s*=\\s*['\"]/['\"]"
+    - regex: '(?i)SESSION_COOKIE_PATH\\s*=\\s*['\"]/['\"]'
   severity: low
   description: "Session cookie path set to root"
   remediation: "Restrict cookie path"
@@ -698,7 +701,7 @@
 - id: flask-session-cookie-domain-wildcard
   languages: [python]
   patterns:
-    regex: "(?i)SESSION_COOKIE_DOMAIN\\s*=\\s*['\"]\\."
+    - regex: '(?i)SESSION_COOKIE_DOMAIN\\s*=\\s*['\"]\\.'
   severity: medium
   description: "Session cookie domain wildcard"
   remediation: "Set specific domain"
@@ -708,7 +711,7 @@
 - id: flask-session-permanent-true
   languages: [python]
   patterns:
-    regex: "(?i)PERMANENT_SESSION_LIFETIME\\s*=\\s*[0-9]{7,}"
+    - regex: '(?i)PERMANENT_SESSION_LIFETIME\\s*=\\s*[0-9]{7,}'
   severity: medium
   description: "Permanent session lifetime too long"
   remediation: "Set reasonable session lifetime"
@@ -718,7 +721,7 @@
 - id: flask-session-refresh-each-request
   languages: [python]
   patterns:
-    regex: "(?i)SESSION_REFRESH_EACH_REQUEST\\s*=\\s*True"
+    - regex: '(?i)SESSION_REFRESH_EACH_REQUEST\\s*=\\s*True'
   severity: low
   description: "Session refresh on each request"
   remediation: "Review session refresh logic"
@@ -728,7 +731,7 @@
 - id: flask-session-type-default
   languages: [python]
   patterns:
-    regex: "(?i)SESSION_TYPE\\s*=\\s*['\"]filesystem['\"]"
+    - regex: '(?i)SESSION_TYPE\\s*=\\s*['\"]filesystem['\"]'
   severity: low
   description: "Session type set to filesystem"
   remediation: "Use Redis or database session"
@@ -738,7 +741,7 @@
 - id: flask-session-filesystem-dir-default
   languages: [python]
   patterns:
-    regex: "(?i)SESSION_FILE_DIR\\s*=\\s*None"
+    - regex: '(?i)SESSION_FILE_DIR\\s*=\\s*None'
   severity: low
   description: "Session file directory default"
   remediation: "Set custom session directory"
@@ -748,7 +751,7 @@
 - id: flask-session-file-threshold-default
   languages: [python]
   patterns:
-    regex: "(?i)SESSION_FILE_THRESHOLD\\s*=\\s*500"
+    - regex: '(?i)SESSION_FILE_THRESHOLD\\s*=\\s*500'
   severity: low
   description: "Session file threshold default"
   remediation: "Review session file threshold"
@@ -758,7 +761,7 @@
 - id: flask-session-redis-url-default
   languages: [python]
   patterns:
-    regex: "(?i)SESSION_REDIS\\s*=\\s*None"
+    - regex: '(?i)SESSION_REDIS\\s*=\\s*None'
   severity: low
   description: "Session Redis not configured"
   remediation: "Configure Redis for sessions"
@@ -768,7 +771,7 @@
 - id: flask-session-sqlalchemy-db-default
   languages: [python]
   patterns:
-    regex: "(?i)SESSION_SQLALCHEMY\\s*=\\s*None"
+    - regex: '(?i)SESSION_SQLALCHEMY\\s*=\\s*None'
   severity: low
   description: "Session SQLAlchemy not configured"
   remediation: "Configure SQLAlchemy for sessions"
@@ -778,7 +781,7 @@
 - id: flask-session-mongodb-db-default
   languages: [python]
   patterns:
-    regex: "(?i)SESSION_MONGODB\\s*=\\s*None"
+    - regex: '(?i)SESSION_MONGODB\\s*=\\s*None'
   severity: low
   description: "Session MongoDB not configured"
   remediation: "Configure MongoDB for sessions"
@@ -789,7 +792,7 @@
 - id: flask-file-upload-no-validation
   languages: [python]
   patterns:
-    regex: "(?i)request\\.files\\[.*\\].*save\\s*\\("
+    - regex: '(?i)request\\.files\\[.*\\].*save\\s*\\('
   severity: high
   description: "File upload without validation"
   remediation: "Validate file type and size"
@@ -799,7 +802,7 @@
 - id: flask-file-upload-filename-user
   languages: [python]
   patterns:
-    regex: "(?i)filename\\s*=\\s*request\\.files"
+    - regex: '(?i)filename\\s*=\\s*request\\.files'
   severity: high
   description: "Filename from user input"
   remediation: "Generate server-side filenames"
@@ -809,7 +812,7 @@
 - id: flask-file-upload-secure-filename-missing
   languages: [python]
   patterns:
-    regex: "(?i)from\\s+werkzeug\\.utils\\s+import\\s+secure_filename(?!.*secure_filename)"
+    - regex: '(?i)from\\s+werkzeug\\.utils\\s+import\\s+secure_filename(?!.*secure_filename)'
   severity: medium
   description: "secure_filename imported but not used"
   remediation: "Use secure_filename for uploads"
@@ -819,7 +822,7 @@
 - id: flask-file-upload-extension-check
   languages: [python]
   patterns:
-    regex: "(?i)ALLOWED_EXTENSIONS\\s*=\\s*\\{"
+    - regex: '(?i)ALLOWED_EXTENSIONS\\s*=\\s*\\{'
   severity: low
   description: "Allowed extensions defined"
   remediation: "Ensure extension validation"
@@ -829,7 +832,7 @@
 - id: flask-file-upload-max-size
   languages: [python]
   patterns:
-    regex: "(?i)MAX_CONTENT_LENGTH\\s*=\\s*None"
+    - regex: '(?i)MAX_CONTENT_LENGTH\\s*=\\s*None'
   severity: medium
   description: "No max content length set"
   remediation: "Set MAX_CONTENT_LENGTH"
@@ -839,7 +842,7 @@
 - id: flask-file-upload-path-join-user
   languages: [python]
   patterns:
-    regex: "(?i)os\\.path\\.join\\s*\\(.*request\\.args"
+    - regex: '(?i)os\\.path\\.join\\s*\\(.*request\\.args'
   severity: high
   description: "Path join with user input"
   remediation: "Validate file paths"
@@ -849,7 +852,7 @@
 - id: flask-file-read-user-path
   languages: [python]
   patterns:
-    regex: "(?i)open\\s*\\(\\s*request\\.args\\["
+    - regex: '(?i)open\\s*\\(\\s*request\\.args\\['
   severity: high
   description: "File read with user-controlled path"
   remediation: "Validate file paths"
@@ -859,7 +862,7 @@
 - id: flask-file-write-user-path
   languages: [python]
   patterns:
-    regex: "(?i)open\\s*\\(.*'w'.*request"
+    - regex: '(?i)open\\s*\\(.*'w'.*request'
   severity: high
   description: "File write with user-controlled path"
   remediation: "Validate file paths"
@@ -869,7 +872,7 @@
 - id: flask-file-exists-user-path
   languages: [python]
   patterns:
-    regex: "(?i)os\\.path\\.exists\\s*\\(\\s*request"
+    - regex: '(?i)os\\.path\\.exists\\s*\\(\\s*request'
   severity: medium
   description: "File exists check with user input"
   remediation: "Validate file paths"
@@ -879,7 +882,7 @@
 - id: flask-file-isfile-user-path
   languages: [python]
   patterns:
-    regex: "(?i)os\\.path\\.isfile\\s*\\(\\s*request"
+    - regex: '(?i)os\\.path\\.isfile\\s*\\(\\s*request'
   severity: medium
   description: "File isfile check with user input"
   remediation: "Validate file paths"
@@ -889,7 +892,7 @@
 - id: flask-file-isdir-user-path
   languages: [python]
   patterns:
-    regex: "(?i)os\\.path\\.isdir\\s*\\(\\s*request"
+    - regex: '(?i)os\\.path\\.isdir\\s*\\(\\s*request'
   severity: medium
   description: "Directory isdir check with user input"
   remediation: "Validate directory paths"
@@ -899,7 +902,7 @@
 - id: flask-file-listdir-user-path
   languages: [python]
   patterns:
-    regex: "(?i)os\\.listdir\\s*\\(\\s*request"
+    - regex: '(?i)os\\.listdir\\s*\\(\\s*request'
   severity: medium
   description: "Directory listing with user input"
   remediation: "Validate directory paths"
@@ -909,7 +912,7 @@
 - id: flask-file-walk-user-path
   languages: [python]
   patterns:
-    regex: "(?i)os\\.walk\\s*\\(\\s*request"
+    - regex: '(?i)os\\.walk\\s*\\(\\s*request'
   severity: medium
   description: "Directory walk with user input"
   remediation: "Validate directory paths"
@@ -919,7 +922,7 @@
 - id: flask-file-remove-user-path
   languages: [python]
   patterns:
-    regex: "(?i)os\\.remove\\s*\\(\\s*request"
+    - regex: '(?i)os\\.remove\\s*\\(\\s*request'
   severity: high
   description: "File remove with user input"
   remediation: "Validate file paths"
@@ -929,7 +932,7 @@
 - id: flask-file-rmdir-user-path
   languages: [python]
   patterns:
-    regex: "(?i)os\\.rmdir\\s*\\(\\s*request"
+    - regex: '(?i)os\\.rmdir\\s*\\(\\s*request'
   severity: high
   description: "Directory remove with user input"
   remediation: "Validate directory paths"
@@ -940,7 +943,7 @@
 - id: flask-config-debug-true
   languages: [python]
   patterns:
-    regex: "(?i)app\\.config\\s*\\[\\s*['\"]DEBUG['\"]\\s*\\]\\s*=\\s*True"
+    - regex: '(?i)app\\.config\\s*\\[\\s*['\"]DEBUG['\"]\\s*\\]\\s*=\\s*True'
   severity: high
   description: "Debug mode enabled in config"
   remediation: "Set DEBUG = False in production"
@@ -950,7 +953,7 @@
 - id: flask-config-secret-key-default
   languages: [python]
   patterns:
-    regex: "(?i)SECRET_KEY\\s*=\\s*['\"]dev['\"]|SECRET_KEY\\s*=\\s*['\"]test['\"]"
+    - regex: '(?i)SECRET_KEY\\s*=\\s*['\"]dev['\"]|SECRET_KEY\\s*=\\s*['\"]test['\"]'
   severity: high
   description: "Default development secret key"
   remediation: "Use strong random secret key"
@@ -960,7 +963,7 @@
 - id: flask-config-session-cookie-name-default
   languages: [python]
   patterns:
-    regex: "(?i)SESSION_COOKIE_NAME\\s*=\\s*['\"]session['\"]"
+    - regex: '(?i)SESSION_COOKIE_NAME\\s*=\\s*['\"]session['\"]'
   severity: low
   description: "Default session cookie name"
   remediation: "Use custom session cookie name"
@@ -970,7 +973,7 @@
 - id: flask-config-permanent-session-lifetime
   languages: [python]
   patterns:
-    regex: "(?i)PERMANENT_SESSION_LIFETIME\\s*=\\s*timedelta\\s*\\(\\s*days\\s*=\\s*[0-9]{3,}"
+    - regex: '(?i)PERMANENT_SESSION_LIFETIME\\s*=\\s*timedelta\\s*\\(\\s*days\\s*=\\s*[0-9]{3,}'
   severity: medium
   description: "Session lifetime too long"
   remediation: "Set reasonable session lifetime"
@@ -980,7 +983,7 @@
 - id: flask-config-remember-cookie-duration
   languages: [python]
   patterns:
-    regex: "(?i)REMEMBER_COOKIE_DURATION\\s*=\\s*timedelta\\s*\\(\\s*days\\s*=\\s*[0-9]{3,}"
+    - regex: '(?i)REMEMBER_COOKIE_DURATION\\s*=\\s*timedelta\\s*\\(\\s*days\\s*=\\s*[0-9]{3,}'
   severity: medium
   description: "Remember cookie duration too long"
   remediation: "Set reasonable duration"
@@ -990,7 +993,7 @@
 - id: flask-config-max-content-length-none
   languages: [python]
   patterns:
-    regex: "(?i)MAX_CONTENT_LENGTH\\s*=\\s*None"
+    - regex: '(?i)MAX_CONTENT_LENGTH\\s*=\\s*None'
   severity: medium
   description: "No max content length"
   remediation: "Set MAX_CONTENT_LENGTH"
@@ -1000,7 +1003,7 @@
 - id: flask-config-upload-folder-default
   languages: [python]
   patterns:
-    regex: "(?i)UPLOAD_FOLDER\\s*=\\s*['\"]uploads['\"]"
+    - regex: '(?i)UPLOAD_FOLDER\\s*=\\s*['\"]uploads['\"]'
   severity: low
   description: "Default upload folder"
   remediation: "Use secure upload folder"
@@ -1010,7 +1013,7 @@
 - id: flask-config-allowed-extensions-empty
   languages: [python]
   patterns:
-    regex: "(?i)ALLOWED_EXTENSIONS\\s*=\\s*set\\s*\\(\\s*\\)"
+    - regex: '(?i)ALLOWED_EXTENSIONS\\s*=\\s*set\\s*\\(\\s*\\)'
   severity: medium
   description: "Empty allowed extensions"
   remediation: "Define allowed extensions"
@@ -1020,7 +1023,7 @@
 - id: flask-config-max-upload-size-default
   languages: [python]
   patterns:
-    regex: "(?i)MAX_CONTENT_LENGTH\\s*=\\s*16\\s*\\*\\s*1024\\s*\\*\\s*1024"
+    - regex: '(?i)MAX_CONTENT_LENGTH\\s*=\\s*16\\s*\\*\\s*1024\\s*\\*\\s*1024'
   severity: low
   description: "Default max upload size"
   remediation: "Set appropriate upload size"
@@ -1030,7 +1033,7 @@
 - id: flask-config-json-as-text
   languages: [python]
   patterns:
-    regex: "(?i)JSON_AS_ASCII\\s*=\\s*True"
+    - regex: '(?i)JSON_AS_ASCII\\s*=\\s*True'
   severity: low
   description: "JSON as ASCII"
   remediation: "Set JSON_AS_ASCII = False"
@@ -1040,7 +1043,7 @@
 - id: flask-config-json-sort-keys
   languages: [python]
   patterns:
-    regex: "(?i)JSON_SORT_KEYS\\s*=\\s*True"
+    - regex: '(?i)JSON_SORT_KEYS\\s*=\\s*True'
   severity: low
   description: "JSON sort keys enabled"
   remediation: "Review JSON sorting"
@@ -1050,7 +1053,7 @@
 - id: flask-config-json-pretty-print
   languages: [python]
   patterns:
-    regex: "(?i)JSONIFY_PRETTYPRINT_REGULAR\\s*=\\s*True"
+    - regex: '(?i)JSONIFY_PRETTYPRINT_REGULAR\\s*=\\s*True'
   severity: low
   description: "JSON pretty print enabled"
   remediation: "Disable pretty print in production"
@@ -1060,7 +1063,7 @@
 - id: flask-config-trap-http-exceptions
   languages: [python]
   patterns:
-    regex: "(?i)TRAP_HTTP_EXCEPTIONS\\s*=\\s*True"
+    - regex: '(?i)TRAP_HTTP_EXCEPTIONS\\s*=\\s*True'
   severity: low
   description: "Trap HTTP exceptions"
   remediation: "Review exception handling"
@@ -1070,7 +1073,7 @@
 - id: flask-config-explain-logging
   languages: [python]
   patterns:
-    regex: "(?i)EXPLAIN_LOADING\\s*=\\s*True"
+    - regex: '(?i)EXPLAIN_LOADING\\s*=\\s*True'
   severity: low
   description: "Explain loading enabled"
   remediation: "Disable in production"
@@ -1080,7 +1083,7 @@
 - id: flask-config-propagate-exceptions
   languages: [python]
   patterns:
-    regex: "(?i)PROPAGATE_EXCEPTIONS\\s*=\\s*True"
+    - regex: '(?i)PROPAGATE_EXCEPTIONS\\s*=\\s*True'
   severity: low
   description: "Propagate exceptions"
   remediation: "Review exception propagation"
@@ -1091,7 +1094,7 @@
 - id: flask-middleware-cors-wildcard
   languages: [python]
   patterns:
-    regex: "(?i)CORS\\s*\\(\\s*app\\s*,\\s*resources\\s*=\\s*\\{\\s*\\\"\\*\\\""
+    - regex: '(?i)CORS\\s*\\(\\s*app\\s*,\\s*resources\\s*=\\s*\\{\\s*\\\"\\*\\\"'
   severity: high
   description: "CORS with wildcard origin"
   remediation: "Specify allowed origins"
@@ -1101,7 +1104,7 @@
 - id: flask-middleware-cors-credentials-true
   languages: [python]
   patterns:
-    regex: "(?i)supports_credentials\\s*=\\s*True"
+    - regex: '(?i)supports_credentials\\s*=\\s*True'
   severity: high
   description: "CORS with credentials"
   remediation: "Don't combine with wildcard"
@@ -1111,7 +1114,7 @@
 - id: flask-middleware-cors-origins-all
   languages: [python]
   patterns:
-    regex: "(?i)origins\\s*=\\s*\\\"\\*\\\""
+    - regex: '(?i)origins\\s*=\\s*\\\"\\*\\\"'
   severity: high
   description: "CORS origins set to all"
   remediation: "Specify allowed origins"
@@ -1121,7 +1124,7 @@
 - id: flask-middleware-compressor-enabled
   languages: [python]
   patterns:
-    regex: "(?i)Compress\\s*\\(\\s*app\\s*\\)"
+    - regex: '(?i)Compress\\s*\\(\\s*app\\s*\\)'
   severity: low
   description: "Response compressor enabled"
   remediation: "Review compression settings"
@@ -1131,7 +1134,7 @@
 - id: flask-middleware-limiter-disabled
   languages: [python]
   patterns:
-    regex: "(?i)Limiter\\s*\\(.*enabled\\s*=\\s*False"
+    - regex: '(?i)Limiter\\s*\\(.*enabled\\s*=\\s*False'
   severity: high
   description: "Rate limiter disabled"
   remediation: "Enable rate limiting"
@@ -1141,7 +1144,7 @@
 - id: flask-middleware-limiter-default-limit
   languages: [python]
   patterns:
-    regex: "(?i)default_limits\\s*=\\s*\\[\\s*\\]"
+    - regex: '(?i)default_limits\\s*=\\s*\\[\\s*\\]'
   severity: medium
   description: "No default rate limits"
   remediation: "Set default rate limits"
@@ -1151,7 +1154,7 @@
 - id: flask-middleware-limiter-storage-default
   languages: [python]
   patterns:
-    regex: "(?i)storage_uri\\s*=\\s*\\\"memory://\""
+    - regex: '(?i)storage_uri\\s*=\\s*\\\"memory://\"'
   severity: low
   description: "Rate limiter memory storage"
   remediation: "Use Redis for distributed limiting"
@@ -1161,7 +1164,7 @@
 - id: flask-middleware-cache-default
   languages: [python]
   patterns:
-    regex: "(?i)Cache\\s*\\(\\s*app\\s*,\\s*config\\s*=\\s*\\{\\s*\\}"
+    - regex: '(?i)Cache\\s*\\(\\s*app\\s*,\\s*config\\s*=\\s*\\{\\s*\\}'
   severity: low
   description: "Cache with default config"
   remediation: "Configure cache properly"
@@ -1171,7 +1174,7 @@
 - id: flask-middleware-cache-type-default
   languages: [python]
   patterns:
-    regex: "(?i)CACHE_TYPE\\s*=\\s*['\"]simple['\"]"
+    - regex: '(?i)CACHE_TYPE\\s*=\\s*['\"]simple['\"]'
   severity: low
   description: "Cache type set to simple"
   remediation: "Use Redis or Memcached"
@@ -1181,7 +1184,7 @@
 - id: flask-middleware-cache-timeout-default
   languages: [python]
   patterns:
-    regex: "(?i)CACHE_DEFAULT_TIMEOUT\\s*=\\s*300"
+    - regex: '(?i)CACHE_DEFAULT_TIMEOUT\\s*=\\s*300'
   severity: low
   description: "Default cache timeout"
   remediation: "Review cache timeout"
@@ -1191,7 +1194,7 @@
 - id: flask-middleware-cache-threshold
   languages: [python]
   patterns:
-    regex: "(?i)CACHE_THRESHOLD\\s*=\\s*500"
+    - regex: '(?i)CACHE_THRESHOLD\\s*=\\s*500'
   severity: low
   description: "Cache threshold"
   remediation: "Review cache threshold"
@@ -1201,7 +1204,7 @@
 - id: flask-middleware-cache-key-prefix
   languages: [python]
   patterns:
-    regex: "(?i)CACHE_KEY_PREFIX\\s*=\\s*['\"]"
+    - regex: '(?i)CACHE_KEY_PREFIX\\s*=\\s*['\"]'
   severity: low
   description: "Cache key prefix"
   remediation: "Set cache key prefix"
@@ -1211,7 +1214,7 @@
 - id: flask-middleware-cache-no-null
   languages: [python]
   patterns:
-    regex: "(?i)CACHE_NO_NULL_WARNING\\s*=\\s*False"
+    - regex: '(?i)CACHE_NO_NULL_WARNING\\s*=\\s*False'
   severity: low
   description: "Cache no null warning"
   remediation: "Review cache warnings"
@@ -1221,7 +1224,7 @@
 - id: flask-middleware-cache-ignore-errors
   languages: [python]
   patterns:
-    regex: "(?i)CACHE_IGNORE_ERRORS\\s*=\\s*True"
+    - regex: '(?i)CACHE_IGNORE_ERRORS\\s*=\\s*True'
   severity: low
   description: "Cache ignore errors"
   remediation: "Review error handling"
@@ -1231,7 +1234,7 @@
 - id: flask-middleware-cache-factory
   languages: [python]
   patterns:
-    regex: "(?i)CACHE_FACTORY\\s*=\\s*"
+    - regex: '(?i)CACHE_FACTORY\\s*=\\s*'
   severity: low
   description: "Cache factory"
   remediation: "Review cache factory"
@@ -1242,7 +1245,7 @@
 - id: flask-route-methods-all
   languages: [python]
   patterns:
-    regex: "(?i)@app\\.route\\s*\\(.*methods\\s*=\\s*\\[.*'GET'.*'POST'.*'PUT'.*'DELETE'"
+    - regex: '(?i)@app\\.route\\s*\\(.*methods\\s*=\\s*\\[.*'GET'.*'POST'.*'PUT'.*'DELETE''
   severity: medium
   description: "Route accepting all HTTP methods"
   remediation: "Specify only needed methods"
@@ -1252,7 +1255,7 @@
 - id: flask-route-subdomain-dynamic
   languages: [python]
   patterns:
-    regex: "(?i)@app\\.route\\s*\\(.*subdomain\\s*=\\s*request"
+    - regex: '(?i)@app\\.route\\s*\\(.*subdomain\\s*=\\s*request'
   severity: medium
   description: "Dynamic subdomain in route"
   remediation: "Use static subdomains"
@@ -1262,7 +1265,7 @@
 - id: flask-route-host-dynamic
   languages: [python]
   patterns:
-    regex: "(?i)@app\\.route\\s*\\(.*host\\s*=\\s*request"
+    - regex: '(?i)@app\\.route\\s*\\(.*host\\s*=\\s*request'
   severity: medium
   description: "Dynamic host in route"
   remediation: "Use static hosts"
@@ -1272,7 +1275,7 @@
 - id: flask-route-endpoint-dynamic
   languages: [python]
   patterns:
-    regex: "(?i)endpoint\\s*=\\s*request"
+    - regex: '(?i)endpoint\\s*=\\s*request'
   severity: medium
   description: "Dynamic endpoint"
   remediation: "Use static endpoints"
@@ -1282,7 +1285,7 @@
 - id: flask-route-redirection-code-default
   languages: [python]
   patterns:
-    regex: "(?i)@app\\.route.*redirect.*code\\s*=\\s*302"
+    - regex: '(?i)@app\\.route.*redirect.*code\\s*=\\s*302'
   severity: low
   description: "Default redirect code"
   remediation: "Use appropriate redirect code"
@@ -1292,7 +1295,7 @@
 - id: flask-route-blueprint-prefix-dynamic
   languages: [python]
   patterns:
-    regex: "(?i)Blueprint\\s*\\(.*url_prefix\\s*=\\s*request"
+    - regex: '(?i)Blueprint\\s*\\(.*url_prefix\\s*=\\s*request'
   severity: medium
   description: "Dynamic blueprint prefix"
   remediation: "Use static URL prefixes"
@@ -1302,7 +1305,7 @@
 - id: flask-route-blueprint-subdomain-dynamic
   languages: [python]
   patterns:
-    regex: "(?i)Blueprint\\s*\\(.*subdomain\\s*=\\s*request"
+    - regex: '(?i)Blueprint\\s*\\(.*subdomain\\s*=\\s*request'
   severity: medium
   description: "Dynamic blueprint subdomain"
   remediation: "Use static subdomains"
@@ -1312,7 +1315,7 @@
 - id: flask-route-blueprint-url-defaults
   languages: [python]
   patterns:
-    regex: "(?i)url_defaults\\s*=\\s*\\{\\s*\\}"
+    - regex: '(?i)url_defaults\\s*=\\s*\\{\\s*\\}'
   severity: low
   description: "Empty URL defaults"
   remediation: "Configure URL defaults"
@@ -1322,7 +1325,7 @@
 - id: flask-route-before-request-dynamic
   languages: [python]
   patterns:
-    regex: "(?i)@app\\.before_request\\s*\\(.*request\\."
+    - regex: '(?i)@app\\.before_request\\s*\\(.*request\\.'
   severity: medium
   description: "Before request with request data"
   remediation: "Validate before request"
@@ -1332,7 +1335,7 @@
 - id: flask-route-after-request-dynamic
   languages: [python]
   patterns:
-    regex: "(?i)@app\\.after_request\\s*\\(.*request\\."
+    - regex: '(?i)@app\\.after_request\\s*\\(.*request\\.'
   severity: medium
   description: "After request with request data"
   remediation: "Validate after request"
@@ -1342,7 +1345,7 @@
 - id: flask-route-teardown-request-dynamic
   languages: [python]
   patterns:
-    regex: "(?i)@app\\.teardown_request\\s*\\(.*request\\."
+    - regex: '(?i)@app\\.teardown_request\\s*\\(.*request\\.'
   severity: medium
   description: "Teardown request with request data"
   remediation: "Validate teardown request"
@@ -1352,7 +1355,7 @@
 - id: flask-route-errorhandler-dynamic
   languages: [python]
   patterns:
-    regex: "(?i)@app\\.errorhandler\\s*\\(\\s*\\w+\\s*\\)"
+    - regex: '(?i)@app\\.errorhandler\\s*\\(\\s*\\w+\\s*\\)'
   severity: low
   description: "Error handler"
   remediation: "Review error handling"
@@ -1362,7 +1365,7 @@
 - id: flask-route-context-processor-dynamic
   languages: [python]
   patterns:
-    regex: "(?i)@app\\.context_processor\\s*\\(.*request\\."
+    - regex: '(?i)@app\\.context_processor\\s*\\(.*request\\.'
   severity: medium
   description: "Context processor with request"
   remediation: "Validate context processor"
@@ -1372,7 +1375,7 @@
 - id: flask-route-template-filter-dynamic
   languages: [python]
   patterns:
-    regex: "(?i)@app\\.template_filter\\s*\\(.*request\\."
+    - regex: '(?i)@app\\.template_filter\\s*\\(.*request\\.'
   severity: medium
   description: "Template filter with request"
   remediation: "Validate template filter"
@@ -1382,7 +1385,7 @@
 - id: flask-route-template-global-dynamic
   languages: [python]
   patterns:
-    regex: "(?i)@app\\.template_global\\s*\\(.*request\\."
+    - regex: '(?i)@app\\.template_global\\s*\\(.*request\\.'
   severity: medium
   description: "Template global with request"
   remediation: "Validate template global"
@@ -1393,7 +1396,7 @@
 - id: flask-validator-required-missing
   languages: [python]
   patterns:
-    regex: "(?i)validate\\s*\\(\\s*\\)"
+    - regex: '(?i)validate\\s*\\(\\s*\\)'
   severity: medium
   description: "Form validation without required fields"
   remediation: "Add required validators"
@@ -1403,7 +1406,7 @@
 - id: flask-validator-length-max-default
   languages: [python]
   patterns:
-    regex: "(?i)Length\\s*\\(\\s*max\\s*=\\s*None"
+    - regex: '(?i)Length\\s*\\(\\s*max\\s*=\\s*None'
   severity: medium
   description: "No max length validator"
   remediation: "Set max length"
@@ -1413,7 +1416,7 @@
 - id: flask-validator-regexp-dynamic
   languages: [python]
   patterns:
-    regex: "(?i)Regexp\\s*\\(\\s*request"
+    - regex: '(?i)Regexp\\s*\\(\\s*request'
   severity: medium
   description: "Dynamic regexp validator"
   remediation: "Use static regex patterns"
@@ -1423,7 +1426,7 @@
 - id: flask-validator-email-default
   languages: [python]
   patterns:
-    regex: "(?i)Email\\s*\\(\\s*\\)"
+    - regex: '(?i)Email\\s*\\(\\s*\\)'
   severity: low
   description: "Email validator"
   remediation: "Ensure email validation"
@@ -1433,7 +1436,7 @@
 - id: flask-validator-url-default
   languages: [python]
   patterns:
-    regex: "(?i)URL\\s*\\(\\s*\\)"
+    - regex: '(?i)URL\\s*\\(\\s*\\)'
   severity: low
   description: "URL validator"
   remediation: "Ensure URL validation"
@@ -1443,7 +1446,7 @@
 - id: flask-validator-ipaddr-default
   languages: [python]
   patterns:
-    regex: "(?i)IPAddress\\s*\\(\\s*\\)"
+    - regex: '(?i)IPAddress\\s*\\(\\s*\\)'
   severity: low
   description: "IP address validator"
   remediation: "Ensure IP validation"
@@ -1453,7 +1456,7 @@
 - id: flask-validator-number-default
   languages: [python]
   patterns:
-    regex: "(?i)NumberRange\\s*\\(\\s*\\)"
+    - regex: '(?i)NumberRange\\s*\\(\\s*\\)'
   severity: low
   description: "Number range validator"
   remediation: "Set number range"
@@ -1463,7 +1466,7 @@
 - id: flask-validator-optional-nullable
   languages: [python]
   patterns:
-    regex: "(?i)Optional\\s*\\(\\s*\\).*Nullable"
+    - regex: '(?i)Optional\\s*\\(\\s*\\).*Nullable'
   severity: low
   description: "Optional and nullable"
   remediation: "Review validation logic"
@@ -1473,7 +1476,7 @@
 - id: flask-validator-anyof-default
   languages: [python]
   patterns:
-    regex: "(?i)AnyOf\\s*\\(\\s*\\[\\s*\\]"
+    - regex: '(?i)AnyOf\\s*\\(\\s*\\[\\s*\\]'
   severity: medium
   description: "Empty AnyOf validator"
   remediation: "Define allowed values"
@@ -1483,7 +1486,7 @@
 - id: flask-validator-noneof-default
   languages: [python]
   patterns:
-    regex: "(?i)NoneOf\\s*\\(\\s*\\[\\s*\\]"
+    - regex: '(?i)NoneOf\\s*\\(\\s*\\[\\s*\\]'
   severity: medium
   description: "Empty NoneOf validator"
   remediation: "Define disallowed values"
@@ -1493,7 +1496,7 @@
 - id: flask-validator-input-required-default
   languages: [python]
   patterns:
-    regex: "(?i)InputRequired\\s*\\(\\s*\\)"
+    - regex: '(?i)InputRequired\\s*\\(\\s*\\)'
   severity: low
   description: "Input required validator"
   remediation: "Ensure input required"
@@ -1503,7 +1506,7 @@
 - id: flask-validator-data-required-default
   languages: [python]
   patterns:
-    regex: "(?i)DataRequired\\s*\\(\\s*\\)"
+    - regex: '(?i)DataRequired\\s*\\(\\s*\\)'
   severity: low
   description: "Data required validator"
   remediation: "Ensure data required"
@@ -1513,7 +1516,7 @@
 - id: flask-validator-stop-validation
   languages: [python]
   patterns:
-    regex: "(?i)StopValidation\\s*\\("
+    - regex: '(?i)StopValidation\\s*\\('
   severity: low
   description: "Stop validation"
   remediation: "Review validation flow"
@@ -1523,7 +1526,7 @@
 - id: flask-validator-validation-error
   languages: [python]
   patterns:
-    regex: "(?i)ValidationError\\s*\\("
+    - regex: '(?i)ValidationError\\s*\\('
   severity: low
   description: "Validation error"
   remediation: "Handle validation errors"
@@ -1533,7 +1536,7 @@
 - id: flask-validator-form-process
   languages: [python]
   patterns:
-    regex: "(?i)form\\.process\\s*\\(\\s*\\)"
+    - regex: '(?i)form\\.process\\s*\\(\\s*\\)'
   severity: low
   description: "Form process"
   remediation: "Review form processing"

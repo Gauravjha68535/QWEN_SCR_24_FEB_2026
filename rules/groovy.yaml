@@ -1,7 +1,7 @@
 - id: groovy-hardcoded-password
   languages: [groovy]
   patterns:
-    - regex: "(?i)(password|passwd|pwd|secret)\\s*=\\s*['\"][^'\"]{8,}['\"]"
+    - regex: '(?i)(password|passwd|pwd|secret)\\s*=\\s*[''"][^''"]{8,}[''"]'
   severity: high
   description: "Hardcoded password detected in Groovy source code"
   remediation: "Use credentials binding or environment variables"
@@ -12,7 +12,7 @@
 - id: groovy-code-injection-evaluate
   languages: [groovy]
   patterns:
-    - regex: "Eval\\.me\\s*\\(|GroovyShell\\s*\\(\\s*\\)\\.evaluate|new GroovyShell\\s*\\(\\s*\\)"
+    - regex: 'Eval\\.me\\s*\\(|GroovyShell\\s*\\(\\s*\\)\\.evaluate|new GroovyShell\\s*\\(\\s*\\)'
   severity: critical
   description: "Groovy code injection via GroovyShell.evaluate()"
   remediation: "Never evaluate untrusted Groovy code. Use CompilerConfiguration with SecureASTCustomizer"
@@ -22,7 +22,7 @@
 - id: groovy-code-injection-gstring
   languages: [groovy]
   patterns:
-    - regex: "\"\\$\\{.*\\}\".*execute|\"\\$\\{.*\\}\"\\.execute"
+    - regex: '"\\$\\{.*\\}".*execute|"\\$\\{.*\\}"\\.execute'
   severity: critical
   description: "Command execution via GString interpolation"
   remediation: "Never execute interpolated strings. Use ProcessBuilder with argument list"
@@ -33,7 +33,7 @@
 - id: groovy-jenkins-credentials-plaintext
   languages: [groovy]
   patterns:
-    - regex: "(?i)(password|token|secret)\\s*:\\s*['\"][^'\"]{8,}['\"]"
+    - regex: '(?i)(password|token|secret)\\s*:\\s*[''"][^''"]{8,}[''"]'
   severity: critical
   description: "Plaintext credentials in Jenkins pipeline"
   remediation: "Use credentials() binding or Jenkins Credentials Manager"
@@ -43,7 +43,7 @@
 - id: groovy-jenkins-script-approval
   languages: [groovy]
   patterns:
-    - regex: "@Grab|@GrabResolver|import groovy\\.lang\\.GroovyShell"
+    - regex: '@Grab|@GrabResolver|import groovy\\.lang\\.GroovyShell'
   severity: high
   description: "Dynamic code loading in Jenkins pipeline may bypass script approval"
   remediation: "Use approved Jenkins plugins. Avoid @Grab and dynamic loading"
@@ -53,7 +53,7 @@
 - id: groovy-jenkins-shared-library-unsafe
   languages: [groovy]
   patterns:
-    - regex: "library\\s*\\(\\s*['\"].*@\\$\\{|checkout\\s*\\(.*url:.*\\$"
+    - regex: 'library\\s*\\(\\s*[''"].*@\\$\\{|checkout\\s*\\(.*url:.*\\$'
   severity: high
   description: "Shared library loaded from user-controlled source"
   remediation: "Pin shared libraries to specific versions from trusted sources"
@@ -64,7 +64,7 @@
 - id: groovy-sql-injection
   languages: [groovy]
   patterns:
-    - regex: "(?i)sql\\.execute\\s*\\(\\s*\".*\\$|Sql\\.newInstance.*execute.*\\$"
+    - regex: '(?i)sql\\.execute\\s*\\(\\s*".*\\$|Sql\\.newInstance.*execute.*\\$'
   severity: critical
   description: "SQL injection via GString interpolation in Groovy SQL"
   remediation: "Use parameterized queries: sql.execute('SELECT * FROM users WHERE id = ?', [userId])"
@@ -75,7 +75,7 @@
 - id: groovy-command-injection
   languages: [groovy]
   patterns:
-    - regex: "\\.execute\\s*\\(\\s*\\)|\\[.*\\]\\.execute\\(\\)"
+    - regex: '\\.execute\\s*\\(\\s*\\)|\\[.*\\]\\.execute\\(\\)'
   severity: critical
   description: "Command execution via Groovy's String.execute() or List.execute()"
   remediation: "Use ProcessBuilder with argument list. Validate and sanitize input"
@@ -86,7 +86,7 @@
 - id: groovy-insecure-deserialization
   languages: [groovy]
   patterns:
-    - regex: "ObjectInputStream|readObject\\s*\\("
+    - regex: 'ObjectInputStream|readObject\\s*\\('
   severity: critical
   description: "Insecure Java deserialization in Groovy code"
   remediation: "Use JSON (JsonSlurper) instead. Never deserialize untrusted Java objects"
@@ -97,7 +97,7 @@
 - id: groovy-path-traversal
   languages: [groovy]
   patterns:
-    - regex: "new File\\s*\\(.*params|new File\\s*\\(.*request"
+    - regex: 'new File\\s*\\(.*params|new File\\s*\\(.*request'
   severity: high
   description: "Path traversal via user-controlled file path"
   remediation: "Validate paths. Use canonical path and check against base directory"
@@ -108,7 +108,7 @@
 - id: groovy-xss-grails
   languages: [groovy]
   patterns:
-    - regex: "(?i)\\$\\{raw\\(|encodeAs.*None|<%=.*params\\."
+    - regex: '(?i)\\$\\{raw\\(|encodeAs.*None|<%=.*params\\.'
   severity: high
   description: "XSS via unescaped output in Grails GSP"
   remediation: "Use ${fieldValue()} or encodeAsHTML() for output encoding"
@@ -119,7 +119,7 @@
 - id: groovy-xxe
   languages: [groovy]
   patterns:
-    - regex: "new XmlSlurper\\s*\\(\\s*\\)|new XmlParser\\s*\\(\\s*\\)"
+    - regex: 'new XmlSlurper\\s*\\(\\s*\\)|new XmlParser\\s*\\(\\s*\\)'
   severity: high
   description: "XML parsing may be vulnerable to XXE"
   remediation: "Disable external entities in XmlSlurper/XmlParser"
@@ -138,7 +138,7 @@
 - id: groovy-jenkins-sh-step
   languages: [groovy]
   patterns:
-    - regex: "sh\\s*\\(\\s*['\"]"
+    - regex: 'sh\\s*\\(\\s*[''"]'
   severity: high
   description: "Jenkins sh step with shell command"
   remediation: "Validate all shell command arguments"
@@ -148,7 +148,7 @@
 - id: groovy-jenkins-bat-step
   languages: [groovy]
   patterns:
-    - regex: "bat\\s*\\(\\s*['\"]"
+    - regex: 'bat\\s*\\(\\s*[''"]'
   severity: high
   description: "Jenkins bat step with Windows command"
   remediation: "Validate all batch command arguments"
@@ -158,7 +158,7 @@
 - id: groovy-jenkins-with-credentials
   languages: [groovy]
   patterns:
-    - regex: "withCredentials\\s*\\("
+    - regex: 'withCredentials\\s*\\('
   severity: low
   description: "Jenkins credentials binding"
   remediation: "Ensure credentials are properly scoped"
@@ -168,7 +168,7 @@
 - id: groovy-jenkins-environment-vars
   languages: [groovy]
   patterns:
-    - regex: "env\\.\\w+\\s*="
+    - regex: 'env\\.\\w+\\s*='
   severity: medium
   description: "Jenkins environment variable modification"
   remediation: "Don't expose sensitive env vars"
@@ -178,7 +178,7 @@
 - id: groovy-jenkins-build-step
   languages: [groovy]
   patterns:
-    - regex: "build\\s*\\(\\s*job:"
+    - regex: 'build\\s*\\(\\s*job:'
   severity: medium
   description: "Jenkins build step triggering other jobs"
   remediation: "Validate job names and parameters"
@@ -188,7 +188,7 @@
 - id: groovy-jenkins-parallel-exec
   languages: [groovy]
   patterns:
-    - regex: "parallel\\s*\\{"
+    - regex: 'parallel\\s*\\{'
   severity: low
   description: "Jenkins parallel execution"
   remediation: "Ensure parallel stages don't share state unsafely"
@@ -198,7 +198,7 @@
 - id: groovy-jenkins-stash-unstash
   languages: [groovy]
   patterns:
-    - regex: "(stash|unstash)\\s*\\("
+    - regex: '(stash|unstash)\\s*\\('
   severity: medium
   description: "Jenkins stash/unstash artifacts"
   remediation: "Validate stashed artifact contents"
@@ -208,7 +208,7 @@
 - id: groovy-jenkins-archive-artifacts
   languages: [groovy]
   patterns:
-    - regex: "archiveArtifacts\\s*\\("
+    - regex: 'archiveArtifacts\\s*\\('
   severity: low
   description: "Jenkins artifact archiving"
   remediation: "Don't archive sensitive files"
@@ -218,7 +218,7 @@
 - id: groovy-jenkins-mail-step
   languages: [groovy]
   patterns:
-    - regex: "mail\\s*\\(\\s*to:"
+    - regex: 'mail\\s*\\(\\s*to:'
   severity: low
   description: "Jenkins mail step"
   remediation: "Don't include sensitive info in emails"
@@ -228,7 +228,7 @@
 - id: groovy-jenkins-slack-step
   languages: [groovy]
   patterns:
-    - regex: "slackSend\\s*\\("
+    - regex: 'slackSend\\s*\\('
   severity: low
   description: "Jenkins Slack notification"
   remediation: "Don't include sensitive info in Slack"
@@ -238,7 +238,7 @@
 - id: groovy-jenkins-input-step
   languages: [groovy]
   patterns:
-    - regex: "input\\s*\\(\\s*message:"
+    - regex: 'input\\s*\\(\\s*message:'
   severity: medium
   description: "Jenkins input step for user approval"
   remediation: "Validate input parameters"
@@ -248,7 +248,7 @@
 - id: groovy-jenkins-checkout-scm
   languages: [groovy]
   patterns:
-    - regex: "checkout\\s*\\(\\s*scm"
+    - regex: 'checkout\\s*\\(\\s*scm'
   severity: low
   description: "Jenkins SCM checkout"
   remediation: "Ensure SCM credentials are secure"
@@ -258,7 +258,7 @@
 - id: groovy-jenkins-git-step
   languages: [groovy]
   patterns:
-    - regex: "git\\s*\\(\\s*url:"
+    - regex: 'git\\s*\\(\\s*url:'
   severity: medium
   description: "Jenkins git step"
   remediation: "Validate git repository URLs"
@@ -268,7 +268,7 @@
 - id: groovy-jenkins-docker-image
   languages: [groovy]
   patterns:
-    - regex: "docker\\.image\\s*\\("
+    - regex: 'docker\\.image\\s*\\('
   severity: medium
   description: "Jenkins Docker image usage"
   remediation: "Use trusted Docker images only"
@@ -278,7 +278,7 @@
 - id: groovy-jenkins-docker-with-registry
   languages: [groovy]
   patterns:
-    - regex: "docker\\.withRegistry\\s*\\("
+    - regex: 'docker\\.withRegistry\\s*\\('
   severity: medium
   description: "Jenkins Docker registry authentication"
   remediation: "Secure Docker registry credentials"
@@ -288,7 +288,7 @@
 - id: groovy-jenkins-kubernetes-pod
   languages: [groovy]
   patterns:
-    - regex: "kubernetesPod\\s*\\("
+    - regex: 'kubernetesPod\\s*\\('
   severity: medium
   description: "Jenkins Kubernetes pod template"
   remediation: "Secure Kubernetes pod configuration"
@@ -298,7 +298,7 @@
 - id: groovy-jenkins-timeout-step
   languages: [groovy]
   patterns:
-    - regex: "timeout\\s*\\(\\s*time:"
+    - regex: 'timeout\\s*\\(\\s*time:'
   severity: low
   description: "Jenkins timeout step"
   remediation: "Set appropriate timeout values"
@@ -308,7 +308,7 @@
 - id: groovy-jenkins-retry-step
   languages: [groovy]
   patterns:
-    - regex: "retry\\s*\\(\\s*\\d+"
+    - regex: 'retry\\s*\\(\\s*\\d+'
   severity: low
   description: "Jenkins retry step"
   remediation: "Implement exponential backoff"
@@ -318,7 +318,7 @@
 - id: groovy-jenkins-lock-step
   languages: [groovy]
   patterns:
-    - regex: "lock\\s*\\(\\s*resource:"
+    - regex: 'lock\\s*\\(\\s*resource:'
   severity: low
   description: "Jenkins lock step for resources"
   remediation: "Ensure proper lock release"
@@ -328,7 +328,7 @@
 - id: groovy-jenkins-ws-step
   languages: [groovy]
   patterns:
-    - regex: "ws\\s*\\(\\s*\\{"
+    - regex: 'ws\\s*\\(\\s*\\{'
   severity: low
   description: "Jenkins workspace step"
   remediation: "Clean workspace after use"
@@ -338,7 +338,7 @@
 - id: groovy-jenkins-dir-step
   languages: [groovy]
   patterns:
-    - regex: "dir\\s*\\(\\s*['\"]"
+    - regex: 'dir\\s*\\(\\s*[''"]'
   severity: low
   description: "Jenkins directory step"
   remediation: "Validate directory paths"
@@ -348,7 +348,7 @@
 - id: groovy-jenkins-read-file
   languages: [groovy]
   patterns:
-    - regex: "readFile\\s*\\(\\s*['\"]"
+    - regex: 'readFile\\s*\\(\\s*[''"]'
   severity: medium
   description: "Jenkins readFile step"
   remediation: "Validate file paths"
@@ -358,7 +358,7 @@
 - id: groovy-jenkins-write-file
   languages: [groovy]
   patterns:
-    - regex: "writeFile\\s*\\(\\s*file:"
+    - regex: 'writeFile\\s*\\(\\s*file:'
   severity: medium
   description: "Jenkins writeFile step"
   remediation: "Validate file paths"
@@ -368,7 +368,7 @@
 - id: groovy-jenkins-delete-dir
   languages: [groovy]
   patterns:
-    - regex: "deleteDir\\s*\\("
+    - regex: 'deleteDir\\s*\\('
   severity: medium
   description: "Jenkins deleteDir step"
   remediation: "Ensure correct directory is deleted"
@@ -378,7 +378,7 @@
 - id: groovy-jenkins-current-build
   languages: [groovy]
   patterns:
-    - regex: "currentBuild\\."
+    - regex: 'currentBuild\\.'
   severity: low
   description: "Jenkins currentBuild access"
   remediation: "Don't expose build info unnecessarily"
@@ -389,7 +389,7 @@
 - id: groovy-gradle-dependency-dynamic
   languages: [groovy]
   patterns:
-    - regex: "implementation\\s*['\"].*:\\*['\"]"
+    - regex: 'implementation\\s*[''"].*:\\*[''"]'
   severity: medium
   description: "Gradle dependency with dynamic version"
   remediation: "Pin dependency versions"
@@ -399,7 +399,7 @@
 - id: groovy-gradle-repository-http
   languages: [groovy]
   patterns:
-    - regex: "maven\\s*\\{\\s*url\\s*['\"]http://"
+    - regex: 'maven\\s*\\{\\s*url\\s*[''"]http://'
   severity: high
   description: "Gradle repository over HTTP"
   remediation: "Use HTTPS for all repositories"
@@ -409,7 +409,7 @@
 - id: groovy-gradle-flat-dir
   languages: [groovy]
   patterns:
-    - regex: "flatDir\\s*\\{\\s*dirs"
+    - regex: 'flatDir\\s*\\{\\s*dirs'
   severity: medium
   description: "Gradle flatDir repository"
   remediation: "Verify flatDir contents"
@@ -419,7 +419,7 @@
 - id: groovy-gradle-task-exec
   languages: [groovy]
   patterns:
-    - regex: "task\\s*\\w+\\s*\\{\\s*exec\\s*\\{"
+    - regex: 'task\\s*\\w+\\s*\\{\\s*exec\\s*\\{'
   severity: high
   description: "Gradle task with exec"
   remediation: "Validate exec command arguments"
@@ -429,7 +429,7 @@
 - id: groovy-gradle-java-exec
   languages: [groovy]
   patterns:
-    - regex: "task\\s*\\w+\\s*\\{\\s*javaexec\\s*\\{"
+    - regex: 'task\\s*\\w+\\s*\\{\\s*javaexec\\s*\\{'
   severity: medium
   description: "Gradle task with javaexec"
   remediation: "Validate javaexec arguments"
@@ -439,7 +439,7 @@
 - id: groovy-gradle-copy-task
   languages: [groovy]
   patterns:
-    - regex: "task\\s*\\w+\\s*\\{\\s*copy\\s*\\{"
+    - regex: 'task\\s*\\w+\\s*\\{\\s*copy\\s*\\{'
   severity: low
   description: "Gradle copy task"
   remediation: "Validate copy source and destination"
@@ -449,7 +449,7 @@
 - id: groovy-gradle-delete-task
   languages: [groovy]
   patterns:
-    - regex: "task\\s*\\w+\\s*\\{\\s*delete\\s*\\{"
+    - regex: 'task\\s*\\w+\\s*\\{\\s*delete\\s*\\{'
   severity: medium
   description: "Gradle delete task"
   remediation: "Validate delete paths"
@@ -459,7 +459,7 @@
 - id: groovy-gradle-zip-task
   languages: [groovy]
   patterns:
-    - regex: "task\\s*\\w+\\s*\\{\\s*zip\\s*\\{"
+    - regex: 'task\\s*\\w+\\s*\\{\\s*zip\\s*\\{'
   severity: low
   description: "Gradle zip task"
   remediation: "Validate zip contents"
@@ -469,7 +469,7 @@
 - id: groovy-gradle-tar-task
   languages: [groovy]
   patterns:
-    - regex: "task\\s*\\w+\\s*\\{\\s*tar\\s*\\{"
+    - regex: 'task\\s*\\w+\\s*\\{\\s*tar\\s*\\{'
   severity: low
   description: "Gradle tar task"
   remediation: "Validate tar contents"
@@ -479,7 +479,7 @@
 - id: groovy-gradle-war-task
   languages: [groovy]
   patterns:
-    - regex: "war\\s*\\{"
+    - regex: 'war\\s*\\{'
   severity: low
   description: "Gradle WAR task"
   remediation: "Validate WAR contents"
@@ -489,7 +489,7 @@
 - id: groovy-gradle-jar-task
   languages: [groovy]
   patterns:
-    - regex: "jar\\s*\\{"
+    - regex: 'jar\\s*\\{'
   severity: low
   description: "Gradle JAR task"
   remediation: "Validate JAR contents"
@@ -499,7 +499,7 @@
 - id: groovy-gradle-signing
   languages: [groovy]
   patterns:
-    - regex: "signing\\s*\\{"
+    - regex: 'signing\\s*\\{'
   severity: low
   description: "Gradle signing configuration"
   remediation: "Secure signing credentials"
@@ -509,7 +509,7 @@
 - id: groovy-gradle-publishing
   languages: [groovy]
   patterns:
-    - regex: "publishing\\s*\\{"
+    - regex: 'publishing\\s*\\{'
   severity: low
   description: "Gradle publishing configuration"
   remediation: "Secure publishing credentials"
@@ -519,7 +519,7 @@
 - id: groovy-gradle-buildscript-dep
   languages: [groovy]
   patterns:
-    - regex: "buildscript\\s*\\{\\s*dependencies"
+    - regex: 'buildscript\\s*\\{\\s*dependencies'
   severity: medium
   description: "Buildscript dependencies"
   remediation: "Pin buildscript dependency versions"
@@ -529,7 +529,7 @@
 - id: groovy-gradle-plugins-block
   languages: [groovy]
   patterns:
-    - regex: "plugins\\s*\\{"
+    - regex: 'plugins\\s*\\{'
   severity: low
   description: "Gradle plugins block"
   remediation: "Pin plugin versions"
@@ -539,7 +539,7 @@
 - id: groovy-gradle-apply-plugin
   languages: [groovy]
   patterns:
-    - regex: "apply\\s*plugin:"
+    - regex: 'apply\\s*plugin:'
   severity: low
   description: "Gradle apply plugin"
   remediation: "Verify plugin source"
@@ -549,7 +549,7 @@
 - id: groovy-gradle-init-script
   languages: [groovy]
   patterns:
-    - regex: "init\\.gradle|init\\.d/"
+    - regex: 'init\\.gradle|init\\.d/'
   severity: medium
   description: "Gradle init script"
   remediation: "Secure init scripts"
@@ -559,7 +559,7 @@
 - id: groovy-gradle-settings-file
   languages: [groovy]
   patterns:
-    - regex: "settings\\.gradle"
+    - regex: 'settings\\.gradle'
   severity: low
   description: "Gradle settings file"
   remediation: "Review settings configuration"
@@ -569,7 +569,7 @@
 - id: groovy-gradle-properties-file
   languages: [groovy]
   patterns:
-    - regex: "gradle\\.properties"
+    - regex: 'gradle\\.properties'
   severity: medium
   description: "Gradle properties file"
   remediation: "Don't store secrets in properties"
@@ -579,7 +579,7 @@
 - id: groovy-gradle-local-properties
   languages: [groovy]
   patterns:
-    - regex: "local\\.properties"
+    - regex: 'local\\.properties'
   severity: medium
   description: "Gradle local.properties file"
   remediation: "Don't commit local.properties"
@@ -589,7 +589,7 @@
 - id: groovy-gradle-wrapper-properties
   languages: [groovy]
   patterns:
-    - regex: "gradle-wrapper\\.properties"
+    - regex: 'gradle-wrapper\\.properties'
   severity: low
   description: "Gradle wrapper properties"
   remediation: "Verify wrapper distribution URL"
@@ -599,7 +599,7 @@
 - id: groovy-gradle-daemon
   languages: [groovy]
   patterns:
-    - regex: "org\\.gradle\\.daemon"
+    - regex: 'org\\.gradle\\.daemon'
   severity: low
   description: "Gradle daemon configuration"
   remediation: "Consider disabling daemon for CI"
@@ -609,7 +609,7 @@
 - id: groovy-gradle-parallel
   languages: [groovy]
   patterns:
-    - regex: "org\\.gradle\\.parallel"
+    - regex: 'org\\.gradle\\.parallel'
   severity: low
   description: "Gradle parallel execution"
   remediation: "Ensure thread-safe tasks"
@@ -619,7 +619,7 @@
 - id: groovy-gradle-build-cache
   languages: [groovy]
   patterns:
-    - regex: "org\\.gradle\\.caching"
+    - regex: 'org\\.gradle\\.caching'
   severity: low
   description: "Gradle build cache"
   remediation: "Secure build cache"
@@ -629,7 +629,7 @@
 - id: groovy-gradle-configuration-cache
   languages: [groovy]
   patterns:
-    - regex: "org\\.gradle\\.configuration-cache"
+    - regex: 'org\\.gradle\\.configuration-cache'
   severity: low
   description: "Gradle configuration cache"
   remediation: "Review configuration cache"
@@ -640,7 +640,7 @@
 - id: groovy-grails-controller
   languages: [groovy]
   patterns:
-    - regex: "class\\s+\\w+Controller\\s+"
+    - regex: 'class\\s+\\w+Controller\\s+'
   severity: low
   description: "Grails controller class"
   remediation: "Implement authorization in controllers"
@@ -650,7 +650,7 @@
 - id: groovy-grails-service
   languages: [groovy]
   patterns:
-    - regex: "class\\s+\\w+Service\\s+"
+    - regex: 'class\\s+\\w+Service\\s+'
   severity: low
   description: "Grails service class"
   remediation: "Validate service inputs"
@@ -660,7 +660,7 @@
 - id: groovy-grails-domain
   languages: [groovy]
   patterns:
-    - regex: "class\\s+\\w+\\s+\\{"
+    - regex: 'class\\s+\\w+\\s+\\{'
   severity: low
   description: "Grails domain class"
   remediation: "Don't expose sensitive fields"
@@ -670,7 +670,7 @@
 - id: groovy-grails-constraints
   languages: [groovy]
   patterns:
-    - regex: "static\\s+constraints\\s*=\\s*\\{"
+    - regex: 'static\\s+constraints\\s*=\\s*\\{'
   severity: low
   description: "Grails constraints block"
   remediation: "Define comprehensive constraints"
@@ -680,7 +680,7 @@
 - id: groovy-grails-mapping
   languages: [groovy]
   patterns:
-    - regex: "static\\s+mapping\\s*=\\s*\\{"
+    - regex: 'static\\s+mapping\\s*=\\s*\\{'
   severity: low
   description: "Grails mapping block"
   remediation: "Review ORM mappings"
@@ -690,7 +690,7 @@
 - id: groovy-grails-url-mappings
   languages: [groovy]
   patterns:
-    - regex: "static\\s+urlMappings\\s*=\\s*\\{"
+    - regex: 'static\\s+urlMappings\\s*=\\s*\\{'
   severity: low
   description: "Grails URL mappings"
   remediation: "Secure URL mappings"
@@ -700,7 +700,7 @@
 - id: groovy-grails-boot-strap
   languages: [groovy]
   patterns:
-    - regex: "class\\s+BootStrap\\s+"
+    - regex: 'class\\s+BootStrap\\s+'
   severity: low
   description: "Grails BootStrap class"
   remediation: "Don't hardcode secrets in BootStrap"
@@ -710,7 +710,7 @@
 - id: groovy-grails-config
   languages: [groovy]
   patterns:
-    - regex: "application\\.yml|application\\.groovy"
+    - regex: 'application\\.yml|application\\.groovy'
   severity: medium
   description: "Grails configuration file"
   remediation: "Don't commit config with secrets"
@@ -720,7 +720,7 @@
 - id: groovy-grails-datasource
   languages: [groovy]
   patterns:
-    - regex: "dataSource\\s*\\{"
+    - regex: 'dataSource\\s*\\{'
   severity: medium
   description: "Grails datasource configuration"
   remediation: "Use environment variables for credentials"
@@ -730,7 +730,7 @@
 - id: groovy-grails-hibernate
   languages: [groovy]
   patterns:
-    - regex: "hibernate\\s*\\{"
+    - regex: 'hibernate\\s*\\{'
   severity: low
   description: "Grails Hibernate configuration"
   remediation: "Review Hibernate settings"
@@ -740,7 +740,7 @@
 - id: groovy-grails-security
   languages: [groovy]
   patterns:
-    - regex: "grails\\.plugin\\.springsecurity"
+    - regex: 'grails\\.plugin\\.springsecurity'
   severity: low
   description: "Grails Spring Security plugin"
   remediation: "Configure security properly"
@@ -750,7 +750,7 @@
 - id: groovy-grails-spring-security-user
   languages: [groovy]
   patterns:
-    - regex: "springSecurityService\\."
+    - regex: 'springSecurityService\\.'
   severity: low
   description: "Spring Security service usage"
   remediation: "Validate authentication"
@@ -760,7 +760,7 @@
 - id: groovy-grails-spring-security-auth
   languages: [groovy]
   patterns:
-    - regex: "springSecurityService\\.authenticate"
+    - regex: 'springSecurityService\\.authenticate'
   severity: low
   description: "Spring Security authentication"
   remediation: "Implement proper auth flow"
@@ -770,7 +770,7 @@
 - id: groovy-grails-spring-security-encode
   languages: [groovy]
   patterns:
-    - regex: "springSecurityService\\.encodePassword"
+    - regex: 'springSecurityService\\.encodePassword'
   severity: low
   description: "Password encoding"
   remediation: "Use strong encoding algorithm"
@@ -780,7 +780,7 @@
 - id: groovy-grails-gsp-template
   languages: [groovy]
   patterns:
-    - regex: "\\.gsp$"
+    - regex: '\\.gsp$'
   severity: low
   description: "Grails GSP template"
   remediation: "Escape output in GSP"
@@ -790,7 +790,7 @@
 - id: groovy-grails-gsp-include
   languages: [groovy]
   patterns:
-    - regex: "<g:include"
+    - regex: '<g:include'
   severity: medium
   description: "GSP include tag"
   remediation: "Validate included templates"
@@ -800,7 +800,7 @@
 - id: groovy-grails-gsp-render
   languages: [groovy]
   patterns:
-    - regex: "<g:render"
+    - regex: '<g:render'
   severity: medium
   description: "GSP render tag"
   remediation: "Validate rendered templates"
@@ -810,7 +810,7 @@
 - id: groovy-grails-gsp-form
   languages: [groovy]
   patterns:
-    - regex: "<g:form"
+    - regex: '<g:form'
   severity: low
   description: "GSP form tag"
   remediation: "Include CSRF token in forms"
@@ -820,7 +820,7 @@
 - id: groovy-grails-gsp-link
   languages: [groovy]
   patterns:
-    - regex: "<g:link"
+    - regex: '<g:link'
   severity: low
   description: "GSP link tag"
   remediation: "Validate link URLs"
@@ -830,7 +830,7 @@
 - id: groovy-grails-gsp-remote
   languages: [groovy]
   patterns:
-    - regex: "<g:remote"
+    - regex: '<g:remote'
   severity: medium
   description: "GSP remote tag"
   remediation: "Validate remote endpoints"
@@ -840,7 +840,7 @@
 - id: groovy-grails-gsp-submit
   languages: [groovy]
   patterns:
-    - regex: "<g:submitToRemote"
+    - regex: '<g:submitToRemote'
   severity: medium
   description: "GSP submitToRemote tag"
   remediation: "Validate remote submission"
@@ -850,7 +850,7 @@
 - id: groovy-grails-gsp-action
   languages: [groovy]
   patterns:
-    - regex: "<g:actionSubmit"
+    - regex: '<g:actionSubmit'
   severity: low
   description: "GSP actionSubmit tag"
   remediation: "Validate action submissions"
@@ -860,7 +860,7 @@
 - id: groovy-grails-gsp-field
   languages: [groovy]
   patterns:
-    - regex: "<g:field"
+    - regex: '<g:field'
   severity: low
   description: "GSP field tag"
   remediation: "Validate field inputs"
@@ -870,7 +870,7 @@
 - id: groovy-grails-gsp-select
   languages: [groovy]
   patterns:
-    - regex: "<g:select"
+    - regex: '<g:select'
   severity: low
   description: "GSP select tag"
   remediation: "Validate select options"
@@ -880,7 +880,7 @@
 - id: groovy-grails-gsp-each
   languages: [groovy]
   patterns:
-    - regex: "<g:each"
+    - regex: '<g:each'
   severity: low
   description: "GSP each tag"
   remediation: "Validate iteration data"
@@ -891,7 +891,7 @@
 - id: groovy-eval-string
   languages: [groovy]
   patterns:
-    - regex: "\\.eval\\s*\\("
+    - regex: '\\.eval\\s*\\('
   severity: critical
   description: "Eval method call"
   remediation: "Avoid eval with untrusted input"
@@ -901,7 +901,7 @@
 - id: groovy-use-method
   languages: [groovy]
   patterns:
-    - regex: "\\.use\\s*\\("
+    - regex: '\\.use\\s*\\('
   severity: medium
   description: "Groovy use method"
   remediation: "Validate use categories"
@@ -911,7 +911,7 @@
 - id: groovy-mixin-method
   languages: [groovy]
   patterns:
-    - regex: "\\.mixin\\s*\\("
+    - regex: '\\.mixin\\s*\\('
   severity: medium
   description: "Groovy mixin method"
   remediation: "Validate mixin classes"
@@ -921,7 +921,7 @@
 - id: groovy-meta-class
   languages: [groovy]
   patterns:
-    - regex: "\\.metaClass"
+    - regex: '\\.metaClass'
   severity: medium
   description: "Groovy metaClass modification"
   remediation: "Don't modify metaClass with untrusted code"
@@ -931,7 +931,7 @@
 - id: groovy-closure-execution
   languages: [groovy]
   patterns:
-    - regex: "\\.call\\s*\\("
+    - regex: '\\.call\\s*\\('
   severity: low
   description: "Closure call method"
   remediation: "Validate closure arguments"
@@ -941,7 +941,7 @@
 - id: groovy-closure-trampoline
   languages: [groovy]
   patterns:
-    - regex: "\\.trampoline\\s*\\("
+    - regex: '\\.trampoline\\s*\\('
   severity: low
   description: "Closure trampoline"
   remediation: "Watch for stack overflow"
@@ -951,7 +951,7 @@
 - id: groovy-currying
   languages: [groovy]
   patterns:
-    - regex: "\\.curry\\s*\\("
+    - regex: '\\.curry\\s*\\('
   severity: low
   description: "Closure currying"
   remediation: "Validate curried arguments"
@@ -961,7 +961,7 @@
 - id: groovy-rcurry
   languages: [groovy]
   patterns:
-    - regex: "\\.rcurry\\s*\\("
+    - regex: '\\.rcurry\\s*\\('
   severity: low
   description: "Closure rcurry"
   remediation: "Validate rcurry arguments"
@@ -971,7 +971,7 @@
 - id: groovy-left-shift
   languages: [groovy]
   patterns:
-    - regex: "<<\\s*\\{"
+    - regex: '<<\\s*\\{'
   severity: low
   description: "Left shift operator with closure"
   remediation: "Validate closure content"
@@ -981,7 +981,7 @@
 - id: groovy-right-shift
   languages: [groovy]
   patterns:
-    - regex: ">>\\s*\\{"
+    - regex: '>>\\s*\\{'
   severity: low
   description: "Right shift operator with closure"
   remediation: "Validate closure content"
@@ -991,7 +991,7 @@
 - id: groovy-method-missing
   languages: [groovy]
   patterns:
-    - regex: "methodMissing\\s*\\("
+    - regex: 'methodMissing\\s*\\('
   severity: medium
   description: "methodMissing handler"
   remediation: "Validate methodMissing logic"
@@ -1001,7 +1001,7 @@
 - id: groovy-property-missing
   languages: [groovy]
   patterns:
-    - regex: "propertyMissing\\s*\\("
+    - regex: 'propertyMissing\\s*\\('
   severity: medium
   description: "propertyMissing handler"
   remediation: "Validate propertyMissing logic"
@@ -1011,7 +1011,7 @@
 - id: groovy-invoke-method
   languages: [groovy]
   patterns:
-    - regex: "invokeMethod\\s*\\("
+    - regex: 'invokeMethod\\s*\\('
   severity: medium
   description: "invokeMethod override"
   remediation: "Validate invokeMethod logic"
@@ -1021,7 +1021,7 @@
 - id: groovy-get-property
   languages: [groovy]
   patterns:
-    - regex: "getProperty\\s*\\("
+    - regex: 'getProperty\\s*\\('
   severity: low
   description: "getProperty override"
   remediation: "Validate getProperty logic"
@@ -1031,7 +1031,7 @@
 - id: groovy-set-property
   languages: [groovy]
   patterns:
-    - regex: "setProperty\\s*\\("
+    - regex: 'setProperty\\s*\\('
   severity: low
   description: "setProperty override"
   remediation: "Validate setProperty logic"
@@ -1041,7 +1041,7 @@
 - id: groovy-get-attribute
   languages: [groovy]
   patterns:
-    - regex: "getAttribute\\s*\\("
+    - regex: 'getAttribute\\s*\\('
   severity: low
   description: "getAttribute override"
   remediation: "Validate getAttribute logic"
@@ -1051,7 +1051,7 @@
 - id: groovy-set-attribute
   languages: [groovy]
   patterns:
-    - regex: "setAttribute\\s*\\("
+    - regex: 'setAttribute\\s*\\('
   severity: low
   description: "setAttribute override"
   remediation: "Validate setAttribute logic"
@@ -1061,7 +1061,7 @@
 - id: groovy-invoke-static-method
   languages: [groovy]
   patterns:
-    - regex: "invokeStaticMethod\\s*\\("
+    - regex: 'invokeStaticMethod\\s*\\('
   severity: medium
   description: "invokeStaticMethod override"
   remediation: "Validate invokeStaticMethod logic"
@@ -1071,7 +1071,7 @@
 - id: groovy-respond-method
   languages: [groovy]
   patterns:
-    - regex: "respond\\s*\\("
+    - regex: 'respond\\s*\\('
   severity: medium
   description: "Grails respond method"
   remediation: "Validate respond content"
@@ -1081,7 +1081,7 @@
 - id: groovy-render-method
   languages: [groovy]
   patterns:
-    - regex: "render\\s*\\("
+    - regex: 'render\\s*\\('
   severity: medium
   description: "Grails render method"
   remediation: "Validate render content"
@@ -1091,7 +1091,7 @@
 - id: groovy-redirect-method
   languages: [groovy]
   patterns:
-    - regex: "redirect\\s*\\("
+    - regex: 'redirect\\s*\\('
   severity: medium
   description: "Grails redirect method"
   remediation: "Validate redirect URL"
@@ -1101,7 +1101,7 @@
 - id: groovy-chain-method
   languages: [groovy]
   patterns:
-    - regex: "chain\\s*\\("
+    - regex: 'chain\\s*\\('
   severity: medium
   description: "Grails chain method"
   remediation: "Validate chain action"
@@ -1111,7 +1111,7 @@
 - id: groovy-forward-method
   languages: [groovy]
   patterns:
-    - regex: "forward\\s*\\("
+    - regex: 'forward\\s*\\('
   severity: medium
   description: "Grails forward method"
   remediation: "Validate forward action"
@@ -1121,7 +1121,7 @@
 - id: groovy-render-view
   languages: [groovy]
   patterns:
-    - regex: "render\\s*view:"
+    - regex: 'render\\s*view:'
   severity: low
   description: "Grails render view"
   remediation: "Validate view name"
@@ -1132,7 +1132,7 @@
 - id: groovy-file-constructor
   languages: [groovy]
   patterns:
-    - regex: "new\\s+File\\s*\\("
+    - regex: 'new\\s+File\\s*\\('
   severity: medium
   description: "File constructor usage"
   remediation: "Validate file paths"
@@ -1142,7 +1142,7 @@
 - id: groovy-file-text
   languages: [groovy]
   patterns:
-    - regex: "\\.text\\s*="
+    - regex: '\\.text\\s*='
   severity: medium
   description: "File.text assignment"
   remediation: "Validate file paths"
@@ -1152,7 +1152,7 @@
 - id: groovy-file-readbytes
   languages: [groovy]
   patterns:
-    - regex: "\\.readBytes\\s*\\("
+    - regex: '\\.readBytes\\s*\\('
   severity: medium
   description: "File readBytes method"
   remediation: "Validate file paths"
@@ -1162,7 +1162,7 @@
 - id: groovy-file-writebytes
   languages: [groovy]
   patterns:
-    - regex: "\\.writeBytes\\s*\\("
+    - regex: '\\.writeBytes\\s*\\('
   severity: medium
   description: "File writeBytes method"
   remediation: "Validate file paths"
@@ -1172,7 +1172,7 @@
 - id: groovy-file-append
   languages: [groovy]
   patterns:
-    - regex: "\\.append\\s*\\("
+    - regex: '\\.append\\s*\\('
   severity: medium
   description: "File append method"
   remediation: "Validate file paths"
@@ -1182,7 +1182,7 @@
 - id: groovy-file-delete
   languages: [groovy]
   patterns:
-    - regex: "\\.delete\\s*\\("
+    - regex: '\\.delete\\s*\\('
   severity: medium
   description: "File delete method"
   remediation: "Validate file paths"
@@ -1192,7 +1192,7 @@
 - id: groovy-file-rename
   languages: [groovy]
   patterns:
-    - regex: "\\.renameTo\\s*\\("
+    - regex: '\\.renameTo\\s*\\('
   severity: medium
   description: "File renameTo method"
   remediation: "Validate file paths"
@@ -1202,7 +1202,7 @@
 - id: groovy-file-copyto
   languages: [groovy]
   patterns:
-    - regex: "\\.copyTo\\s*\\("
+    - regex: '\\.copyTo\\s*\\('
   severity: medium
   description: "File copyTo method"
   remediation: "Validate file paths"
@@ -1212,7 +1212,7 @@
 - id: groovy-file-moveto
   languages: [groovy]
   patterns:
-    - regex: "\\.moveTo\\s*\\("
+    - regex: '\\.moveTo\\s*\\('
   severity: medium
   description: "File moveTo method"
   remediation: "Validate file paths"
@@ -1222,7 +1222,7 @@
 - id: groovy-file-mkdirs
   languages: [groovy]
   patterns:
-    - regex: "\\.mkdirs\\s*\\("
+    - regex: '\\.mkdirs\\s*\\('
   severity: low
   description: "File mkdirs method"
   remediation: "Validate directory paths"
@@ -1232,7 +1232,7 @@
 - id: groovy-file-list
   languages: [groovy]
   patterns:
-    - regex: "\\.list\\s*\\("
+    - regex: '\\.list\\s*\\('
   severity: low
   description: "File list method"
   remediation: "Don't expose directory structure"
@@ -1242,7 +1242,7 @@
 - id: groovy-file-listfiles
   languages: [groovy]
   patterns:
-    - regex: "\\.listFiles\\s*\\("
+    - regex: '\\.listFiles\\s*\\('
   severity: low
   description: "File listFiles method"
   remediation: "Don't expose directory structure"
@@ -1252,7 +1252,7 @@
 - id: groovy-file-getcanonicalpath
   languages: [groovy]
   patterns:
-    - regex: "\\.getCanonicalPath\\s*\\("
+    - regex: '\\.getCanonicalPath\\s*\\('
   severity: low
   description: "File getCanonicalPath method"
   remediation: "Use for path validation"
@@ -1262,7 +1262,7 @@
 - id: groovy-file-getabsolutepath
   languages: [groovy]
   patterns:
-    - regex: "\\.getAbsolutePath\\s*\\("
+    - regex: '\\.getAbsolutePath\\s*\\('
   severity: low
   description: "File getAbsolutePath method"
   remediation: "Use for path validation"
@@ -1272,7 +1272,7 @@
 - id: groovy-file-getparentfile
   languages: [groovy]
   patterns:
-    - regex: "\\.getParentFile\\s*\\("
+    - regex: '\\.getParentFile\\s*\\('
   severity: low
   description: "File getParentFile method"
   remediation: "Validate parent directory"
@@ -1282,7 +1282,7 @@
 - id: groovy-file-input-stream
   languages: [groovy]
   patterns:
-    - regex: "new\\s+FileInputStream\\s*\\("
+    - regex: 'new\\s+FileInputStream\\s*\\('
   severity: medium
   description: "FileInputStream usage"
   remediation: "Validate file paths"
@@ -1292,7 +1292,7 @@
 - id: groovy-file-output-stream
   languages: [groovy]
   patterns:
-    - regex: "new\\s+FileOutputStream\\s*\\("
+    - regex: 'new\\s+FileOutputStream\\s*\\('
   severity: medium
   description: "FileOutputStream usage"
   remediation: "Validate file paths"
@@ -1302,7 +1302,7 @@
 - id: groovy-file-reader
   languages: [groovy]
   patterns:
-    - regex: "new\\s+FileReader\\s*\\("
+    - regex: 'new\\s+FileReader\\s*\\('
   severity: medium
   description: "FileReader usage"
   remediation: "Validate file paths"
@@ -1312,7 +1312,7 @@
 - id: groovy-file-writer
   languages: [groovy]
   patterns:
-    - regex: "new\\s+FileWriter\\s*\\("
+    - regex: 'new\\s+FileWriter\\s*\\('
   severity: medium
   description: "FileWriter usage"
   remediation: "Validate file paths"
@@ -1322,7 +1322,7 @@
 - id: groovy-buffered-reader
   languages: [groovy]
   patterns:
-    - regex: "new\\s+BufferedReader\\s*\\("
+    - regex: 'new\\s+BufferedReader\\s*\\('
   severity: low
   description: "BufferedReader usage"
   remediation: "Validate underlying stream"
@@ -1332,7 +1332,7 @@
 - id: groovy-buffered-writer
   languages: [groovy]
   patterns:
-    - regex: "new\\s+BufferedWriter\\s*\\("
+    - regex: 'new\\s+BufferedWriter\\s*\\('
   severity: low
   description: "BufferedWriter usage"
   remediation: "Validate underlying stream"
@@ -1342,7 +1342,7 @@
 - id: groovy-print-writer
   languages: [groovy]
   patterns:
-    - regex: "new\\s+PrintWriter\\s*\\("
+    - regex: 'new\\s+PrintWriter\\s*\\('
   severity: low
   description: "PrintWriter usage"
   remediation: "Validate underlying stream"
@@ -1352,7 +1352,7 @@
 - id: groovy-print-stream
   languages: [groovy]
   patterns:
-    - regex: "new\\s+PrintStream\\s*\\("
+    - regex: 'new\\s+PrintStream\\s*\\('
   severity: low
   description: "PrintStream usage"
   remediation: "Validate underlying stream"
@@ -1362,7 +1362,7 @@
 - id: groovy-files-walk
   languages: [groovy]
   patterns:
-    - regex: "Files\\.walk\\s*\\("
+    - regex: 'Files\\.walk\\s*\\('
   severity: low
   description: "Files.walk usage"
   remediation: "Validate walk paths"
@@ -1372,7 +1372,7 @@
 - id: groovy-files-list
   languages: [groovy]
   patterns:
-    - regex: "Files\\.list\\s*\\("
+    - regex: 'Files\\.list\\s*\\('
   severity: low
   description: "Files.list usage"
   remediation: "Validate list paths"
@@ -1383,7 +1383,7 @@
 - id: groovy-url-constructor
   languages: [groovy]
   patterns:
-    - regex: "new\\s+URL\\s*\\("
+    - regex: 'new\\s+URL\\s*\\('
   severity: medium
   description: "URL constructor usage"
   remediation: "Validate URL strings"
@@ -1393,7 +1393,7 @@
 - id: groovy-uri-constructor
   languages: [groovy]
   patterns:
-    - regex: "new\\s+URI\\s*\\("
+    - regex: 'new\\s+URI\\s*\\('
   severity: medium
   description: "URI constructor usage"
   remediation: "Validate URI strings"
@@ -1403,7 +1403,7 @@
 - id: groovy-url-open-stream
   languages: [groovy]
   patterns:
-    - regex: "\\.openStream\\s*\\("
+    - regex: '\\.openStream\\s*\\('
   severity: medium
   description: "URL.openStream usage"
   remediation: "Validate URL before opening"
@@ -1413,7 +1413,7 @@
 - id: groovy-url-open-connection
   languages: [groovy]
   patterns:
-    - regex: "\\.openConnection\\s*\\("
+    - regex: '\\.openConnection\\s*\\('
   severity: medium
   description: "URL.openConnection usage"
   remediation: "Validate URL before connecting"
@@ -1423,7 +1423,7 @@
 - id: groovy-http-builder
   languages: [groovy]
   patterns:
-    - regex: "new\\s+HTTPBuilder\\s*\\("
+    - regex: 'new\\s+HTTPBuilder\\s*\\('
   severity: medium
   description: "HTTPBuilder usage"
   remediation: "Validate HTTP endpoints"
@@ -1433,7 +1433,7 @@
 - id: groovy-rest-client
   languages: [groovy]
   patterns:
-    - regex: "new\\s+RESTClient\\s*\\("
+    - regex: 'new\\s+RESTClient\\s*\\('
   severity: medium
   description: "RESTClient usage"
   remediation: "Validate REST endpoints"
@@ -1443,7 +1443,7 @@
 - id: groovy-http-get
   languages: [groovy]
   patterns:
-    - regex: "\\.get\\s*\\("
+    - regex: '\\.get\\s*\\('
   severity: low
   description: "HTTP GET request"
   remediation: "Validate GET parameters"
@@ -1453,7 +1453,7 @@
 - id: groovy-http-post
   languages: [groovy]
   patterns:
-    - regex: "\\.post\\s*\\("
+    - regex: '\\.post\\s*\\('
   severity: low
   description: "HTTP POST request"
   remediation: "Validate POST data"
@@ -1463,7 +1463,7 @@
 - id: groovy-http-put
   languages: [groovy]
   patterns:
-    - regex: "\\.put\\s*\\("
+    - regex: '\\.put\\s*\\('
   severity: low
   description: "HTTP PUT request"
   remediation: "Validate PUT data"
@@ -1473,7 +1473,7 @@
 - id: groovy-http-delete
   languages: [groovy]
   patterns:
-    - regex: "\\.delete\\s*\\("
+    - regex: '\\.delete\\s*\\('
   severity: low
   description: "HTTP DELETE request"
   remediation: "Validate DELETE target"
@@ -1483,7 +1483,7 @@
 - id: groovy-http-request
   languages: [groovy]
   patterns:
-    - regex: "\\.request\\s*\\("
+    - regex: '\\.request\\s*\\('
   severity: low
   description: "HTTP request method"
   remediation: "Validate request parameters"
@@ -1493,7 +1493,7 @@
 - id: groovy-socket-constructor
   languages: [groovy]
   patterns:
-    - regex: "new\\s+Socket\\s*\\("
+    - regex: 'new\\s+Socket\\s*\\('
   severity: medium
   description: "Socket constructor usage"
   remediation: "Validate socket endpoints"
@@ -1503,7 +1503,7 @@
 - id: groovy-server-socket
   languages: [groovy]
   patterns:
-    - regex: "new\\s+ServerSocket\\s*\\("
+    - regex: 'new\\s+ServerSocket\\s*\\('
   severity: medium
   description: "ServerSocket usage"
   remediation: "Secure server socket"
@@ -1513,7 +1513,7 @@
 - id: groovy-datagram-socket
   languages: [groovy]
   patterns:
-    - regex: "new\\s+DatagramSocket\\s*\\("
+    - regex: 'new\\s+DatagramSocket\\s*\\('
   severity: medium
   description: "DatagramSocket usage"
   remediation: "Validate socket endpoints"
@@ -1523,7 +1523,7 @@
 - id: groovy-inet-address
   languages: [groovy]
   patterns:
-    - regex: "InetAddress\\."
+    - regex: 'InetAddress\\.'
   severity: low
   description: "InetAddress usage"
   remediation: "Validate IP addresses"
@@ -1533,7 +1533,7 @@
 - id: groovy-network-interface
   languages: [groovy]
   patterns:
-    - regex: "NetworkInterface\\."
+    - regex: 'NetworkInterface\\.'
   severity: low
   description: "NetworkInterface usage"
   remediation: "Don't expose network info"
@@ -1543,7 +1543,7 @@
 - id: groovy-proxy-selector
   languages: [groovy]
   patterns:
-    - regex: "ProxySelector\\."
+    - regex: 'ProxySelector\\.'
   severity: low
   description: "ProxySelector usage"
   remediation: "Configure proxy securely"
@@ -1553,7 +1553,7 @@
 - id: groovy-authenticator
   languages: [groovy]
   patterns:
-    - regex: "Authenticator\\."
+    - regex: 'Authenticator\\.'
   severity: medium
   description: "Authenticator usage"
   remediation: "Secure authentication"
@@ -1563,7 +1563,7 @@
 - id: groovy-ssl-context
   languages: [groovy]
   patterns:
-    - regex: "SSLContext\\."
+    - regex: 'SSLContext\\.'
   severity: medium
   description: "SSLContext usage"
   remediation: "Configure SSL securely"
@@ -1573,7 +1573,7 @@
 - id: groovy-ssl-socket-factory
   languages: [groovy]
   patterns:
-    - regex: "SSLSocketFactory\\."
+    - regex: 'SSLSocketFactory\\.'
   severity: medium
   description: "SSLSocketFactory usage"
   remediation: "Configure SSL securely"
@@ -1584,7 +1584,7 @@
 - id: groovy-xml-blind-xxe
   languages: [groovy]
   patterns:
-    - regex: "(?i)XmlSlurper.*DTD|new\s+XmlParser.*DTD"
+    - regex: '(?i)XmlSlurper.*DTD|new\s+XmlParser.*DTD'
   severity: high
   description: "XML parser vulnerable to XXE"
   remediation: "Disable DTD processing"
@@ -1595,7 +1595,7 @@
 - id: groovy-ldap-injection
   languages: [groovy]
   patterns:
-    - regex: "(?i)ldapTemplate\\.search.*\\+"
+    - regex: '(?i)ldapTemplate\\.search.*\\+'
   severity: critical
   description: "LDAP injection"
   remediation: "Use LDAP filters properly"
@@ -1606,7 +1606,7 @@
 - id: groovy-process-builder
   languages: [groovy]
   patterns:
-    - regex: "(?i)new\s+ProcessBuilder.*\\+"
+    - regex: '(?i)new\s+ProcessBuilder.*\\+'
   severity: critical
   description: "Command injection via ProcessBuilder"
   remediation: "Use ProcessBuilder with list"
@@ -1617,7 +1617,7 @@
 - id: groovy-eval-injection
   languages: [groovy]
   patterns:
-    - regex: "(?i)GroovyShell\\.evaluate.*\\$"
+    - regex: '(?i)GroovyShell\\.evaluate.*\\$'
   severity: critical
   description: "Eval injection"
   remediation: "Avoid eval"
@@ -1628,7 +1628,7 @@
 - id: groovy-jackson-deserialization
   languages: [groovy]
   patterns:
-    - regex: "(?i)ObjectMapper.*enableDefaultTyping"
+    - regex: '(?i)ObjectMapper.*enableDefaultTyping'
   severity: critical
   description: "Jackson unsafe deserialization"
   remediation: "Disable default typing"

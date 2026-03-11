@@ -6,7 +6,7 @@
 - id: sol-reentrancy-external-call
   languages: [solidity]
   patterns:
-    - regex: "\\.call\\{value:|\\.send\\(|\\.transfer\\("
+    - regex: '\\.call\\{value:|\\.send\\(|\\.transfer\\('
   severity: critical
   description: "External call may be vulnerable to reentrancy attacks"
   remediation: "Use checks-effects-interactions pattern. Apply ReentrancyGuard from OpenZeppelin"
@@ -16,7 +16,7 @@
 - id: sol-reentrancy-state-after-call
   languages: [solidity]
   patterns:
-    - regex: "\\.call\\{[^}]*\\}\\([^)]*\\)[^;]*;[^}]*\\w+\\s*="
+    - regex: '\\.call\\{[^}]*\\}\\([^)]*\\)[^;]*;[^}]*\\w+\\s*='
   severity: critical
   description: "State modification after external call — reentrancy risk"
   remediation: "Update state BEFORE external calls (checks-effects-interactions pattern)"
@@ -27,7 +27,7 @@
 - id: sol-unchecked-math
   languages: [solidity]
   patterns:
-    - regex: "unchecked\\s*\\{"
+    - regex: 'unchecked\\s*\\{'
   severity: medium
   description: "Unchecked arithmetic block bypasses overflow/underflow checks"
   remediation: "Only use unchecked blocks when overflow is mathematically impossible"
@@ -38,7 +38,7 @@
 - id: sol-tx-origin-auth
   languages: [solidity]
   patterns:
-    - regex: "tx\\.origin"
+    - regex: 'tx\\.origin'
   severity: high
   description: "tx.origin used for authorization — vulnerable to phishing attacks"
   remediation: "Use msg.sender instead of tx.origin for authorization checks"
@@ -48,7 +48,7 @@
 - id: sol-missing-access-control
   languages: [solidity]
   patterns:
-    - regex: "function\\s+\\w+\\s*\\([^)]*\\)\\s*(public|external)(?!.*onlyOwner|.*require\\(msg\\.sender)"
+    - regex: 'function\\s+\\w+\\s*\\([^)]*\\)\\s*(public|external)(?!.*onlyOwner|.*require\\(msg\\.sender)'
   severity: high
   description: "Public/external function may lack access control"
   remediation: "Add onlyOwner modifier or require(msg.sender == owner) for sensitive functions"
@@ -58,7 +58,7 @@
 - id: sol-unprotected-selfdestruct
   languages: [solidity]
   patterns:
-    - regex: "selfdestruct\\s*\\(|suicide\\s*\\("
+    - regex: 'selfdestruct\\s*\\(|suicide\\s*\\('
   severity: critical
   description: "selfdestruct can destroy the contract and steal all funds"
   remediation: "Add strict access control to selfdestruct. Consider removing it entirely"
@@ -69,7 +69,7 @@
 - id: sol-insecure-randomness
   languages: [solidity]
   patterns:
-    - regex: "block\\.(timestamp|difficulty|number|coinbase)|blockhash\\("
+    - regex: 'block\\.(timestamp|difficulty|number|coinbase)|blockhash\\('
   severity: high
   description: "Block variables used for randomness can be manipulated by miners"
   remediation: "Use Chainlink VRF or commit-reveal scheme for secure randomness"
@@ -80,7 +80,7 @@
 - id: sol-unbounded-loop
   languages: [solidity]
   patterns:
-    - regex: "for\\s*\\(\\s*uint\\s+\\w+\\s*=\\s*0\\s*;\\s*\\w+\\s*<\\s*\\w+\\.length"
+    - regex: 'for\\s*\\(\\s*uint\\s+\\w+\\s*=\\s*0\\s*;\\s*\\w+\\s*<\\s*\\w+\\.length'
   severity: medium
   description: "Unbounded loop over dynamic array may cause out-of-gas DoS"
   remediation: "Limit loop iterations or use pagination pattern"
@@ -90,7 +90,7 @@
 - id: sol-dos-with-revert
   languages: [solidity]
   patterns:
-    - regex: "require\\s*\\([^)]*\\.transfer\\(|require\\s*\\([^)]*\\.send\\("
+    - regex: 'require\\s*\\([^)]*\\.transfer\\(|require\\s*\\([^)]*\\.send\\('
   severity: medium
   description: "External call in require can brick the contract if recipient reverts"
   remediation: "Use pull-over-push pattern for payments. Let users withdraw instead"
@@ -101,7 +101,7 @@
 - id: sol-default-visibility
   languages: [solidity]
   patterns:
-    - regex: "function\\s+\\w+\\s*\\([^)]*\\)\\s*(?!public|private|internal|external|view|pure)"
+    - regex: 'function\\s+\\w+\\s*\\([^)]*\\)\\s*(?!public|private|internal|external|view|pure)'
   severity: medium
   description: "Function without explicit visibility defaults to public"
   remediation: "Always specify function visibility: public, private, internal, or external"
@@ -112,7 +112,7 @@
 - id: sol-delegatecall
   languages: [solidity]
   patterns:
-    - regex: "\\.delegatecall\\("
+    - regex: '\\.delegatecall\\('
   severity: high
   description: "delegatecall executes code in the context of the calling contract"
   remediation: "Only delegatecall to trusted contracts. Validate target address"
@@ -123,7 +123,7 @@
 - id: sol-hardcoded-address
   languages: [solidity]
   patterns:
-    - regex: "0x[0-9a-fA-F]{40}"
+    - regex: '0x[0-9a-fA-F]{40}'
   severity: low
   description: "Hardcoded Ethereum address detected"
   remediation: "Use constructor parameters or configuration for addresses to support multiple networks"
@@ -134,7 +134,7 @@
 - id: sol-floating-pragma
   languages: [solidity]
   patterns:
-    - regex: "pragma solidity\\s*\\^"
+    - regex: 'pragma solidity\\s*\\^'
   severity: low
   description: "Floating pragma version allows compilation with different compiler versions"
   remediation: "Lock pragma to a specific version: pragma solidity 0.8.20;"
@@ -145,7 +145,7 @@
 - id: sol-frontrunning-vulnerable
   languages: [solidity]
   patterns:
-    - regex: "(?i)approve\\s*\\(|transferFrom\\s*\\("
+    - regex: '(?i)approve\\s*\\(|transferFrom\\s*\\('
   severity: medium
   description: "ERC-20 approve/transferFrom pattern is vulnerable to front-running"
   remediation: "Use increaseAllowance/decreaseAllowance or permit (EIP-2612)"
@@ -156,7 +156,7 @@
 - id: sol-flash-loan-vulnerable
   languages: [solidity]
   patterns:
-    - regex: "(?i)flashLoan|flash_loan|getReserves"
+    - regex: '(?i)flashLoan|flash_loan|getReserves'
   severity: medium
   description: "Function may be vulnerable to flash loan price manipulation"
   remediation: "Use time-weighted average prices (TWAP) from Uniswap V3 or Chainlink oracles"
@@ -175,7 +175,7 @@
 - id: sol-erc20-approve-race
   languages: [solidity]
   patterns:
-    - regex: "(?i)function\\s+approve\\s*\\("
+    - regex: '(?i)function\\s+approve\\s*\\('
   severity: medium
   description: "ERC20 approve vulnerable to race condition"
   remediation: "Use increaseAllowance/decreaseAllowance pattern"
@@ -185,7 +185,7 @@
 - id: sol-erc20-transfer-from
   languages: [solidity]
   patterns:
-    - regex: "(?i)transferFrom\\s*\\("
+    - regex: '(?i)transferFrom\\s*\\('
   severity: low
   description: "ERC20 transferFrom usage"
   remediation: "Validate allowance before transfer"
@@ -195,7 +195,7 @@
 - id: sol-erc20-mint-function
   languages: [solidity]
   patterns:
-    - regex: "(?i)function\\s+mint\\s*\\("
+    - regex: '(?i)function\\s+mint\\s*\\('
   severity: high
   description: "ERC20 mint function"
   remediation: "Restrict mint access with proper access control"
@@ -205,7 +205,7 @@
 - id: sol-erc20-burn-function
   languages: [solidity]
   patterns:
-    - regex: "(?i)function\\s+burn\\s*\\("
+    - regex: '(?i)function\\s+burn\\s*\\('
   severity: medium
   description: "ERC20 burn function"
   remediation: "Validate burn amount and caller"
@@ -215,7 +215,7 @@
 - id: sol-erc721-safe-transfer
   languages: [solidity]
   patterns:
-    - regex: "(?i)safeTransferFrom\\s*\\("
+    - regex: '(?i)safeTransferFrom\\s*\\('
   severity: low
   description: "ERC721 safe transfer"
   remediation: "Ensure recipient can handle NFTs"
@@ -225,7 +225,7 @@
 - id: sol-erc721-approve-all
   languages: [solidity]
   patterns:
-    - regex: "(?i)setApprovalForAll\\s*\\("
+    - regex: '(?i)setApprovalForAll\\s*\\('
   severity: medium
   description: "ERC721 approve all"
   remediation: "Warn users about approve all risks"
@@ -235,7 +235,7 @@
 - id: sol-erc721-metadata
   languages: [solidity]
   patterns:
-    - regex: "(?i)tokenURI\\s*\\("
+    - regex: '(?i)tokenURI\\s*\\('
   severity: low
   description: "ERC721 metadata URI"
   remediation: "Validate metadata URIs"
@@ -245,7 +245,7 @@
 - id: sol-erc721-enumerable
   languages: [solidity]
   patterns:
-    - regex: "(?i)ERC721Enumerable"
+    - regex: '(?i)ERC721Enumerable'
   severity: low
   description: "ERC721 Enumerable extension"
   remediation: "Consider gas costs of enumeration"
@@ -255,7 +255,7 @@
 - id: sol-erc1155-batch-transfer
   languages: [solidity]
   patterns:
-    - regex: "(?i)safeBatchTransferFrom\\s*\\("
+    - regex: '(?i)safeBatchTransferFrom\\s*\\('
   severity: low
   description: "ERC1155 batch transfer"
   remediation: "Validate batch amounts"
@@ -265,7 +265,7 @@
 - id: sol-erc1155-uri
   languages: [solidity]
   patterns:
-    - regex: "(?i)uri\\s*\\(\\s*uint256"
+    - regex: '(?i)uri\\s*\\(\\s*uint256'
   severity: low
   description: "ERC1155 URI function"
   remediation: "Validate token URIs"
@@ -275,7 +275,7 @@
 - id: sol-erc4626-vault
   languages: [solidity]
   patterns:
-    - regex: "(?i)ERC4626|function\\s+deposit\\s*\\("
+    - regex: '(?i)ERC4626|function\\s+deposit\\s*\\('
   severity: medium
   description: "ERC4626 vault"
   remediation: "Validate vault inflation attacks"
@@ -285,7 +285,7 @@
 - id: sol-erc4626-withdraw
   languages: [solidity]
   patterns:
-    - regex: "(?i)function\\s+withdraw\\s*\\("
+    - regex: '(?i)function\\s+withdraw\\s*\\('
   severity: medium
   description: "ERC4626 withdraw"
   remediation: "Validate withdrawal amounts"
@@ -295,7 +295,7 @@
 - id: sol-erc4626-convert
   languages: [solidity]
   patterns:
-    - regex: "(?i)convertToShares|convertToAssets"
+    - regex: '(?i)convertToShares|convertToAssets'
   severity: medium
   description: "ERC4626 conversion"
   remediation: "Check for rounding issues"
@@ -305,7 +305,7 @@
 - id: sol-erc2981-royalty
   languages: [solidity]
   patterns:
-    - regex: "(?i)royaltyInfo\\s*\\("
+    - regex: '(?i)royaltyInfo\\s*\\('
   severity: low
   description: "ERC2981 royalty"
   remediation: "Validate royalty percentages"
@@ -315,7 +315,7 @@
 - id: sol-erc1271-signature
   languages: [solidity]
   patterns:
-    - regex: "(?i)isValidSignature\\s*\\("
+    - regex: '(?i)isValidSignature\\s*\\('
   severity: low
   description: "ERC1271 signature verification"
   remediation: "Implement proper signature validation"
@@ -325,7 +325,7 @@
 - id: sol-erc2612-permit
   languages: [solidity]
   patterns:
-    - regex: "(?i)permit\\s*\\("
+    - regex: '(?i)permit\\s*\\('
   severity: medium
   description: "ERC2612 permit"
   remediation: "Validate permit signatures"
@@ -335,7 +335,7 @@
 - id: sol-erc2612-domain
   languages: [solidity]
   patterns:
-    - regex: "(?i)DOMAIN_SEPARATOR\\s*\\("
+    - regex: '(?i)DOMAIN_SEPARATOR\\s*\\('
   severity: low
   description: "EIP712 domain separator"
   remediation: "Ensure proper domain separation"
@@ -345,7 +345,7 @@
 - id: sol-erc2612-nonce
   languages: [solidity]
   patterns:
-    - regex: "(?i)nonces\\s*\\("
+    - regex: '(?i)nonces\\s*\\('
   severity: low
   description: "Permit nonce tracking"
   remediation: "Ensure nonce increment"
@@ -355,7 +355,7 @@
 - id: sol-erc165-interface
   languages: [solidity]
   patterns:
-    - regex: "(?i)supportsInterface\\s*\\("
+    - regex: '(?i)supportsInterface\\s*\\('
   severity: low
   description: "ERC165 interface check"
   remediation: "Implement interface detection properly"
@@ -365,7 +365,7 @@
 - id: sol-erc1820-registry
   languages: [solidity]
   patterns:
-    - regex: "(?i)ERC1820Registry|IERC1820Registry"
+    - regex: '(?i)ERC1820Registry|IERC1820Registry'
   severity: low
   description: "ERC1820 registry"
   remediation: "Validate registry interactions"
@@ -376,7 +376,7 @@
 - id: sol-gas-loop-array
   languages: [solidity]
   patterns:
-    - regex: "(?i)for\\s*\\([^;]+;[^;]+<\\s*\\w+\\.length"
+    - regex: '(?i)for\\s*\\([^;]+;[^;]+<\\s*\\w+\\.length'
   severity: medium
   description: "Loop over dynamic array length"
   remediation: "Cache array length before loop"
@@ -386,7 +386,7 @@
 - id: sol-gas-storage-read
   languages: [solidity]
   patterns:
-    - regex: "(?i)\\w+\\.\\w+\\s*\\+\\s*\\w+\\.\\w+"
+    - regex: '(?i)\\w+\\.\\w+\\s*\\+\\s*\\w+\\.\\w+'
   severity: low
   description: "Multiple storage reads"
   remediation: "Cache storage values in memory"
@@ -396,7 +396,7 @@
 - id: sol-gas-external-call
   languages: [solidity]
   patterns:
-    - regex: "(?i)\\w+\\.\\w+\\s*\\([^)]*\\)\\s*\\{[^}]*\\w+\\.\\w+"
+    - regex: '(?i)\\w+\\.\\w+\\s*\\([^)]*\\)\\s*\\{[^}]*\\w+\\.\\w+'
   severity: medium
   description: "External call in loop"
   remediation: "Avoid external calls in loops"
@@ -406,7 +406,7 @@
 - id: sol-gas-string-concat
   languages: [solidity]
   patterns:
-    - regex: "(?i)string\\s*\\([^)]*\\+\\s*[^)]*\\+"
+    - regex: '(?i)string\\s*\\([^)]*\\+\\s*[^)]*\\+'
   severity: low
   description: "String concatenation"
   remediation: "Use assembly or libraries for string operations"
@@ -416,7 +416,7 @@
 - id: sol-gas-event-emission
   languages: [solidity]
   patterns:
-    - regex: "(?i)emit\\s+\\w+\\s*\\([^)]*\\w+\\s*\\+\\s*\\w+"
+    - regex: '(?i)emit\\s+\\w+\\s*\\([^)]*\\w+\\s*\\+\\s*\\w+'
   severity: low
   description: "Complex event emission"
   remediation: "Simplify event parameters"
@@ -426,7 +426,7 @@
 - id: sol-gas-mapping-iteration
   languages: [solidity]
   patterns:
-    - regex: "(?i)mapping\\s*\\([^)]+\\)\\s*\\w+;"
+    - regex: '(?i)mapping\\s*\\([^)]+\\)\\s*\\w+;'
   severity: low
   description: "Mapping usage"
   remediation: "Track keys separately for iteration"
@@ -436,7 +436,7 @@
 - id: sol-gas-delete-mapping
   languages: [solidity]
   patterns:
-    - regex: "(?i)delete\\s+\\w+\\s*\\["
+    - regex: '(?i)delete\\s+\\w+\\s*\\['
   severity: low
   description: "Mapping element deletion"
   remediation: "Note: delete doesn't remove from mapping"
@@ -446,7 +446,7 @@
 - id: sol-gas-array-push
   languages: [solidity]
   patterns:
-    - regex: "(?i)\\w+\\.push\\s*\\("
+    - regex: '(?i)\\w+\\.push\\s*\\('
   severity: low
   description: "Array push operation"
   remediation: "Consider gas costs of dynamic arrays"
@@ -456,7 +456,7 @@
 - id: sol-gas-array-pop
   languages: [solidity]
   patterns:
-    - regex: "(?i)\\w+\\.pop\\s*\\("
+    - regex: '(?i)\\w+\\.pop\\s*\\('
   severity: low
   description: "Array pop operation"
   remediation: "Consider gas refunds"
@@ -466,7 +466,7 @@
 - id: sol-gas-require-message
   languages: [solidity]
   patterns:
-    - regex: "(?i)require\\s*\\([^,]+,\\s*['\"]"
+    - regex: '(?i)require\\s*\\([^,]+,\\s*['\"]'
   severity: low
   description: "Require with string message"
   remediation: "Consider using custom errors (Solidity 0.8.4+)"
@@ -476,7 +476,7 @@
 - id: sol-gas-custom-error
   languages: [solidity]
   patterns:
-    - regex: "(?i)error\\s+\\w+\\s*\\("
+    - regex: '(?i)error\\s+\\w+\\s*\\('
   severity: low
   description: "Custom error definition"
   remediation: "Good practice for gas optimization"
@@ -486,7 +486,7 @@
 - id: sol-gas-view-function
   languages: [solidity]
   patterns:
-    - regex: "(?i)view\\s+external\\s+function|pure\\s+external\\s+function"
+    - regex: '(?i)view\\s+external\\s+function|pure\\s+external\\s+function'
   severity: low
   description: "View/pure function"
   remediation: "Use view/pure when possible"
@@ -496,7 +496,7 @@
 - id: sol-gas-payable-function
   languages: [solidity]
   patterns:
-    - regex: "(?i)payable\\s+external\\s+function"
+    - regex: '(?i)payable\\s+external\\s+function'
   severity: low
   description: "Payable function"
   remediation: "Validate ETH handling"
@@ -506,7 +506,7 @@
 - id: sol-gas-fallback
   languages: [solidity]
   patterns:
-    - regex: "(?i)fallback\\s*\\(\\s*\\)\\s+external"
+    - regex: '(?i)fallback\\s*\\(\\s*\\)\\s+external'
   severity: medium
   description: "Fallback function"
   remediation: "Implement fallback securely"
@@ -516,7 +516,7 @@
 - id: sol-gas-receive
   languages: [solidity]
   patterns:
-    - regex: "(?i)receive\\s*\\(\\s*\\)\\s+external\\s+payable"
+    - regex: '(?i)receive\\s*\\(\\s*\\)\\s+external\\s+payable'
   severity: medium
   description: "Receive function"
   remediation: "Implement receive securely"
@@ -526,7 +526,7 @@
 - id: sol-gas-constructor
   languages: [solidity]
   patterns:
-    - regex: "(?i)constructor\\s*\\("
+    - regex: '(?i)constructor\\s*\\('
   severity: low
   description: "Constructor"
   remediation: "Keep constructor gas-efficient"
@@ -536,7 +536,7 @@
 - id: sol-gas-initializer
   languages: [solidity]
   patterns:
-    - regex: "(?i)function\\s+initialize\\s*\\("
+    - regex: '(?i)function\\s+initialize\\s*\\('
   severity: medium
   description: "Initializer function"
   remediation: "Protect initializer with proper access control"
@@ -546,7 +546,7 @@
 - id: sol-gas-proxy-call
   languages: [solidity]
   patterns:
-    - regex: "(?i)delegatecall\\s*\\("
+    - regex: '(?i)delegatecall\\s*\\('
   severity: high
   description: "Delegatecall usage"
   remediation: "Validate delegatecall targets"
@@ -556,7 +556,7 @@
 - id: sol-gas-assembly
   languages: [solidity]
   patterns:
-    - regex: "(?i)assembly\\s*\\{"
+    - regex: '(?i)assembly\\s*\\{'
   severity: medium
   description: "Assembly block"
   remediation: "Review assembly code carefully"
@@ -566,7 +566,7 @@
 - id: sol-gas-sload
   languages: [solidity]
   patterns:
-    - regex: "(?i)sload\\s*\\("
+    - regex: '(?i)sload\\s*\\('
   severity: low
   description: "SLOAD operation"
   remediation: "Minimize storage reads"
@@ -577,7 +577,7 @@
 - id: sol-upgrade-proxy
   languages: [solidity]
   patterns:
-    - regex: "(?i)TransparentUpgradeableProxy|UpgradeableProxy"
+    - regex: '(?i)TransparentUpgradeableProxy|UpgradeableProxy'
   severity: low
   description: "Upgradeable proxy"
   remediation: "Implement upgrade access control"
@@ -587,7 +587,7 @@
 - id: sol-upgrade-beacon
   languages: [solidity]
   patterns:
-    - regex: "(?i)BeaconProxy|UpgradeableBeacon"
+    - regex: '(?i)BeaconProxy|UpgradeableBeacon'
   severity: low
   description: "Beacon proxy pattern"
   remediation: "Secure beacon upgrade access"
@@ -597,7 +597,7 @@
 - id: sol-upgrade-implementation
   languages: [solidity]
   patterns:
-    - regex: "(?i)upgradeTo\\s*\\(|upgradeToAndCall\\s*\\("
+    - regex: '(?i)upgradeTo\\s*\\(|upgradeToAndCall\\s*\\('
   severity: high
   description: "Upgrade function"
   remediation: "Restrict upgrade access"
@@ -607,7 +607,7 @@
 - id: sol-upgrade-admin
   languages: [solidity]
   patterns:
-    - regex: "(?i)admin\\s*\\(|changeAdmin\\s*\\("
+    - regex: '(?i)admin\\s*\\(|changeAdmin\\s*\\('
   severity: high
   description: "Admin change function"
   remediation: "Secure admin transfer"
@@ -617,7 +617,7 @@
 - id: sol-upgrade-initializer
   languages: [solidity]
   patterns:
-    - regex: "(?i)__\\w+Init\\s*\\("
+    - regex: '(?i)__\\w+Init\\s*\\('
   severity: medium
   description: "Initializer function"
   remediation: "Prevent re-initialization"
@@ -627,7 +627,7 @@
 - id: sol-upgrade-storage-gap
   languages: [solidity]
   patterns:
-    - regex: "(?i)uint256\\s*\\[\\s*\\d+\\s*\\]\\s+__gap"
+    - regex: '(?i)uint256\\s*\\[\\s*\\d+\\s*\\]\\s+__gap'
   severity: low
   description: "Storage gap for upgrades"
   remediation: "Maintain storage layout"
@@ -637,7 +637,7 @@
 - id: sol-upgrade-storage-slot
   languages: [solidity]
   patterns:
-    - regex: "(?i)bytes32\\s*\\(\\s*uint256\\s*\\(\\s*keccak256"
+    - regex: '(?i)bytes32\\s*\\(\\s*uint256\\s*\\(\\s*keccak256'
   severity: low
   description: "Storage slot calculation"
   remediation: "Use consistent slot calculation"
@@ -647,7 +647,7 @@
 - id: sol-upgrade-uups
   languages: [solidity]
   patterns:
-    - regex: "(?i)UUPSUpgradeable|ERC1967Upgrade"
+    - regex: '(?i)UUPSUpgradeable|ERC1967Upgrade'
   severity: low
   description: "UUPS upgrade pattern"
   remediation: "Implement _authorizeUpgrade properly"
@@ -657,7 +657,7 @@
 - id: sol-upgrade-transparent
   languages: [solidity]
   patterns:
-    - regex: "(?i)TransparentUpgradeableProxy"
+    - regex: '(?i)TransparentUpgradeableProxy'
   severity: low
   description: "Transparent proxy"
   remediation: "Understand proxy-admin separation"
@@ -667,7 +667,7 @@
 - id: sol-upgrade-diamond
   languages: [solidity]
   patterns:
-    - regex: "(?i)DiamondCut|DiamondLoupe"
+    - regex: '(?i)DiamondCut|DiamondLoupe'
   severity: medium
   description: "Diamond pattern (EIP2535)"
   remediation: "Secure facet management"
@@ -677,7 +677,7 @@
 - id: sol-upgrade-facet
   languages: [solidity]
   patterns:
-    - regex: "(?i)function\\s+\\w+\\s*\\([^)]*\\)\\s+external\\s+facet"
+    - regex: '(?i)function\\s+\\w+\\s*\\([^)]*\\)\\s+external\\s+facet'
   severity: low
   description: "Diamond facet"
   remediation: "Validate facet functions"
@@ -687,7 +687,7 @@
 - id: sol-upgrade-selector-clash
   languages: [solidity]
   patterns:
-    - regex: "(?i)function\\s+\\w+\\s*\\("
+    - regex: '(?i)function\\s+\\w+\\s*\\('
   severity: low
   description: "Function selector"
   remediation: "Avoid selector clashes in upgrades"
@@ -697,7 +697,7 @@
 - id: sol-upgrade-storage-collision
   languages: [solidity]
   patterns:
-    - regex: "(?i)mapping\\s*\\(|uint256\\s+\\w+\\s*;"
+    - regex: '(?i)mapping\\s*\\(|uint256\\s+\\w+\\s*;'
   severity: low
   description: "Storage variable"
   remediation: "Maintain storage layout across upgrades"
@@ -707,7 +707,7 @@
 - id: sol-upgrade-logic-contract
   languages: [solidity]
   patterns:
-    - regex: "(?i)LogicContract|Implementation"
+    - regex: '(?i)LogicContract|Implementation'
   severity: low
   description: "Logic contract reference"
   remediation: "Validate implementation address"
@@ -717,7 +717,7 @@
 - id: sol-upgrade-proxy-admin
   languages: [solidity]
   patterns:
-    - regex: "(?i)ProxyAdmin|proxyAdmin"
+    - regex: '(?i)ProxyAdmin|proxyAdmin'
   severity: medium
   description: "Proxy admin"
   remediation: "Secure proxy admin access"
@@ -727,7 +727,7 @@
 - id: sol-upgrade-timelock
   languages: [solidity]
   patterns:
-    - regex: "(?i)TimelockController|timelock"
+    - regex: '(?i)TimelockController|timelock'
   severity: low
   description: "Timelock for upgrades"
   remediation: "Set appropriate timelock delay"
@@ -737,7 +737,7 @@
 - id: sol-upgrade-multisig
   languages: [solidity]
   patterns:
-    - regex: "(?i)GnosisSafe|MultiSigWallet"
+    - regex: '(?i)GnosisSafe|MultiSigWallet'
   severity: low
   description: "Multisig for upgrades"
   remediation: "Configure multisig properly"
@@ -747,7 +747,7 @@
 - id: sol-upgrade-governance
   languages: [solidity]
   patterns:
-    - regex: "(?i)Governor|Timelock|Votes"
+    - regex: '(?i)Governor|Timelock|Votes'
   severity: low
   description: "Governance for upgrades"
   remediation: "Implement governance securely"
@@ -757,7 +757,7 @@
 - id: sol-upgrade-emergency-stop
   languages: [solidity]
   patterns:
-    - regex: "(?i)Pausable|pause\\s*\\(|unpause\\s*\\("
+    - regex: '(?i)Pausable|pause\\s*\\(|unpause\\s*\\('
   severity: low
   description: "Emergency stop mechanism"
   remediation: "Implement pause functionality"
@@ -767,7 +767,7 @@
 - id: sol-upgrade-version
   languages: [solidity]
   patterns:
-    - regex: "(?i)version\\s*\\(\\s*\\)|VERSION"
+    - regex: '(?i)version\\s*\\(\\s*\\)|VERSION'
   severity: low
   description: "Version tracking"
   remediation: "Track contract versions"
@@ -778,7 +778,7 @@
 - id: sol-oracle-chainlink
   languages: [solidity]
   patterns:
-    - regex: "(?i)Chainlink|AggregatorV3Interface"
+    - regex: '(?i)Chainlink|AggregatorV3Interface'
   severity: low
   description: "Chainlink oracle"
   remediation: "Validate oracle responses"
@@ -788,7 +788,7 @@
 - id: sol-oracle-price-feed
   languages: [solidity]
   patterns:
-    - regex: "(?i)latestRoundData\\s*\\("
+    - regex: '(?i)latestRoundData\\s*\\('
   severity: medium
   description: "Price feed access"
   remediation: "Check for stale prices"
@@ -798,7 +798,7 @@
 - id: sol-oracle-stale-price
   languages: [solidity]
   patterns:
-    - regex: "(?i)updatedAt\\s*\\(|answeredAt\\s*\\("
+    - regex: '(?i)updatedAt\\s*\\(|answeredAt\\s*\\('
   severity: medium
   description: "Price timestamp check"
   remediation: "Validate price freshness"
@@ -808,7 +808,7 @@
 - id: sol-oracle-heartbeat
   languages: [solidity]
   patterns:
-    - regex: "(?i)heartbeat\\s*\\("
+    - regex: '(?i)heartbeat\\s*\\('
   severity: low
   description: "Oracle heartbeat"
   remediation: "Monitor oracle health"
@@ -818,7 +818,7 @@
 - id: sol-oracle-manipulation
   languages: [solidity]
   patterns:
-    - regex: "(?i)price\\s*\\(|getPrice\\s*\\("
+    - regex: '(?i)price\\s*\\(|getPrice\\s*\\('
   severity: high
   description: "Price access"
   remediation: "Use time-weighted average prices"
@@ -828,7 +828,7 @@
 - id: sol-oracle-spot-price
   languages: [solidity]
   patterns:
-    - regex: "(?i)spotPrice|currentPrice"
+    - regex: '(?i)spotPrice|currentPrice'
   severity: high
   description: "Spot price usage"
   remediation: "Avoid using spot prices for critical operations"
@@ -838,7 +838,7 @@
 - id: sol-oracle-twap
   languages: [solidity]
   patterns:
-    - regex: "(?i)TWAP|timeWeightedAverage"
+    - regex: '(?i)TWAP|timeWeightedAverage'
   severity: low
   description: "TWAP oracle"
   remediation: "Use appropriate time window"
@@ -848,7 +848,7 @@
 - id: sol-oracle-uniswap-v3
   languages: [solidity]
   patterns:
-    - regex: "(?i)UniswapV3Oracle|TWAPOracle"
+    - regex: '(?i)UniswapV3Oracle|TWAPOracle'
   severity: low
   description: "Uniswap V3 oracle"
   remediation: "Validate oracle configuration"
@@ -858,7 +858,7 @@
 - id: sol-oracle-band
   languages: [solidity]
   patterns:
-    - regex: "(?i)BandProtocol|IBandOracle"
+    - regex: '(?i)BandProtocol|IBandOracle'
   severity: low
   description: "Band Protocol oracle"
   remediation: "Validate Band oracle responses"
@@ -868,7 +868,7 @@
 - id: sol-oracle-tellor
   languages: [solidity]
   patterns:
-    - regex: "(?i)Tellor|ITellor"
+    - regex: '(?i)Tellor|ITellor'
   severity: low
   description: "Tellor oracle"
   remediation: "Validate Tellor responses"
@@ -878,7 +878,7 @@
 - id: sol-oracle-api3
   languages: [solidity]
   patterns:
-    - regex: "(?i)API3|Airnode"
+    - regex: '(?i)API3|Airnode'
   severity: low
   description: "API3 oracle"
   remediation: "Validate API3 responses"
@@ -888,7 +888,7 @@
 - id: sol-oracle-dia
   languages: [solidity]
   patterns:
-    - regex: "(?i)DIA|DIAPriceFeed"
+    - regex: '(?i)DIA|DIAPriceFeed'
   severity: low
   description: "DIA oracle"
   remediation: "Validate DIA responses"
@@ -898,7 +898,7 @@
 - id: sol-oracle-custom
   languages: [solidity]
   patterns:
-    - regex: "(?i)Oracle|oracle\\s*\\("
+    - regex: '(?i)Oracle|oracle\\s*\\('
   severity: medium
   description: "Custom oracle"
   remediation: "Implement oracle securely"
@@ -908,7 +908,7 @@
 - id: sol-oracle-callback
   languages: [solidity]
   patterns:
-    - regex: "(?i)oracleCallback|fulfillOracleRequest"
+    - regex: '(?i)oracleCallback|fulfillOracleRequest'
   severity: medium
   description: "Oracle callback"
   remediation: "Validate callback origin"
@@ -918,7 +918,7 @@
 - id: sol-oracle-request
   languages: [solidity]
   patterns:
-    - regex: "(?i)requestOracleData|requestData"
+    - regex: '(?i)requestOracleData|requestData'
   severity: medium
   description: "Oracle request"
   remediation: "Validate request parameters"
@@ -928,7 +928,7 @@
 - id: sol-oracle-payment
   languages: [solidity]
   patterns:
-    - regex: "(?i)oraclePayment|payOracle"
+    - regex: '(?i)oraclePayment|payOracle'
   severity: low
   description: "Oracle payment"
   remediation: "Validate oracle fees"
@@ -938,7 +938,7 @@
 - id: sol-oracle-multiple
   languages: [solidity]
   patterns:
-    - regex: "(?i)multiple.*oracle|oracle.*multiple"
+    - regex: '(?i)multiple.*oracle|oracle.*multiple'
   severity: low
   description: "Multiple oracles"
   remediation: "Implement oracle aggregation"
@@ -948,7 +948,7 @@
 - id: sol-oracle-deviation
   languages: [solidity]
   patterns:
-    - regex: "(?i)deviation|threshold"
+    - regex: '(?i)deviation|threshold'
   severity: low
   description: "Price deviation check"
   remediation: "Set appropriate deviation threshold"
@@ -958,7 +958,7 @@
 - id: sol-oracle-circuit-breaker
   languages: [solidity]
   patterns:
-    - regex: "(?i)circuitBreaker|circuit.*breaker"
+    - regex: '(?i)circuitBreaker|circuit.*breaker'
   severity: low
   description: "Circuit breaker for oracles"
   remediation: "Implement circuit breaker"
@@ -968,7 +968,7 @@
 - id: sol-oracle-fallback
   languages: [solidity]
   patterns:
-    - regex: "(?i)fallbackOracle|backupOracle"
+    - regex: '(?i)fallbackOracle|backupOracle'
   severity: low
   description: "Fallback oracle"
   remediation: "Configure fallback oracle"
@@ -979,7 +979,7 @@
 - id: sol-multisig-gnosis
   languages: [solidity]
   patterns:
-    - regex: "(?i)GnosisSafe|Safe"
+    - regex: '(?i)GnosisSafe|Safe'
   severity: low
   description: "Gnosis Safe multisig"
   remediation: "Configure Safe properly"
@@ -989,7 +989,7 @@
 - id: sol-multisig-threshold
   languages: [solidity]
   patterns:
-    - regex: "(?i)threshold\\s*\\(|required\\s*\\("
+    - regex: '(?i)threshold\\s*\\(|required\\s*\\('
   severity: low
   description: "Multisig threshold"
   remediation: "Set appropriate threshold"
@@ -999,7 +999,7 @@
 - id: sol-multisig-owner
   languages: [solidity]
   patterns:
-    - regex: "(?i)addOwner|removeOwner|swapOwner"
+    - regex: '(?i)addOwner|removeOwner|swapOwner'
   severity: medium
   description: "Owner management"
   remediation: "Secure owner changes"
@@ -1009,7 +1009,7 @@
 - id: sol-multisig-transaction
   languages: [solidity]
   patterns:
-    - regex: "(?i)submitTransaction|confirmTransaction"
+    - regex: '(?i)submitTransaction|confirmTransaction'
   severity: medium
   description: "Transaction submission"
   remediation: "Validate transaction parameters"
@@ -1019,7 +1019,7 @@
 - id: sol-multisig-execution
   languages: [solidity]
   patterns:
-    - regex: "(?i)executeTransaction|execTransaction"
+    - regex: '(?i)executeTransaction|execTransaction'
   severity: medium
   description: "Transaction execution"
   remediation: "Validate execution conditions"
@@ -1029,7 +1029,7 @@
 - id: sol-multisig-replay
   languages: [solidity]
   patterns:
-    - regex: "(?i)nonce\\s*\\(|transactionCount\\s*\\("
+    - regex: '(?i)nonce\\s*\\(|transactionCount\\s*\\('
   severity: low
   description: "Transaction nonce"
   remediation: "Ensure nonce increment"
@@ -1039,7 +1039,7 @@
 - id: sol-multisig-signature
   languages: [solidity]
   patterns:
-    - regex: "(?i)signature|signTransaction"
+    - regex: '(?i)signature|signTransaction'
   severity: low
   description: "Transaction signature"
   remediation: "Validate signatures properly"
@@ -1049,7 +1049,7 @@
 - id: sol-multisig-module
   languages: [solidity]
   patterns:
-    - regex: "(?i)enableModule|disableModule"
+    - regex: '(?i)enableModule|disableModule'
   severity: medium
   description: "Module management"
   remediation: "Secure module changes"
@@ -1059,7 +1059,7 @@
 - id: sol-multisig-guard
   languages: [solidity]
   patterns:
-    - regex: "(?i)setGuard|guard\\s*\\("
+    - regex: '(?i)setGuard|guard\\s*\\('
   severity: medium
   description: "Guard configuration"
   remediation: "Validate guard contract"
@@ -1069,7 +1069,7 @@
 - id: sol-multisig-fallback
   languages: [solidity]
   patterns:
-    - regex: "(?i)fallbackManager|setFallbackHandler"
+    - regex: '(?i)fallbackManager|setFallbackHandler'
   severity: low
   description: "Fallback handler"
   remediation: "Validate fallback handler"
@@ -1079,7 +1079,7 @@
 - id: sol-multisig-delegate
   languages: [solidity]
   patterns:
-    - regex: "(?i)delegateCall|delegatecall"
+    - regex: '(?i)delegateCall|delegatecall'
   severity: high
   description: "Delegate call in multisig"
   remediation: "Restrict delegate calls"
@@ -1089,7 +1089,7 @@
 - id: sol-multisig-recovery
   languages: [solidity]
   patterns:
-    - regex: "(?i)recovery|socialRecovery"
+    - regex: '(?i)recovery|socialRecovery'
   severity: low
   description: "Account recovery"
   remediation: "Implement secure recovery"
@@ -1099,7 +1099,7 @@
 - id: sol-multisig-time-lock
   languages: [solidity]
   patterns:
-    - regex: "(?i)timeLock|delay\\s*\\("
+    - regex: '(?i)timeLock|delay\\s*\\('
   severity: low
   description: "Time lock for multisig"
   remediation: "Set appropriate delay"
@@ -1109,7 +1109,7 @@
 - id: sol-multisig-spending-limit
   languages: [solidity]
   patterns:
-    - regex: "(?i)spendingLimit|dailyLimit"
+    - regex: '(?i)spendingLimit|dailyLimit'
   severity: low
   description: "Spending limit"
   remediation: "Configure spending limits"
@@ -1119,7 +1119,7 @@
 - id: sol-multisig-batch
   languages: [solidity]
   patterns:
-    - regex: "(?i)multiSend|batchTransaction"
+    - regex: '(?i)multiSend|batchTransaction'
   severity: low
   description: "Batch transaction"
   remediation: "Validate batch transactions"
@@ -1129,7 +1129,7 @@
 - id: sol-multisig-meta-tx
   languages: [solidity]
   patterns:
-    - regex: "(?i)metaTransaction|executeMeta"
+    - regex: '(?i)metaTransaction|executeMeta'
   severity: medium
   description: "Meta transaction"
   remediation: "Validate meta transactions"
@@ -1139,7 +1139,7 @@
 - id: sol-multisig-relay
   languages: [solidity]
   patterns:
-    - regex: "(?i)relay|relayer"
+    - regex: '(?i)relay|relayer'
   severity: low
   description: "Transaction relay"
   remediation: "Validate relayer"
@@ -1149,7 +1149,7 @@
 - id: sol-multisig-gas-token
   languages: [solidity]
   patterns:
-    - regex: "(?i)gasToken|gasTokenPayment"
+    - regex: '(?i)gasToken|gasTokenPayment'
   severity: low
   description: "Gas token payment"
   remediation: "Validate gas token"
@@ -1159,7 +1159,7 @@
 - id: sol-multisig-refund
   languages: [solidity]
   patterns:
-    - regex: "(?i)refund|gasRefund"
+    - regex: '(?i)refund|gasRefund'
   severity: low
   description: "Gas refund"
   remediation: "Calculate refund properly"
@@ -1169,7 +1169,7 @@
 - id: sol-multisig-version
   languages: [solidity]
   patterns:
-    - regex: "(?i)VERSION\\s*=|version\\s*\\("
+    - regex: '(?i)VERSION\\s*=|version\\s*\\('
   severity: low
   description: "Multisig version"
   remediation: "Track multisig version"
@@ -1180,7 +1180,7 @@
 - id: sol-time-block-timestamp
   languages: [solidity]
   patterns:
-    - regex: "(?i)block\\.timestamp|now\\b"
+    - regex: '(?i)block\\.timestamp|now\\b'
   severity: medium
   description: "Block timestamp usage"
   remediation: "Be aware of timestamp manipulation"
@@ -1190,7 +1190,7 @@
 - id: sol-time-block-number
   languages: [solidity]
   patterns:
-    - regex: "(?i)block\\.number|block\\.height"
+    - regex: '(?i)block\\.number|block\\.height'
   severity: low
   description: "Block number usage"
   remediation: "Be aware of block number manipulation"
@@ -1200,7 +1200,7 @@
 - id: sol-time-difficulty
   languages: [solidity]
   patterns:
-    - regex: "(?i)block\\.difficulty|block\\.prevrandao"
+    - regex: '(?i)block\\.difficulty|block\\.prevrandao'
   severity: high
   description: "Block difficulty usage"
   remediation: "Don't use difficulty for randomness"
@@ -1210,7 +1210,7 @@
 - id: sol-time-lock-until
   languages: [solidity]
   patterns:
-    - regex: "(?i)lockUntil\\s*\\(|unlockTime"
+    - regex: '(?i)lockUntil\\s*\\(|unlockTime'
   severity: low
   description: "Time lock"
   remediation: "Validate lock duration"
@@ -1220,7 +1220,7 @@
 - id: sol-time-vesting
   languages: [solidity]
   patterns:
-    - regex: "(?i)vesting|vestedAmount"
+    - regex: '(?i)vesting|vestedAmount'
   severity: low
   description: "Vesting schedule"
   remediation: "Validate vesting calculation"
@@ -1230,7 +1230,7 @@
 - id: sol-time-cliff
   languages: [solidity]
   patterns:
-    - regex: "(?i)cliff\\s*\\(|cliffTime"
+    - regex: '(?i)cliff\\s*\\(|cliffTime'
   severity: low
   description: "Vesting cliff"
   remediation: "Validate cliff duration"
@@ -1240,7 +1240,7 @@
 - id: sol-time-duration
   languages: [solidity]
   patterns:
-    - regex: "(?i)duration\\s*\\(|timeDuration"
+    - regex: '(?i)duration\\s*\\(|timeDuration'
   severity: low
   description: "Time duration"
   remediation: "Validate duration values"
@@ -1250,7 +1250,7 @@
 - id: sol-time-deadline
   languages: [solidity]
   patterns:
-    - regex: "(?i)deadline\\s*\\(|deadlineAt"
+    - regex: '(?i)deadline\\s*\\(|deadlineAt'
   severity: medium
   description: "Deadline check"
   remediation: "Validate deadline"
@@ -1260,7 +1260,7 @@
 - id: sol-time-expiry
   languages: [solidity]
   patterns:
-    - regex: "(?i)expiry\\s*\\(|expiresAt"
+    - regex: '(?i)expiry\\s*\\(|expiresAt'
   severity: medium
   description: "Expiry check"
   remediation: "Validate expiry"
@@ -1270,7 +1270,7 @@
 - id: sol-time-grace-period
   languages: [solidity]
   patterns:
-    - regex: "(?i)gracePeriod|grace_period"
+    - regex: '(?i)gracePeriod|grace_period'
   severity: low
   description: "Grace period"
   remediation: "Validate grace period"
@@ -1280,7 +1280,7 @@
 - id: sol-time-delay
   languages: [solidity]
   patterns:
-    - regex: "(?i)delay\\s*\\(|timeDelay"
+    - regex: '(?i)delay\\s*\\(|timeDelay'
   severity: low
   description: "Time delay"
   remediation: "Validate delay duration"
@@ -1290,7 +1290,7 @@
 - id: sol-time-period
   languages: [solidity]
   patterns:
-    - regex: "(?i)period\\s*\\(|timePeriod"
+    - regex: '(?i)period\\s*\\(|timePeriod'
   severity: low
   description: "Time period"
   remediation: "Validate period"
@@ -1300,7 +1300,7 @@
 - id: sol-time-interval
   languages: [solidity]
   patterns:
-    - regex: "(?i)interval\\s*\\(|timeInterval"
+    - regex: '(?i)interval\\s*\\(|timeInterval'
   severity: low
   description: "Time interval"
   remediation: "Validate interval"
@@ -1310,7 +1310,7 @@
 - id: sol-time-frequency
   languages: [solidity]
   patterns:
-    - regex: "(?i)frequency\\s*\\(|timeFrequency"
+    - regex: '(?i)frequency\\s*\\(|timeFrequency'
   severity: low
   description: "Time frequency"
   remediation: "Validate frequency"
@@ -1320,7 +1320,7 @@
 - id: sol-time-rate
   languages: [solidity]
   patterns:
-    - regex: "(?i)rate\\s*\\(|timeRate"
+    - regex: '(?i)rate\\s*\\(|timeRate'
   severity: low
   description: "Time rate"
   remediation: "Validate rate"
@@ -1330,7 +1330,7 @@
 - id: sol-time-speed
   languages: [solidity]
   patterns:
-    - regex: "(?i)speed\\s*\\(|timeSpeed"
+    - regex: '(?i)speed\\s*\\(|timeSpeed'
   severity: low
   description: "Time speed"
   remediation: "Validate speed"
@@ -1340,7 +1340,7 @@
 - id: sol-time-acceleration
   languages: [solidity]
   patterns:
-    - regex: "(?i)acceleration|timeAcceleration"
+    - regex: '(?i)acceleration|timeAcceleration'
   severity: low
   description: "Time acceleration"
   remediation: "Validate acceleration"
@@ -1350,7 +1350,7 @@
 - id: sol-time-deceleration
   languages: [solidity]
   patterns:
-    - regex: "(?i)deceleration|timeDeceleration"
+    - regex: '(?i)deceleration|timeDeceleration'
   severity: low
   description: "Time deceleration"
   remediation: "Validate deceleration"
@@ -1360,7 +1360,7 @@
 - id: sol-time-schedule
   languages: [solidity]
   patterns:
-    - regex: "(?i)schedule\\s*\\(|timeSchedule"
+    - regex: '(?i)schedule\\s*\\(|timeSchedule'
   severity: low
   description: "Time schedule"
   remediation: "Validate schedule"
@@ -1370,7 +1370,7 @@
 - id: sol-time-calendar
   languages: [solidity]
   patterns:
-    - regex: "(?i)calendar|timeCalendar"
+    - regex: '(?i)calendar|timeCalendar'
   severity: low
   description: "Time calendar"
   remediation: "Validate calendar"
@@ -1381,7 +1381,7 @@
 - id: sol-signature-ecrecover
   languages: [solidity]
   patterns:
-    - regex: "(?i)ecrecover\\s*\\("
+    - regex: '(?i)ecrecover\\s*\\('
   severity: medium
   description: "ECDSA signature recovery"
   remediation: "Use OpenZeppelin ECDSA library"
@@ -1391,7 +1391,7 @@
 - id: sol-signature-hash
   languages: [solidity]
   patterns:
-    - regex: "(?i)keccak256\\s*\\(.*abi\\.encode"
+    - regex: '(?i)keccak256\\s*\\(.*abi\\.encode'
   severity: low
   description: "Signature hash"
   remediation: "Use proper encoding for signatures"
@@ -1401,7 +1401,7 @@
 - id: sol-signature-domain
   languages: [solidity]
   patterns:
-    - regex: "(?i)DOMAIN_SEPARATOR|domainSeparator"
+    - regex: '(?i)DOMAIN_SEPARATOR|domainSeparator'
   severity: low
   description: "EIP712 domain"
   remediation: "Implement domain separator properly"
@@ -1411,7 +1411,7 @@
 - id: sol-signature-struct
   languages: [solidity]
   patterns:
-    - regex: "(?i)struct\\s+\\w+Signature|Signature\\s*\\("
+    - regex: '(?i)struct\\s+\\w+Signature|Signature\\s*\\('
   severity: low
   description: "Signature struct"
   remediation: "Validate signature structure"
@@ -1421,7 +1421,7 @@
 - id: sol-signature-vrs
   languages: [solidity]
   patterns:
-    - regex: "(?i)v\\s*,\\s*r\\s*,\\s*s"
+    - regex: '(?i)v\\s*,\\s*r\\s*,\\s*s'
   severity: low
   description: "VRS signature components"
   remediation: "Validate VRS values"
@@ -1431,7 +1431,7 @@
 - id: sol-signature-malleability
   languages: [solidity]
   patterns:
-    - regex: "(?i)signature.*malleability|malleable"
+    - regex: '(?i)signature.*malleability|malleable'
   severity: medium
   description: "Signature malleability"
   remediation: "Check for signature malleability"
@@ -1441,7 +1441,7 @@
 - id: sol-signature-replay
   languages: [solidity]
   patterns:
-    - regex: "(?i)signature.*replay|replay.*attack"
+    - regex: '(?i)signature.*replay|replay.*attack'
   severity: high
   description: "Signature replay"
   remediation: "Implement replay protection"
@@ -1451,7 +1451,7 @@
 - id: sol-signature-nonce
   languages: [solidity]
   patterns:
-    - regex: "(?i)signatureNonce|nonce.*signature"
+    - regex: '(?i)signatureNonce|nonce.*signature'
   severity: low
   description: "Signature nonce"
   remediation: "Ensure nonce uniqueness"
@@ -1461,7 +1461,7 @@
 - id: sol-signature-chain-id
   languages: [solidity]
   patterns:
-    - regex: "(?i)chainId\\s*\\(|CHAIN_ID"
+    - regex: '(?i)chainId\\s*\\(|CHAIN_ID'
   severity: low
   description: "Chain ID in signature"
   remediation: "Include chain ID in signatures"
@@ -1471,7 +1471,7 @@
 - id: sol-signature-contract
   languages: [solidity]
   patterns:
-    - regex: "(?i)isContract.*signature|signature.*isContract"
+    - regex: '(?i)isContract.*signature|signature.*isContract'
   severity: medium
   description: "Contract signature verification"
   remediation: "Use ERC1271 for contract signatures"
@@ -1481,7 +1481,7 @@
 - id: sol-signature-batch
   languages: [solidity]
   patterns:
-    - regex: "(?i)batch.*signature|signature.*batch"
+    - regex: '(?i)batch.*signature|signature.*batch'
   severity: low
   description: "Batch signature"
   remediation: "Validate batch signatures"
@@ -1491,7 +1491,7 @@
 - id: sol-signature-aggregate
   languages: [solidity]
   patterns:
-    - regex: "(?i)aggregate.*signature|signature.*aggregate"
+    - regex: '(?i)aggregate.*signature|signature.*aggregate'
   severity: low
   description: "Aggregate signature"
   remediation: "Validate aggregate signatures"
@@ -1501,7 +1501,7 @@
 - id: sol-signature-threshold
   languages: [solidity]
   patterns:
-    - regex: "(?i)threshold.*signature|signature.*threshold"
+    - regex: '(?i)threshold.*signature|signature.*threshold'
   severity: low
   description: "Threshold signature"
   remediation: "Validate threshold signatures"
@@ -1511,7 +1511,7 @@
 - id: sol-signature-multisig
   languages: [solidity]
   patterns:
-    - regex: "(?i)multisig.*signature|signature.*multisig"
+    - regex: '(?i)multisig.*signature|signature.*multisig'
   severity: low
   description: "Multisig signature"
   remediation: "Validate multisig signatures"
@@ -1521,7 +1521,7 @@
 - id: sol-signature-recovery
   languages: [solidity]
   patterns:
-    - regex: "(?i)signature.*recover|recover.*signature"
+    - regex: '(?i)signature.*recover|recover.*signature'
   severity: low
   description: "Signature recovery"
   remediation: "Validate recovery process"
@@ -1532,7 +1532,7 @@
 - id: sol-event-emission
   languages: [solidity]
   patterns:
-    - regex: "(?i)emit\\s+\\w+\\s*\\("
+    - regex: '(?i)emit\\s+\\w+\\s*\\('
   severity: low
   description: "Event emission"
   remediation: "Emit events for important state changes"
@@ -1542,7 +1542,7 @@
 - id: sol-event-indexed
   languages: [solidity]
   patterns:
-    - regex: "(?i)event\\s+\\w+\\s*\\([^)]*indexed"
+    - regex: '(?i)event\\s+\\w+\\s*\\([^)]*indexed'
   severity: low
   description: "Indexed event parameter"
   remediation: "Use indexed for filterable parameters"
@@ -1552,7 +1552,7 @@
 - id: sol-event-anonymous
   languages: [solidity]
   patterns:
-    - regex: "(?i)event\\s+\\w+\\s*anonymous"
+    - regex: '(?i)event\\s+\\w+\\s*anonymous'
   severity: low
   description: "Anonymous event"
   remediation: "Use anonymous events appropriately"
@@ -1562,7 +1562,7 @@
 - id: sol-event-sensitive
   languages: [solidity]
   patterns:
-    - regex: "(?i)emit.*password|emit.*secret|emit.*key"
+    - regex: '(?i)emit.*password|emit.*secret|emit.*key'
   severity: high
   description: "Sensitive data in event"
   remediation: "Don't emit sensitive data"
@@ -1572,7 +1572,7 @@
 - id: sol-event-hash
   languages: [solidity]
   patterns:
-    - regex: "(?i)event.*hash|hash.*event"
+    - regex: '(?i)event.*hash|hash.*event'
   severity: low
   description: "Event hash"
   remediation: "Validate event hashing"
@@ -1582,7 +1582,7 @@
 - id: sol-event-log
   languages: [solidity]
   patterns:
-    - regex: "(?i)event.*log|log.*event"
+    - regex: '(?i)event.*log|log.*event'
   severity: low
   description: "Event logging"
   remediation: "Use events for logging"
@@ -1592,7 +1592,7 @@
 - id: sol-event-topic
   languages: [solidity]
   patterns:
-    - regex: "(?i)event.*topic|topic.*event"
+    - regex: '(?i)event.*topic|topic.*event'
   severity: low
   description: "Event topic"
   remediation: "Understand event topics"
@@ -1602,7 +1602,7 @@
 - id: sol-event-data
   languages: [solidity]
   patterns:
-    - regex: "(?i)event.*data|data.*event"
+    - regex: '(?i)event.*data|data.*event'
   severity: low
   description: "Event data"
   remediation: "Validate event data"
@@ -1612,7 +1612,7 @@
 - id: sol-event-filter
   languages: [solidity]
   patterns:
-    - regex: "(?i)event.*filter|filter.*event"
+    - regex: '(?i)event.*filter|filter.*event'
   severity: low
   description: "Event filtering"
   remediation: "Use indexed parameters for filtering"
@@ -1622,7 +1622,7 @@
 - id: sol-event-listener
   languages: [solidity]
   patterns:
-    - regex: "(?i)event.*listener|listener.*event"
+    - regex: '(?i)event.*listener|listener.*event'
   severity: low
   description: "Event listener"
   remediation: "Implement event listeners"
@@ -1632,7 +1632,7 @@
 - id: sol-event-monitor
   languages: [solidity]
   patterns:
-    - regex: "(?i)event.*monitor|monitor.*event"
+    - regex: '(?i)event.*monitor|monitor.*event'
   severity: low
   description: "Event monitoring"
   remediation: "Monitor important events"
@@ -1642,7 +1642,7 @@
 - id: sol-event-alert
   languages: [solidity]
   patterns:
-    - regex: "(?i)event.*alert|alert.*event"
+    - regex: '(?i)event.*alert|alert.*event'
   severity: low
   description: "Event alert"
   remediation: "Configure event alerts"
@@ -1652,7 +1652,7 @@
 - id: sol-event-notification
   languages: [solidity]
   patterns:
-    - regex: "(?i)event.*notification|notification.*event"
+    - regex: '(?i)event.*notification|notification.*event'
   severity: low
   description: "Event notification"
   remediation: "Implement event notifications"
@@ -1662,7 +1662,7 @@
 - id: sol-event-archive
   languages: [solidity]
   patterns:
-    - regex: "(?i)event.*archive|archive.*event"
+    - regex: '(?i)event.*archive|archive.*event'
   severity: low
   description: "Event archiving"
   remediation: "Archive important events"
@@ -1672,7 +1672,7 @@
 - id: sol-event-retention
   languages: [solidity]
   patterns:
-    - regex: "(?i)event.*retention|retention.*event"
+    - regex: '(?i)event.*retention|retention.*event'
   severity: low
   description: "Event retention"
   remediation: "Configure event retention"
@@ -1682,7 +1682,7 @@
 - id: sol-erc20-approve-race
   languages: [solidity]
   patterns:
-    - regex: "(?i)approve\\s*\\(\\s*\\w+\\s*,\\s*\\w+\\s*\\)"
+    - regex: '(?i)approve\\s*\\(\\s*\\w+\\s*,\\s*\\w+\\s*\\)'
   severity: high
   description: "ERC20 approve race condition"
   remediation: "Use increaseAllowance/decreaseAllowance"
@@ -1693,7 +1693,7 @@
 - id: sol-erc721-safe-transfer
   languages: [solidity]
   patterns:
-    - regex: "(?i)safeTransferFrom.*onERC721Received"
+    - regex: '(?i)safeTransferFrom.*onERC721Received'
   severity: high
   description: "ERC721 safe transfer not verified"
   remediation: "Implement onERC721Received"
@@ -1704,7 +1704,7 @@
 - id: sol-call-data-length
   languages: [solidity]
   patterns:
-    - regex: "(?i)abi\\.encodeCall.*\\.selector.*msg\\.data"
+    - regex: '(?i)abi\\.encodeCall.*\\.selector.*msg\\.data'
   severity: medium
   description: "Full call data forwarded"
   remediation: "Validate forwarded data"
@@ -1715,7 +1715,7 @@
 - id: sol-ecrecover-verify
   languages: [solidity]
   patterns:
-    - regex: "(?i)ecrecover.*return\\s+0"
+    - regex: '(?i)ecrecover.*return\\s+0'
   severity: high
   description: "ecrecover return value not checked"
   remediation: "Verify ecrecover returns non-zero"
@@ -1726,7 +1726,7 @@
 - id: sol-ERC165-missing
   languages: [solidity]
   patterns:
-    - regex: "(?i)function supportsInterface.*return.*false"
+    - regex: '(?i)function supportsInterface.*return.*false'
   severity: medium
   description: "ERC165 interface check missing"
   remediation: "Implement supportsInterface"

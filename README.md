@@ -3,7 +3,7 @@
 > **Modern SAST, Supply Chain, & AI-Orchestrated Security Platform**
 > A high-performance, local-first security tool designed for elite engineering teams. Powered by Go and Local AI (Ollama).
 
-This tool transforms security scanning from simple pattern matching into **Intelligent Orchestration**. It runs your codebase through 900+ static rules, performs AI-driven vulnerability discovery, and uses a "Security Guru" LLM to deduplicate and validate findings—all running 100% locally on your machine.
+This tool transforms security scanning from simple pattern matching into **Intelligent Orchestration**. It runs your codebase through **12,400+ static rules** across 60+ languages, performs AI-driven vulnerability discovery, and uses a "Security Guru" LLM to deduplicate and validate findings—all running 100% locally on your machine.
 
 ---
 
@@ -11,9 +11,9 @@ This tool transforms security scanning from simple pattern matching into **Intel
 
 | Feature | What it means & why it's useful |
 | :--- | :--- |
-| **🔍 Pattern Matching Engine** | Uses **security rules** across 20+ languages to find hardcoded secrets, weak crypto, and classic injections. |
+| **🔍 Pattern Matching Engine** | Uses **12,400+ security rules** across 60+ languages to find hardcoded secrets, weak crypto, and classic injections. A resilient 3-tier YAML parser auto-rescues broken rules. |
 | **🧠 Security Guru 3.0 (AI)** | **Chain of Thought (CoT)** reasoning. The AI "thinks" like an attacker, performing simulated **Taint-Flow** traces and construction exploitation payloads before reporting. |
-| **🔄 Intelligent Orchestration** | **The Merger Mode:** Runs Static rules first, then AI Discovery, then uses a Master LLM to semantically deduplicate and merge the results into one "Master" report. |
+| **🔄 Intelligent Orchestration** | **The Merger Mode:** Runs Static rules first, then AI Discovery, then uses a Master LLM to semantically deduplicate and merge the results into one "Master" report. Advanced line-based deduplication groups findings on the same code location automatically. |
 | **🌊 Deep Flow Analysis** | Tracks data from Source to Sink. It understands what is MISSING—detecting the **Absence of CSRF tokens**, missing **HSTS/CSP headers**, or unvalidated entry points. |
 | **📦 Supply Chain (SCA)** | Integrates **Google OSV-Scanner** for deep lockfile analysis. If the CLI is missing, it fails back to a custom built-in parser with OSV.dev API support. |
 | **🛡️ Adversarial Validation** | The AI doesn't just "check" code; it attempts to **Simulated Bypass**. It tries to break your filters using encoding tricks (Base64, Unicode, Null bytes) to ensure they are truly secure. |
@@ -166,7 +166,7 @@ go run ./cmd/scanner -d ./myapp -ai -model llama3
 └───────┬─────────┘
         ▼
 ┌─────────────────┐     ┌──────────────────┐
-│ Static Engine   │────▶│  Pattern Matching│(928 YAML rules)
+│ Static Engine   │────▶│  Pattern Matching│(12,400+ YAML rules)
 │ (Pattern + AST  │     │  AST Analysis    │(Tree-sitter)
 │  + Taint Flow)  │     │  Taint Tracking  │(Source → Sink)
 └───────┬─────────┘     └──────────────────┘

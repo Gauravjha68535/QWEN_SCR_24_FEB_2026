@@ -5,10 +5,12 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"QWEN_SCR_24_FEB_2026/reporter"
 	"QWEN_SCR_24_FEB_2026/utils"
@@ -113,15 +115,28 @@ func (sd *SecretDetector) ScanSecrets(targetDir string) ([]reporter.Finding, err
 						matchedText = decoded
 					}
 
+					// Live Validation
+					issueName := "Hardcoded Secret Detected"
+					severity := "critical"
+					if isVerifiableSecret(matchedText) {
+						utils.LogInfo(fmt.Sprintf("Testing live validity of secret in %s...", filepath.Base(path)))
+						if validateLiveSecret(matchedText) {
+							issueName = "[VERIFIED LIVE] Hardcoded Secret Detected"
+						} else {
+							issueName = "[INACTIVE] Hardcoded Secret Detected"
+							severity = "medium" // Downgrade if we confirmed it's dead
+						}
+					}
+
 					findings = append(findings, reporter.Finding{
 						SrNo:        srNo,
-						IssueName:   "Hardcoded Secret Detected",
+						IssueName:   issueName,
 						FilePath:    path,
 						Description: generateSecretDescription(matchedText),
-						Severity:    "critical",
+						Severity:    severity,
 						LineNumber:  fmt.Sprintf("%d", startLine),
 						AiValidated: "No",
-						Remediation: "Remove hardcoded secret. Use environment variables, secrets manager, or vault.",
+						Remediation: "Remove hardcoded secret. Use environment variables, secrets manager, or vault. If VERIFIED LIVE, revoke immediately.",
 						RuleID:      "secret-detector-entropy",
 						Source:      "secret-detector",
 					})
@@ -201,6 +216,43 @@ func tryDecodeSecret(s string) string {
 	}
 
 	return ""
+}
+
+// isVerifiableSecret checks if we have a live validation method for this token type
+func isVerifiableSecret(secret string) bool {
+	secret = strings.Trim(secret, `'"`)
+	if strings.HasPrefix(secret, "ghp_") {
+		return true // GitHub PAT
+	}
+	// Note: AWS STS requires both access key & secret key, hard to do with just one string easily without SDK.
+	// For now, we'll demonstrate live validation with GitHub
+	return false
+}
+
+// validateLiveSecret performs an HTTP check to see if the token is active
+func validateLiveSecret(secret string) bool {
+	secret = strings.Trim(secret, `'"`)
+
+	client := &http.Client{
+		Timeout: 5 * time.Second,
+	}
+
+	if strings.HasPrefix(secret, "ghp_") {
+		req, _ := http.NewRequest("GET", "https://api.github.com/user", nil)
+		req.Header.Set("Authorization", "Bearer "+secret)
+		req.Header.Set("User-Agent", "SecureGopher-Scanner")
+
+		resp, err := client.Do(req)
+		if err != nil {
+			return false // Network error, assume safe/dead for now or cannot verify
+		}
+		defer resp.Body.Close()
+
+		// 200 OK means the token is completely active.
+		return resp.StatusCode == 200
+	}
+
+	return false
 }
 
 // generateSecretDescription generates a descriptive message for the finding

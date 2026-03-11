@@ -1,7 +1,7 @@
 - id: cairo-hint-injection
   languages: [cairo]
   patterns:
-    - regex: "(?i)%\\{.*?%\\}"
+    - regex: '(?i)%\\{.*?%\\}'
   severity: high
   description: "Hint injection"
   remediation: "Hints can write to arbitrary memory locations"
@@ -12,7 +12,7 @@
 - id: cairo-assert-eq
   languages: [cairo]
   patterns:
-    - regex: "(?i)assert\\s+\\w+\\s*=\\s*"
+    - regex: '(?i)assert\\s+\\w+\\s*=\\s*'
   severity: medium
   description: "Constrained assert"
   remediation: "Review constraint logic carefully"
@@ -23,7 +23,7 @@
 - id: cairo-alloc-locals
   languages: [cairo]
   patterns:
-    - regex: "(?i)alloc_locals"
+    - regex: '(?i)alloc_locals'
   severity: low
   description: "Local allocation"
   remediation: "Ensure proper revoked reference handling"
@@ -34,7 +34,7 @@
 - id: cairo-call-contract
   languages: [cairo]
   patterns:
-    - regex: "(?i)call_contract"
+    - regex: '(?i)call_contract'
   severity: medium
   description: "External contract call"
   remediation: "Verify external target and handle state changes safely"
@@ -45,7 +45,7 @@
 - id: cairo-missing-range-check
   languages: [cairo]
   patterns:
-    - regex: "(?i)func\s+\w+\s*\{[\s\S]*?\}\s*\([\s\S]*?\)(?!.*assert_nn|assert_le)"
+    - regex: '(?i)func\s+\w+\s*\{[\s\S]*?\}\s*\([\s\S]*?\)(?!.*assert_nn|assert_le)'
   severity: high
   description: "Missing range check on arithmetic/felt"
   remediation: "Use assert_nn or assert_le for bounds checking"
@@ -55,7 +55,7 @@
 - id: cairo-implicit-gas-bypass
   languages: [cairo]
   patterns:
-    - regex: "(?i)func\s+\w+\s*\{[\s\S]*?\}\s*\([\s\S]*?\)(?!.*get_gas_remaining|withdraw_gas)"
+    - regex: '(?i)func\s+\w+\s*\{[\s\S]*?\}\s*\([\s\S]*?\)(?!.*get_gas_remaining|withdraw_gas)'
   severity: medium
   description: "Recursive or looping function missing gas checks (Cairo 1.0)"
   remediation: "Check array bounds or withdraw gas"
@@ -65,7 +65,7 @@
 - id: cairo-arbitrary-state-change
   languages: [cairo]
   patterns:
-    - regex: "(?i)storage_write\\s*\\([\\s\\S]*?\\)(?!.*assert[\\s\\S]*?caller_address)"
+    - regex: '(?i)storage_write\\s*\\([\\s\\S]*?\\)(?!.*assert[\\s\\S]*?caller_address)'
   severity: critical
   description: "Storage written without access control"
   remediation: "Assert caller_address before storage_write"
@@ -76,7 +76,7 @@
 - id: cairo-reentrancy-guard
   languages: [cairo]
   patterns:
-    - regex: "(?i)func\\s+\\w+\\s*\\([^)]*\\)[^)]*emit\\s+event(?!.*nonreentrant)"
+    - regex: '(?i)func\\s+\\w+\\s*\\([^)]*\\)[^)]*emit\\s+event(?!.*nonreentrant)'
   severity: high
   description: "Missing reentrancy guard"
   remediation: "Use @external decorator with reentrancy guard"
@@ -87,7 +87,7 @@
 - id: cairo-oracle-manipulation
   languages: [cairo]
   patterns:
-    - regex: "(?i)call_contract.*oracle(?!.*stale|.*timeout)"
+    - regex: '(?i)call_contract.*oracle(?!.*stale|.*timeout)'
   severity: critical
   description: "Oracle call without staleness check"
   remediation: "Add oracle staleness/timeout validation"
@@ -98,7 +98,7 @@
 - id: cairo-front-running
   languages: [cairo]
   patterns:
-    - regex: "(?i)func\\s+\\w+\\s*\\([^)]*\\)[^)]*(?!.*priority|.*nonce)"
+    - regex: '(?i)func\\s+\\w+\\s*\\([^)]*\\)[^)]*(?!.*priority|.*nonce)'
   severity: medium
   description: "Missing transaction ordering protection"
   remediation: "Implement commit-reveal or nonce-based ordering"
@@ -109,7 +109,7 @@
 - id: cairo-untrusted-library
   languages: [cairo]
   patterns:
-    - regex: "(?i)@storage_var.*uint256.*address"
+    - regex: '(?i)@storage_var.*uint256.*address'
   severity: medium
   description: "Storage variable with address type"
   remediation: "Validate addresses before storage operations"
@@ -120,7 +120,7 @@
 - id: cairo-unchecked-return
   languages: [cairo]
   patterns:
-    - regex: "(?i)call_contract.*\\)(?!.*assert)"
+    - regex: '(?i)call_contract.*\\)(?!.*assert)'
   severity: high
   description: "Unchecked return value from external call"
   remediation: "Check return values from external calls"
@@ -131,7 +131,7 @@
 - id: cairo-auth-bypass
   languages: [cairo]
   patterns:
-    - regex: "(?i)@external.*(?!.*caller|.*owner|.*auth)"
+    - regex: '(?i)@external.*(?!.*caller|.*owner|.*auth)'
   severity: high
   description: "External function missing authorization"
   remediation: "Add access control checks"
@@ -142,7 +142,7 @@
 - id: cairo-curve-bypass
   languages: [cairo]
   patterns:
-    - regex: "(?i)ec_mul|ec_add(?!.*assert)"
+    - regex: '(?i)ec_mul|ec_add(?!.*assert)'
   severity: medium
   description: "Elliptic curve operation without validation"
   remediation: "Validate curve points"
@@ -153,7 +153,7 @@
 - id: cairo-math-overflow
   languages: [cairo]
   patterns:
-    - regex: "(?i)\\+\\s*\\+|-\\s*-|\\*\\s*\\*"
+    - regex: '(?i)\\+\\s*\\+|-\\s*-|\\*\\s*\\*'
   severity: high
   description: "Arithmetic without overflow check"
   remediation: "Use checked arithmetic"
@@ -164,7 +164,7 @@
 - id: cairo-randomness
   languages: [cairo]
   patterns:
-    - regex: "(?i)block\\.timestamp.*%.*seed"
+    - regex: '(?i)block\\.timestamp.*%.*seed'
   severity: medium
   description: "Block timestamp for randomness"
   remediation: "Use Chainlink VRF"
@@ -175,7 +175,7 @@
 - id: cairo-loop-gas
   languages: [cairo]
   patterns:
-    - regex: "(?i)loop\\s*\\{.*(?!.*get_gas)"
+    - regex: '(?i)loop\\s*\\{.*(?!.*get_gas)'
   severity: medium
   description: "Loop without gas checking"
   remediation: "Add gas checks in loops"
@@ -186,7 +186,7 @@
 - id: cairo-eth-transfer
   languages: [cairo]
   patterns:
-    - regex: "(?i)send\\.emit\\s*\\(.*(?!.*caller)"
+    - regex: '(?i)send\\.emit\\s*\\(.*(?!.*caller)'
   severity: high
   description: "Ether send without caller check"
   remediation: "Verify caller before sending"

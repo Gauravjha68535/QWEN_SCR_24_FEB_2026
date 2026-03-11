@@ -1,7 +1,7 @@
 - id: move-missing-acquire
   languages: [move]
   patterns:
-    - regex: "(?i)fun\\s+\\w+.*(?!.*acquires)"
+    - regex: '(?i)fun\\s+\\w+.*(?!.*acquires)'
   severity: low
   description: "Missing acquires clause (framework dependent)"
   remediation: "Ensure required resources are acquired"
@@ -12,7 +12,7 @@
 - id: move-signer-no-check
   languages: [move]
   patterns:
-    - regex: "(?i)fun\\s+\\w+\\s*\\(.*?signer.*?\\).*\\{.*move_to"
+    - regex: '(?i)fun\\s+\\w+\\s*\\(.*?signer.*?\\).*\\{.*move_to'
   severity: medium
   description: "Moving resources without strong checks"
   remediation: "Verify signer authorization"
@@ -23,7 +23,7 @@
 - id: move-assert-false
   languages: [move]
   patterns:
-    - regex: "(?i)assert!\\s*\\(.*false"
+    - regex: '(?i)assert!\\s*\\(.*false'
   severity: low
   description: "Hardcoded abort/assert"
   remediation: "Review logic for unreachable paths"
@@ -34,7 +34,7 @@
 - id: move-borrow-global-mut
   languages: [move]
   patterns:
-    - regex: "(?i)borrow_global_mut\\s*<"
+    - regex: '(?i)borrow_global_mut\\s*<'
   severity: medium
   description: "Mutable borrow of global resource"
   remediation: "Ensure proper access control before borrow"
@@ -45,7 +45,7 @@
 - id: move-tx-context-sender
   languages: [move]
   patterns:
-    - regex: "(?i)tx_context::sender\\s*\\("
+    - regex: '(?i)tx_context::sender\\s*\\('
   severity: low
   description: "Sender dependence"
   remediation: "Ensure proper logic for sender access"
@@ -56,7 +56,7 @@
 - id: move-missing-signer-auth
   languages: [move]
   patterns:
-    - regex: "(?i)fun\s+\w+\s*\(account:\s*&signer[\s\S]*?(?!.*signer::address_of)"
+    - regex: '(?i)fun\s+\w+\s*\(account:\s*&signer[\s\S]*?(?!.*signer::address_of)'
   severity: high
   description: "Missing signer authorization check"
   remediation: "Verify signer address against expected owner"
@@ -66,7 +66,7 @@
 - id: move-unchecked-overflow
   languages: [move]
   patterns:
-    - regex: "(?i)(?:\+|\-|\*)\s*(?!.*assert!)"
+    - regex: '(?i)(?:\+|\-|\*)\s*(?!.*assert!)'
   severity: medium
   description: "Potential arithmetic overflow without checks"
   remediation: "Use assert! to check boundaries before math operations"
@@ -76,7 +76,7 @@
 - id: move-resource-leak
   languages: [move]
   patterns:
-    - regex: "(?i)fun\s+\w+\s*\([\s\S]*?\)[\s\S]*?move_to\s*<[\s\S]*?>(?!.*move_from)"
+    - regex: '(?i)fun\s+\w+\s*\([\s\S]*?\)[\s\S]*?move_to\s*<[\s\S]*?>(?!.*move_from)'
   severity: low
   description: "Resource created without mechanism to destroy/unpack"
   remediation: "Ensure resource can be destroyed to prevent bloat"
@@ -86,7 +86,7 @@
 - id: move-global-unbounded
   languages: [move]
   patterns:
-    - regex: "(?i)borrow_global_mut\\s<[\\s\\S]*?>\\s*\\(.*\\)(?!.*assert!)"
+    - regex: '(?i)borrow_global_mut\\s<[\\s\\S]*?>\\s*\\(.*\\)(?!.*assert!)'
   severity: medium
   description: "Mutable global borrow without constraints"
   remediation: "Assert caller permissions before mutable borrow"
@@ -97,7 +97,7 @@
 - id: move-timestamp-randomness
   languages: [move]
   patterns:
-    - regex: "(?i)timestamp::now_microseconds.*%\\s*\\d+"
+    - regex: '(?i)timestamp::now_microseconds.*%\\s*\\d+'
   severity: medium
   description: "Timestamp used for randomness"
   remediation: "Use cryptographic randomness, not timestamps"
@@ -108,7 +108,7 @@
 - id: move-coin-validation
   languages: [move]
   patterns:
-    - regex: "(?i)coin::withdraw[^)]*\\)(?!.*assert)"
+    - regex: '(?i)coin::withdraw[^)]*\\)(?!.*assert)'
   severity: high
   description: "Coin withdrawal without validation"
   remediation: "Add balance checks before withdrawal"
@@ -119,7 +119,7 @@
 - id: move-multi-sig-missing
   languages: [move]
   patterns:
-    - regex: "(?i)fun\\s+\\w+\\s*\\(.*signer[^)]*\\)(?!.*multisig)"
+    - regex: '(?i)fun\\s+\\w+\\s*\\(.*signer[^)]*\\)(?!.*multisig)'
   severity: medium
   description: "Missing multi-signature verification"
   remediation: "Implement multi-sig verification for sensitive operations"
@@ -130,7 +130,7 @@
 - id: move-public-entry
   languages: [move]
   patterns:
-    - regex: "(?i)public\\s+entry\\s+fun(?!.*acquires)"
+    - regex: '(?i)public\\s+entry\\s+fun(?!.*acquires)'
   severity: medium
   description: "Public entry function without resource acquire"
   remediation: "Ensure proper resource management in entry functions"
@@ -141,7 +141,7 @@
 - id: move-storage-privilege
   languages: [move]
   patterns:
-    - regex: "(?i)storage\\.append|storage\\.push(?!.*caller)"
+    - regex: '(?i)storage\\.append|storage\\.push(?!.*caller)'
   severity: high
   description: "Storage modification without caller check"
   remediation: "Verify caller authorization before storage modification"
@@ -152,7 +152,7 @@
 - id: move-math-overflow
   languages: [move]
   patterns:
-    - regex: "(?i)\\+\\s*\\+|-\\s*-|\\*\\s*\\*(?!.*assert)"
+    - regex: '(?i)\\+\\s*\\+|-\\s*-|\\*\\s*\\*(?!.*assert)'
   severity: high
   description: "Arithmetic operation without overflow check"
   remediation: "Use checked arithmetic"
@@ -163,7 +163,7 @@
 - id: move-wallet-signature
   languages: [move]
   patterns:
-    - regex: "(?i)Signer\\.address_of.*(?!.*txn|.*signer)"
+    - regex: '(?i)Signer\\.address_of.*(?!.*txn|.*signer)'
   severity: medium
   description: "Signer address without transaction context"
   remediation: "Verify signer in transaction context"
@@ -174,7 +174,7 @@
 - id: move-aptos-signature
   languages: [move]
   patterns:
-    - regex: "(?i)aptos_account\\.sign_transaction(?!.*auth_key)"
+    - regex: '(?i)aptos_account\\.sign_transaction(?!.*auth_key)'
   severity: high
   description: "Transaction signing without auth key verification"
   remediation: "Verify authentication key"
@@ -185,7 +185,7 @@
 - id: move-randomness
   languages: [move]
   patterns:
-    - regex: "(?i)timestamp::now_microseconds.*%.*random"
+    - regex: '(?i)timestamp::now_microseconds.*%.*random'
   severity: medium
   description: "Using timestamp for randomness"
   remediation: "Use chainlink VRF or secure randomness"
@@ -196,7 +196,7 @@
 - id: move-loop-unbounded
   languages: [move]
   patterns:
-    - regex: "(?i)while\\s+true\\s*\\{|loop\\s*\\{"
+    - regex: '(?i)while\\s+true\\s*\\{|loop\\s*\\{'
   severity: medium
   description: "Unbounded loop without gas check"
   remediation: "Add iteration limits"
@@ -207,7 +207,7 @@
 - id: move-nft-transfer
   languages: [move]
   patterns:
-    - regex: "(?i)token::transfer.*(?!.*sender|.*owner)"
+    - regex: '(?i)token::transfer.*(?!.*sender|.*owner)'
   severity: high
   description: "NFT transfer without owner verification"
   remediation: "Verify sender is owner"

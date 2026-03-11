@@ -9,7 +9,7 @@
 - id: spring-auth-no-security-config
   languages: [java]
   patterns:
-    regex: "(?i)@SpringBootApplication(?!.*@EnableWebSecurity)"
+    - regex: '(?i)@SpringBootApplication(?!.*@EnableWebSecurity)'
   severity: high
   description: "Spring Boot application without security configuration"
   remediation: "Add @EnableWebSecurity and configure SecurityFilterChain"
@@ -19,7 +19,7 @@
 - id: spring-auth-permit-all-endpoints
   languages: [java]
   patterns:
-    regex: "(?i)\\.permitAll\\(\\)\\.anyRequest"
+    - regex: '(?i)\\.permitAll\\(\\)\\.anyRequest'
   severity: critical
   description: "All endpoints permitted without authentication"
   remediation: "Restrict permitAll to specific endpoints like /login, /register"
@@ -29,7 +29,7 @@
 - id: spring-auth-web-ignored
   languages: [java]
   patterns:
-    regex: "(?i)\\.web\\.ignoring\\(\\)\\.antMatchers"
+    - regex: '(?i)\\.web\\.ignoring\\(\\)\\.antMatchers'
   severity: high
   description: "Security ignored for URL patterns"
   remediation: "Use httpSecurity instead of web.ignoring for security"
@@ -39,7 +39,7 @@
 - id: spring-auth-no-password-encoder
   languages: [java]
   patterns:
-    regex: "(?i)PasswordEncoder\\s*\\{\\s*\\}|NoOpPasswordEncoder"
+    - regex: '(?i)PasswordEncoder\\s*\\{\\s*\\}|NoOpPasswordEncoder'
   severity: critical
   description: "NoOpPasswordEncoder stores passwords in plain text"
   remediation: "Use BCryptPasswordEncoder or Argon2PasswordEncoder"
@@ -49,7 +49,7 @@
 - id: spring-auth-basic-auth-enabled
   languages: [java]
   patterns:
-    regex: "(?i)httpBasic\\(\\)\\.and\\(\\)"
+    - regex: '(?i)httpBasic\\(\\)\\.and\\(\\)'
   severity: medium
   description: "HTTP Basic Authentication enabled"
   remediation: "Use token-based auth for APIs, Basic only for internal services"
@@ -59,7 +59,7 @@
 - id: spring-auth-remember-me-enabled
   languages: [java]
   patterns:
-    regex: "(?i)\\.rememberMe\\(\\)\\.key\\s*\\("
+    - regex: '(?i)\\.rememberMe\\(\\)\\.key\\s*\\('
   severity: medium
   description: "Remember-me with hardcoded key"
   remediation: "Generate secure random key for remember-me"
@@ -69,7 +69,7 @@
 - id: spring-auth-session-fixation
   languages: [java]
   patterns:
-    regex: "(?i)\\.sessionManagement\\(\\)\\.sessionFixation\\(\\)\\.none"
+    - regex: '(?i)\\.sessionManagement\\(\\)\\.sessionFixation\\(\\)\\.none'
   severity: high
   description: "Session fixation protection disabled"
   remediation: "Enable session fixation protection: migrateSession or newSession"
@@ -79,7 +79,7 @@
 - id: spring-auth-concurrent-sessions
   languages: [java]
   patterns:
-    regex: "(?i)\\.maximumSessions\\s*\\(\\s*-1\\s*\\)"
+    - regex: '(?i)\\.maximumSessions\\s*\\(\\s*-1\\s*\\)'
   severity: medium
   description: "Unlimited concurrent sessions allowed"
   remediation: "Set reasonable maximum sessions limit"
@@ -89,7 +89,7 @@
 - id: spring-auth-anonymous-enabled
   languages: [java]
   patterns:
-    regex: "(?i)\\.anonymous\\(\\)\\.disable\\s*\\(\\s*\\)\\s*\\)"
+    - regex: '(?i)\\.anonymous\\(\\)\\.disable\\s*\\(\\s*\\)\\s*\\)'
   severity: low
   description: "Anonymous authentication disabled"
   remediation: "Review if anonymous access is needed"
@@ -99,7 +99,7 @@
 - id: spring-auth-logout-url-default
   languages: [java]
   patterns:
-    regex: "(?i)\\.logout\\(\\)(?!.*logoutUrl)"
+    - regex: '(?i)\\.logout\\(\\)(?!.*logoutUrl)'
   severity: low
   description: "Default logout URL (/logout) used"
   remediation: "Consider customizing logout URL"
@@ -109,7 +109,7 @@
 - id: spring-auth-csrf-disabled
   languages: [java]
   patterns:
-    regex: "(?i)\\.csrf\\(\\)\\.disable\\(\\)"
+    - regex: '(?i)\\.csrf\\(\\)\\.disable\\(\\)'
   severity: critical
   description: "CSRF protection completely disabled"
   remediation: "Enable CSRF for state-changing operations"
@@ -119,7 +119,7 @@
 - id: spring-auth-csrf-ignore-ant-matchers
   languages: [java]
   patterns:
-    regex: "(?i)\\.csrf\\(\\)\\.ignoringAntMatchers"
+    - regex: '(?i)\\.csrf\\(\\)\\.ignoringAntMatchers'
   severity: high
   description: "CSRF ignored for specific URL patterns"
   remediation: "Review if CSRF should be ignored for these endpoints"
@@ -129,7 +129,7 @@
 - id: spring-auth-csrf-cookie-http-only-false
   languages: [java]
   patterns:
-    regex: "(?i)\\.csrfTokenRepository\\(\\).*httpOnly\\s*\\(\\s*false\\s*\\)"
+    - regex: '(?i)\\.csrfTokenRepository\\(\\).*httpOnly\\s*\\(\\s*false\\s*\\)'
   severity: high
   description: "CSRF cookie not HttpOnly"
   remediation: "Set CSRF cookie as HttpOnly"
@@ -139,7 +139,7 @@
 - id: spring-auth-oauth2-client-secret-plaintext
   languages: [java]
   patterns:
-    regex: "(?i)client-secret:\\s*[a-zA-Z0-9]{8,}"
+    - regex: '(?i)client-secret:\\s*[a-zA-Z0-9]{8,}'
   severity: high
   description: "OAuth2 client secret in plaintext configuration"
   remediation: "Use environment variables or vault for client secrets"
@@ -149,7 +149,7 @@
 - id: spring-auth-jwt-secret-short
   languages: [java]
   patterns:
-    regex: "(?i)jwt\\.secret\\s*=\\s*[\\\"'][a-zA-Z0-9]{8,20}[\\\"']"
+    - regex: '(?i)jwt\\.secret\\s*=\\s*[\\\"'][a-zA-Z0-9]{8,20}[\\\"']'
   severity: high
   description: "JWT secret key too short"
   remediation: "Use minimum 256-bit (32 character) secret for JWT"
@@ -159,7 +159,7 @@
 - id: spring-auth-jwt-no-expiration
   languages: [java]
   patterns:
-    regex: "(?i)JwtBuilder.*\\.setExpiration\\s*\\(\\s*null\\s*\\)"
+    - regex: '(?i)JwtBuilder.*\\.setExpiration\\s*\\(\\s*null\\s*\\)'
   severity: high
   description: "JWT token without expiration"
   remediation: "Set reasonable expiration time for JWT tokens"
@@ -169,7 +169,7 @@
 - id: spring-auth-jwt-algorithm-none
   languages: [java]
   patterns:
-    regex: "(?i)\\.signWith\\s*\\(\\s*SignatureAlgorithm\\.NONE"
+    - regex: '(?i)\\.signWith\\s*\\(\\s*SignatureAlgorithm\\.NONE'
   severity: critical
   description: "JWT signed with NONE algorithm"
   remediation: "Use HS256, RS256, or ES256 for JWT signing"
@@ -179,7 +179,7 @@
 - id: spring-auth-method-security-disabled
   languages: [java]
   patterns:
-    regex: "(?i)@EnableMethodSecurity\\s*\\(\\s*securedEnabled\\s*=\\s*false"
+    - regex: '(?i)@EnableMethodSecurity\\s*\\(\\s*securedEnabled\\s*=\\s*false'
   severity: medium
   description: "Method security disabled"
   remediation: "Enable method security for fine-grained access control"
@@ -189,7 +189,7 @@
 - id: spring-auth-preauthorize-spel-injection
   languages: [java]
   patterns:
-    - regex: "(?i)@PreAuthorize\\s*\\(\\s*\\\".*#\\{.*\\}"
+    - regex: '(?i)@PreAuthorize\\s*\\(\\s*\\\".*#\\{.*\\}'
   severity: high
   description: "SpEL injection in @PreAuthorize"
   remediation: "Avoid user input in SpEL expressions"
@@ -199,7 +199,7 @@
 - id: spring-auth-roles-hardcoded
   languages: [java]
   patterns:
-    regex: "(?i)@PreAuthorize\\s*\\(\\s*\\\"hasRole\\s*\\(\\s*['\"]ADMIN['\"]"
+    - regex: '(?i)@PreAuthorize\\s*\\(\\s*\\\"hasRole\\s*\\(\\s*['\"]ADMIN['\"]'
   severity: low
   description: "Hardcoded role in authorization"
   remediation: "Externalize roles to configuration"
@@ -210,7 +210,7 @@
 - id: spring-sql-jdbc-concatenation
   languages: [java]
   patterns:
-    regex: "(?i)JdbcTemplate.*execute\\s*\\(\\s*\\\".*\\+.*\\+"
+    - regex: '(?i)JdbcTemplate.*execute\\s*\\(\\s*\\\".*\\+.*\\+'
   severity: critical
   description: "SQL injection via string concatenation in JdbcTemplate"
   remediation: "Use parameterized queries with ? placeholders"
@@ -220,7 +220,7 @@
 - id: spring-sql-named-parameter-jdbc
   languages: [java]
   patterns:
-    regex: "(?i)NamedParameterJdbcTemplate.*\\\".*:\\w+.*\\\".*\\+.*\\+"
+    - regex: '(?i)NamedParameterJdbcTemplate.*\\\".*:\\w+.*\\\".*\\+.*\\+'
   severity: critical
   description: "SQL injection in NamedParameterJdbcTemplate"
   remediation: "Use MapSqlParameterSource for parameters"
@@ -230,7 +230,7 @@
 - id: spring-sql-hibernate-create-native-query
   languages: [java]
   patterns:
-    regex: "(?i)createNativeQuery\\s*\\(\\s*\\\".*\\+.*\\+"
+    - regex: '(?i)createNativeQuery\\s*\\(\\s*\\\".*\\+.*\\+'
   severity: critical
   description: "SQL injection in Hibernate native query"
   remediation: "Use parameterized native queries"
@@ -240,7 +240,7 @@
 - id: spring-sql-hibernate-hql-concatenation
   languages: [java]
   patterns:
-    regex: "(?i)createQuery\\s*\\(\\s*\\\"FROM.*WHERE.*\\+.*\\+"
+    - regex: '(?i)createQuery\\s*\\(\\s*\\\"FROM.*WHERE.*\\+.*\\+'
   severity: critical
   description: "HQL injection via string concatenation"
   remediation: "Use HQL with named parameters"
@@ -250,7 +250,7 @@
 - id: spring-sql-string-builder-sql
   languages: [java]
   patterns:
-    regex: "(?i)StringBuilder.*append\\s*\\(.*SELECT|StringBuilder.*append\\s*\\(.*INSERT"
+    - regex: '(?i)StringBuilder.*append\\s*\\(.*SELECT|StringBuilder.*append\\s*\\(.*INSERT'
   severity: critical
   description: "SQL built with StringBuilder"
   remediation: "Use parameterized queries instead"
@@ -260,7 +260,7 @@
 - id: spring-sql-string-format-sql
   languages: [java]
   patterns:
-    regex: "(?i)String\\.format\\s*\\(\\s*\\\".*SELECT.*%s"
+    - regex: '(?i)String\\.format\\s*\\(\\s*\\\".*SELECT.*%s'
   severity: critical
   description: "SQL built with String.format"
   remediation: "Use parameterized queries"
@@ -270,7 +270,7 @@
 - id: spring-sql-concat-function
   languages: [java]
   patterns:
-    regex: "(?i)CONCAT\\s*\\(.*\\$\\{|CONCAT\\s*\\(.*\\+"
+    - regex: '(?i)CONCAT\\s*\\(.*\\$\\{|CONCAT\\s*\\(.*\\+'
   severity: critical
   description: "SQL CONCAT with user input"
   remediation: "Use parameterized queries"
@@ -280,7 +280,7 @@
 - id: spring-sql-order-by-injection
   languages: [java]
   patterns:
-    regex: "(?i)ORDER\\s+BY\\s+\\$\\{|ORDER\\s+BY\\s+\\+"
+    - regex: '(?i)ORDER\\s+BY\\s+\\$\\{|ORDER\\s+BY\\s+\\+'
   severity: high
   description: "ORDER BY clause with user input"
   remediation: "Whitelist allowed sort columns"
@@ -290,7 +290,7 @@
 - id: spring-sql-limit-injection
   languages: [java]
   patterns:
-    regex: "(?i)LIMIT\\s+\\$\\{|LIMIT\\s+\\+"
+    - regex: '(?i)LIMIT\\s+\\$\\{|LIMIT\\s+\\+'
   severity: high
   description: "LIMIT clause with user input"
   remediation: "Validate and cast to integer"
@@ -300,7 +300,7 @@
 - id: spring-sql-group-by-injection
   languages: [java]
   patterns:
-    regex: "(?i)GROUP\\s+BY\\s+\\$\\{|GROUP\\s+BY\\s+\\+"
+    - regex: '(?i)GROUP\\s+BY\\s+\\$\\{|GROUP\\s+BY\\s+\\+'
   severity: high
   description: "GROUP BY clause with user input"
   remediation: "Whitelist allowed group columns"
@@ -310,7 +310,7 @@
 - id: spring-sql-into-outfile
   languages: [java]
   patterns:
-    regex: "(?i)INTO\\s+OUTFILE|INTO\\s+DUMPFILE"
+    - regex: '(?i)INTO\\s+OUTFILE|INTO\\s+DUMPFILE'
   severity: critical
   description: "SQL INTO OUTFILE can write files"
   remediation: "Disable FILE privilege for database user"
@@ -320,7 +320,7 @@
 - id: spring-sql-union-based
   languages: [java]
   patterns:
-    regex: "(?i)UNION\\s+SELECT.*\\$\\{"
+    - regex: '(?i)UNION\\s+SELECT.*\\$\\{'
   severity: critical
   description: "UNION-based SQL injection"
   remediation: "Use parameterized queries"
@@ -330,7 +330,7 @@
 - id: spring-sql-error-based
   languages: [java]
   patterns:
-    regex: "(?i)EXTRACTVALUE\\s*\\(|UPDATEXML\\s*\\("
+    - regex: '(?i)EXTRACTVALUE\\s*\\(|UPDATEXML\\s*\\('
   severity: critical
   description: "Error-based SQL injection functions"
   remediation: "Use parameterized queries"
@@ -340,7 +340,7 @@
 - id: spring-sql-time-based
   languages: [java]
   patterns:
-    regex: "(?i)SLEEP\\s*\\(|BENCHMARK\\s*\\(|WAITFOR\\s+DELAY"
+    - regex: '(?i)SLEEP\\s*\\(|BENCHMARK\\s*\\(|WAITFOR\\s+DELAY'
   severity: critical
   description: "Time-based SQL injection functions"
   remediation: "Use parameterized queries"
@@ -350,7 +350,7 @@
 - id: spring-sql-stored-procedure
   languages: [java]
   patterns:
-    regex: "(?i)\\{\\s*CALL\\s+.*\\$\\{"
+    - regex: '(?i)\\{\\s*CALL\\s+.*\\$\\{'
   severity: high
   description: "Stored procedure with user input"
   remediation: "Validate stored procedure parameters"
@@ -360,7 +360,7 @@
 - id: spring-sql-batch-update
   languages: [java]
   patterns:
-    regex: "(?i)batchUpdate\\s*\\(\\s*\\\".*\\+.*\\+"
+    - regex: '(?i)batchUpdate\\s*\\(\\s*\\\".*\\+.*\\+'
   severity: critical
   description: "SQL injection in batch update"
   remediation: "Use parameterized batch operations"
@@ -370,7 +370,7 @@
 - id: spring-sql-dynamic-table-name
   languages: [java]
   patterns:
-    regex: "(?i)FROM\\s+\\$\\{|FROM\\s+\\+.*table"
+    - regex: '(?i)FROM\\s+\\$\\{|FROM\\s+\\+.*table'
   severity: critical
   description: "Dynamic table name from user input"
   remediation: "Whitelist allowed table names"
@@ -380,7 +380,7 @@
 - id: spring-sql-like-injection
   languages: [java]
   patterns:
-    regex: "(?i)LIKE\\s+\\\"%\\\".*\\+.*\\+"
+    - regex: '(?i)LIKE\\s+\\\"%\\\".*\\+.*\\+'
   severity: high
   description: "LIKE clause with user input"
   remediation: "Escape special characters in LIKE queries"
@@ -390,7 +390,7 @@
 - id: spring-sql-in-clause-injection
   languages: [java]
   patterns:
-    regex: "(?i)IN\\s*\\(\\s*\\$\\{|IN\\s*\\(\\s*\\+"
+    - regex: '(?i)IN\\s*\\(\\s*\\$\\{|IN\\s*\\(\\s*\\+'
   severity: high
   description: "IN clause with user input"
   remediation: "Validate and sanitize IN clause values"
@@ -400,7 +400,7 @@
 - id: spring-sql-comment-injection
   languages: [java]
   patterns:
-    regex: "(?i)--\\s*$|/\\*.*\\*/.*\\$"
+    - regex: '(?i)--\\s*$|/\\*.*\\*/.*\\$'
   severity: high
   description: "SQL comment in query with user input"
   remediation: "Remove comments from user input"
@@ -411,7 +411,7 @@
 - id: spring-xss-response-body
   languages: [java]
   patterns:
-    regex: "(?i)@ResponseBody.*String.*request\\.getParameter"
+    - regex: '(?i)@ResponseBody.*String.*request\\.getParameter'
   severity: high
   description: "XSS via @ResponseBody with user input"
   remediation: "Encode output or use @ResponseBody with proper content type"
@@ -421,7 +421,7 @@
 - id: spring-xss-response-entity
   languages: [java]
   patterns:
-    regex: "(?i)ResponseEntity\\.ok\\s*\\(\\s*request\\.getParameter"
+    - regex: '(?i)ResponseEntity\\.ok\\s*\\(\\s*request\\.getParameter'
   severity: high
   description: "XSS via ResponseEntity with user input"
   remediation: "Encode output before returning in ResponseEntity"
@@ -431,7 +431,7 @@
 - id: spring-xss-model-and-view
   languages: [java]
   patterns:
-    regex: "(?i)new\\s+ModelAndView\\s*\\(\\s*\\\".*\\\".*request\\.getParameter"
+    - regex: '(?i)new\\s+ModelAndView\\s*\\(\\s*\\\".*\\\".*request\\.getParameter'
   severity: high
   description: "XSS via ModelAndView with user input"
   remediation: "Encode model attributes or use view technology auto-escaping"
@@ -441,7 +441,7 @@
 - id: spring-xss-model-add-attribute
   languages: [java]
   patterns:
-    regex: "(?i)model\\.addAttribute\\s*\\(\\s*request\\.getParameter"
+    - regex: '(?i)model\\.addAttribute\\s*\\(\\s*request\\.getParameter'
   severity: high
   description: "XSS via model.addAttribute with user input"
   remediation: "Encode data before adding to model"
@@ -451,7 +451,7 @@
 - id: spring-xss-print-writer
   languages: [java]
   patterns:
-    regex: "(?i)response\\.getWriter\\s*\\(\\s*\\)\\.print\\s*\\(\\s*request"
+    - regex: '(?i)response\\.getWriter\\s*\\(\\s*\\)\\.print\\s*\\(\\s*request'
   severity: high
   description: "XSS via PrintWriter with user input"
   remediation: "Encode output before writing to response"
@@ -461,7 +461,7 @@
 - id: spring-xss-output-stream
   languages: [java]
   patterns:
-    regex: "(?i)response\\.getOutputStream\\s*\\(\\s*\\)\\.write\\s*\\(\\s*request"
+    - regex: '(?i)response\\.getOutputStream\\s*\\(\\s*\\)\\.write\\s*\\(\\s*request'
   severity: high
   description: "XSS via OutputStream with user input"
   remediation: "Encode output before writing to response"
@@ -471,7 +471,7 @@
 - id: spring-xss-jsp-expression
   languages: [java, jsp]
   patterns:
-    regex: "(?i)<%=.*request\\.getParameter|%\\{.*param\\."
+    - regex: '(?i)<%=.*request\\.getParameter|%\\{.*param\\.'
   severity: high
   description: "XSS via JSP expression with user input"
   remediation: "Use JSTL <c:out> or EL with escaping"
@@ -481,7 +481,7 @@
 - id: spring-xss-thymeleaf-unescaped
   languages: [java, html]
   patterns:
-    regex: "(?i)th:utext\\s*=|th:utext\\s*\\("
+    - regex: '(?i)th:utext\\s*=|th:utext\\s*\\('
   severity: high
   description: "XSS via Thymeleaf unescaped text (th:utext)"
   remediation: "Use th:text instead of th:utext for user input"
@@ -491,7 +491,7 @@
 - id: spring-xss-freemarker-raw
   languages: [java, ftl]
   patterns:
-    regex: "(?i)\\$\\{.*\\?html|\\$\\{.*\\?xml"
+    - regex: '(?i)\\$\\{.*\\?html|\\$\\{.*\\?xml'
   severity: high
   description: "XSS via FreeMarker without escaping"
   remediation: "Use ?html or ?xml built-in for escaping"
@@ -501,7 +501,7 @@
 - id: spring-xss-velocity-unescaped
   languages: [java, vm]
   patterns:
-    regex: "(?i)\\$[^{]|\\$!\\{"
+    - regex: '(?i)\\$[^{]|\\$!\\{'
   severity: high
   description: "XSS via Velocity without escaping"
   remediation: "Use Velocity escape tools"
@@ -511,7 +511,7 @@
 - id: spring-xss-redirect-url
   languages: [java]
   patterns:
-    regex: "(?i)redirect:\\s*\\+.*request\\.getParameter"
+    - regex: '(?i)redirect:\\s*\\+.*request\\.getParameter'
   severity: high
   description: "XSS via redirect URL with user input"
   remediation: "Validate and encode redirect URLs"
@@ -521,7 +521,7 @@
 - id: spring-xss-forward-url
   languages: [java]
   patterns:
-    regex: "(?i)forward:\\s*\\+.*request\\.getParameter"
+    - regex: '(?i)forward:\\s*\\+.*request\\.getParameter'
   severity: high
   description: "XSS via forward URL with user input"
   remediation: "Validate forward URLs against whitelist"
@@ -531,7 +531,7 @@
 - id: spring-xss-json-content-type
   languages: [java]
   patterns:
-    regex: "(?i)produces\\s*=\\s*\\\"application/json\\\".*request\\.getParameter"
+    - regex: '(?i)produces\\s*=\\s*\\\"application/json\\\".*request\\.getParameter'
   severity: medium
   description: "JSON response with user input"
   remediation: "Validate and sanitize JSON output"
@@ -541,7 +541,7 @@
 - id: spring-xss-html-content-type
   languages: [java]
   patterns:
-    regex: "(?i)produces\\s*=\\s*\\\"text/html\\\".*request\\.getParameter"
+    - regex: '(?i)produces\\s*=\\s*\\\"text/html\\\".*request\\.getParameter'
   severity: high
   description: "HTML response with user input"
   remediation: "Encode all user input in HTML responses"
@@ -551,7 +551,7 @@
 - id: spring-xss-javascript-content-type
   languages: [java]
   patterns:
-    regex: "(?i)produces\\s*=\\s*\\\"application/javascript\\\".*request"
+    - regex: '(?i)produces\\s*=\\s*\\\"application/javascript\\\".*request'
   severity: high
   description: "JavaScript response with user input"
   remediation: "Avoid returning user input in JavaScript"
@@ -561,7 +561,7 @@
 - id: spring-xss-xml-content-type
   languages: [java]
   patterns:
-    regex: "(?i)produces\\s*=\\s*\\\"application/xml\\\".*request"
+    - regex: '(?i)produces\\s*=\\s*\\\"application/xml\\\".*request'
   severity: high
   description: "XML response with user input"
   remediation: "Encode XML special characters"
@@ -571,7 +571,7 @@
 - id: spring-xss-svg-content-type
   languages: [java]
   patterns:
-    regex: "(?i)produces\\s*=\\s*\\\"image/svg\\+xml\\\".*request"
+    - regex: '(?i)produces\\s*=\\s*\\\"image/svg\\+xml\\\".*request'
   severity: high
   description: "SVG response with user input"
   remediation: "Sanitize SVG content"
@@ -581,7 +581,7 @@
 - id: spring-xss-pdf-content-type
   languages: [java]
   patterns:
-    regex: "(?i)produces\\s*=\\s*\\\"application/pdf\\\".*request"
+    - regex: '(?i)produces\\s*=\\s*\\\"application/pdf\\\".*request'
   severity: medium
   description: "PDF generation with user input"
   remediation: "Validate PDF content"
@@ -591,7 +591,7 @@
 - id: spring-xss-csv-content-type
   languages: [java]
   patterns:
-    regex: "(?i)produces\\s*=\\s*\\\"text/csv\\\".*request"
+    - regex: '(?i)produces\\s*=\\s*\\\"text/csv\\\".*request'
   severity: medium
   description: "CSV export with user input"
   remediation: "Escape CSV special characters"
@@ -601,7 +601,7 @@
 - id: spring-xss-reflected-parameter
   languages: [java]
   patterns:
-    regex: "(?i)@RequestParam.*@ResponseBody|@RequestParam.*ResponseEntity"
+    - regex: '(?i)@RequestParam.*@ResponseBody|@RequestParam.*ResponseEntity'
   severity: high
   description: "Reflected XSS via RequestParam to Response"
   remediation: "Encode all reflected parameters"
@@ -612,7 +612,7 @@
 - id: spring-csrf-get-state-changing
   languages: [java]
   patterns:
-    regex: "(?i)@GetMapping.*@PostMapping|@GetMapping.*delete|@GetMapping.*update"
+    - regex: '(?i)@GetMapping.*@PostMapping|@GetMapping.*delete|@GetMapping.*update'
   severity: high
   description: "State-changing operation on GET request"
   remediation: "Use POST/PUT/DELETE for state-changing operations"
@@ -622,7 +622,7 @@
 - id: spring-csrf-cookie-secure-false
   languages: [java]
   patterns:
-    regex: "(?i)\\.secure\\s*\\(\\s*false\\s*\\)"
+    - regex: '(?i)\\.secure\\s*\\(\\s*false\\s*\\)'
   severity: high
   description: "CSRF cookie not marked as secure"
   remediation: "Set CSRF cookie as secure"
@@ -632,7 +632,7 @@
 - id: spring-csrf-cookie-same-site-none
   languages: [java]
   patterns:
-    regex: "(?i)\\.sameSite\\s*\\(\\s*SameSitePolicy\\.NONE"
+    - regex: '(?i)\\.sameSite\\s*\\(\\s*SameSitePolicy\\.NONE'
   severity: medium
   description: "CSRF cookie with SameSite=None"
   remediation: "Use SameSite=Lax or Strict"
@@ -642,7 +642,7 @@
 - id: spring-csrf-header-name-default
   languages: [java]
   patterns:
-    regex: "(?i)\\.csrfTokenRepository\\s*\\(\\).*headerName\\s*\\(\\s*\\\"X-CSRF-TOKEN"
+    - regex: '(?i)\\.csrfTokenRepository\\s*\\(\\).*headerName\\s*\\(\\s*\\\"X-CSRF-TOKEN'
   severity: low
   description: "Default CSRF header name used"
   remediation: "Consider customizing CSRF header name"
@@ -652,7 +652,7 @@
 - id: spring-csrf-parameter-name-default
   languages: [java]
   patterns:
-    regex: "(?i)\\.csrfTokenRepository\\s*\\(\\).*parameterName\\s*\\(\\s*\\\"_csrf"
+    - regex: '(?i)\\.csrfTokenRepository\\s*\\(\\).*parameterName\\s*\\(\\s*\\\"_csrf'
   severity: low
   description: "Default CSRF parameter name used"
   remediation: "Consider customizing CSRF parameter name"
@@ -662,7 +662,7 @@
 - id: spring-csrf-session-repository
   languages: [java]
   patterns:
-    regex: "(?i)HttpSessionCsrfTokenRepository"
+    - regex: '(?i)HttpSessionCsrfTokenRepository'
   severity: low
   description: "Session-based CSRF token repository"
   remediation: "Consider cookie-based token repository for stateless APIs"
@@ -672,7 +672,7 @@
 - id: spring-csrf-cookie-http-only-false
   languages: [java]
   patterns:
-    regex: "(?i)CookieCsrfTokenRepository.*httpOnly\\s*\\(\\s*false"
+    - regex: '(?i)CookieCsrfTokenRepository.*httpOnly\\s*\\(\\s*false'
   severity: high
   description: "CSRF cookie not HttpOnly"
   remediation: "Set CSRF cookie as HttpOnly"
@@ -682,7 +682,7 @@
 - id: spring-csrf-cookie-path-root
   languages: [java]
   patterns:
-    regex: "(?i)\\.cookiePath\\s*\\(\\s*\\\"/\\\"\\s*\\)"
+    - regex: '(?i)\\.cookiePath\\s*\\(\\s*\\\"/\\\"\\s*\\)'
   severity: low
   description: "CSRF cookie path set to root"
   remediation: "Consider restricting cookie path"
@@ -692,7 +692,7 @@
 - id: spring-csrf-cookie-domain
   languages: [java]
   patterns:
-    regex: "(?i)\\.cookieDomain\\s*\\(\\s*\\\"\\."
+    - regex: '(?i)\\.cookieDomain\\s*\\(\\s*\\\"\\.'
   severity: medium
   description: "CSRF cookie domain set to parent domain"
   remediation: "Set cookie domain to specific domain"
@@ -702,7 +702,7 @@
 - id: spring-csrf-cookie-max-age
   languages: [java]
   patterns:
-    regex: "(?i)\\.cookieMaxAgeSeconds\\s*\\(\\s*-1\\s*\\)"
+    - regex: '(?i)\\.cookieMaxAgeSeconds\\s*\\(\\s*-1\\s*\\)'
   severity: medium
   description: "CSRF cookie with session-only lifetime"
   remediation: "Set appropriate max age for CSRF cookie"
@@ -712,7 +712,7 @@
 - id: spring-csrf-request-attribute
   languages: [java]
   patterns:
-    regex: "(?i)\\.csrfTokenRepository\\s*\\(\\).*requestAttributeName"
+    - regex: '(?i)\\.csrfTokenRepository\\s*\\(\\).*requestAttributeName'
   severity: low
   description: "CSRF token in request attribute"
   remediation: "Review CSRF token storage mechanism"
@@ -722,7 +722,7 @@
 - id: spring-csrf-ignoring-request-matcher
   languages: [java]
   patterns:
-    regex: "(?i)\\.ignoringRequestMatchers\\s*\\("
+    - regex: '(?i)\\.ignoringRequestMatchers\\s*\\('
   severity: high
   description: "CSRF ignoring for specific request matchers"
   remediation: "Review if CSRF should be ignored"
@@ -732,7 +732,7 @@
 - id: spring-csrf-ignoring-ant-matcher
   languages: [java]
   patterns:
-    regex: "(?i)\\.ignoringRequestMatchers\\s*\\(\\s*new\\s+AntPathRequestMatcher"
+    - regex: '(?i)\\.ignoringRequestMatchers\\s*\\(\\s*new\\s+AntPathRequestMatcher'
   severity: high
   description: "CSRF ignored for Ant path patterns"
   remediation: "Review CSRF exemption for these paths"
@@ -742,7 +742,7 @@
 - id: spring-csrf-ignoring-regex-matcher
   languages: [java]
   patterns:
-    regex: "(?i)\\.ignoringRequestMatchers\\s*\\(\\s*new\\s+RegexRequestMatcher"
+    - regex: '(?i)\\.ignoringRequestMatchers\\s*\\(\\s*new\\s+RegexRequestMatcher'
   severity: high
   description: "CSRF ignored for regex patterns"
   remediation: "Review CSRF exemption for these patterns"
@@ -752,7 +752,7 @@
 - id: spring-csrf-ignoring-request-matcher-type
   languages: [java]
   patterns:
-    regex: "(?i)\\.ignoringRequestMatchers\\s*\\(\\s*new\\s+RequestMatcher"
+    - regex: '(?i)\\.ignoringRequestMatchers\\s*\\(\\s*new\\s+RequestMatcher'
   severity: high
   description: "CSRF ignored for custom request matcher"
   remediation: "Review CSRF exemption logic"
@@ -763,7 +763,7 @@
 - id: spring-deser-object-input-stream
   languages: [java]
   patterns:
-    regex: "(?i)new\\s+ObjectInputStream\\s*\\("
+    - regex: '(?i)new\\s+ObjectInputStream\\s*\\('
   severity: critical
   description: "Java native deserialization detected"
   remediation: "Use JSON or implement ObjectInputFilter"
@@ -773,7 +773,7 @@
 - id: spring-deser-read-object
   languages: [java]
   patterns:
-    regex: "(?i)\\.readObject\\s*\\("
+    - regex: '(?i)\\.readObject\\s*\\('
   severity: critical
   description: "readObject() call for deserialization"
   remediation: "Implement readObject validation or use safe serialization"
@@ -783,7 +783,7 @@
 - id: spring-deser-xml-decoder
   languages: [java]
   patterns:
-    regex: "(?i)new\\s+XMLDecoder\\s*\\("
+    - regex: '(?i)new\\s+XMLDecoder\\s*\\('
   severity: critical
   description: "XMLDecoder can execute arbitrary code"
   remediation: "Use JAXB or Jackson for XML processing"
@@ -793,7 +793,7 @@
 - id: spring-deser-xstream
   languages: [java]
   patterns:
-    regex: "(?i)new\\s+XStream\\s*\\("
+    - regex: '(?i)new\\s+XStream\\s*\\('
   severity: critical
   description: "XStream deserialization without security setup"
   remediation: "Configure XStream with security framework"
@@ -803,7 +803,7 @@
 - id: spring-deser-yaml-snakeyaml
   languages: [java]
   patterns:
-    regex: "(?i)new\\s+Yaml\\s*\\(\\s*\\)\\.load"
+    - regex: '(?i)new\\s+Yaml\\s*\\(\\s*\\)\\.load'
   severity: critical
   description: "SnakeYAML load without safe constructor"
   remediation: "Use SafeConstructor for YAML parsing"
@@ -813,7 +813,7 @@
 - id: spring-deser-jackson-default-typing
   languages: [java]
   patterns:
-    regex: "(?i)\\.enableDefaultTyping\\s*\\("
+    - regex: '(?i)\\.enableDefaultTyping\\s*\\('
   severity: critical
   description: "Jackson default typing enabled"
   remediation: "Disable default typing or use allowlist"
@@ -823,7 +823,7 @@
 - id: spring-deser-jackson-type-name
   languages: [java]
   patterns:
-    regex: "(?i)@JsonTypeInfo.*use\\s*=\\s*JsonTypeInfo\\.Id\\.CLASS"
+    - regex: '(?i)@JsonTypeInfo.*use\\s*=\\s*JsonTypeInfo\\.Id\\.CLASS'
   severity: high
   description: "Jackson type information from class name"
   remediation: "Use Id.NAME with explicit type names"
@@ -833,7 +833,7 @@
 - id: spring-deser-jackson-object-id
   languages: [java]
   patterns:
-    regex: "(?i)@JsonIdentityInfo\\s*\\("
+    - regex: '(?i)@JsonIdentityInfo\\s*\\('
   severity: medium
   description: "Jackson object identity handling"
   remediation: "Validate object references"
@@ -843,7 +843,7 @@
 - id: spring-deser-kryo
   languages: [java]
   patterns:
-    regex: "(?i)new\\s+Kryo\\s*\\("
+    - regex: '(?i)new\\s+Kryo\\s*\\('
   severity: critical
   description: "Kryo deserialization without security"
   remediation: "Configure Kryo with registration required"
@@ -853,7 +853,7 @@
 - id: spring-deser-hessian
   languages: [java]
   patterns:
-    regex: "(?i)new\\s+Hessian2Input\\s*\\("
+    - regex: '(?i)new\\s+Hessian2Input\\s*\\('
   severity: critical
   description: "Hessian deserialization detected"
   remediation: "Use whitelist for allowed classes"
@@ -863,7 +863,7 @@
 - id: spring-deser-castor
   languages: [java]
   patterns:
-    regex: "(?i)org\\.codehaus\\.castor"
+    - regex: '(?i)org\\.codehaus\\.castor'
   severity: critical
   description: "Castor XML deserialization"
   remediation: "Configure class whitelist"
@@ -873,7 +873,7 @@
 - id: spring-deser-beanshell
   languages: [java]
   patterns:
-    regex: "(?i)bsh\\.Interpreter|bsh\\.Eval"
+    - regex: '(?i)bsh\\.Interpreter|bsh\\.Eval'
   severity: critical
   description: "BeanShell interpreter can execute code"
   remediation: "Remove BeanShell or restrict access"
@@ -883,7 +883,7 @@
 - id: spring-deser-groovy
   languages: [java]
   patterns:
-    regex: "(?i)GroovyShell|GroovyClassLoader"
+    - regex: '(?i)GroovyShell|GroovyClassLoader'
   severity: critical
   description: "Groovy script execution detected"
   remediation: "Use SecureGroovyScriptEngine"
@@ -893,7 +893,7 @@
 - id: spring-deser-mvel
   languages: [java]
   patterns:
-    regex: "(?i)MVEL\\.eval|new\\s+MVELExpressionCompiler"
+    - regex: '(?i)MVEL\\.eval|new\\s+MVELExpressionCompiler'
   severity: critical
   description: "MVEL expression evaluation"
   remediation: "Restrict MVEL expressions"
@@ -903,7 +903,7 @@
 - id: spring-deser-jxpath
   languages: [java]
   patterns:
-    regex: "(?i)JXPathContext\\.newContext"
+    - regex: '(?i)JXPathContext\\.newContext'
   severity: high
   description: "JXPath context creation"
   remediation: "Validate XPath expressions"
@@ -914,7 +914,7 @@
 - id: spring-ssrf-rest-template
   languages: [java]
   patterns:
-    regex: "(?i)RestTemplate.*getForObject\\s*\\(\\s*request\\.getParameter"
+    - regex: '(?i)RestTemplate.*getForObject\\s*\\(\\s*request\\.getParameter'
   severity: high
   description: "SSRF via RestTemplate with user-controlled URL"
   remediation: "Validate URLs against allowlist"
@@ -924,7 +924,7 @@
 - id: spring-ssrf-web-client
   languages: [java]
   patterns:
-    regex: "(?i)WebClient\\.create\\(\\).*uri\\s*\\(\\s*request"
+    - regex: '(?i)WebClient\\.create\\(\\).*uri\\s*\\(\\s*request'
   severity: high
   description: "SSRF via WebClient with user-controlled URI"
   remediation: "Validate URIs before making requests"
@@ -934,7 +934,7 @@
 - id: spring-ssrf-http-url-connection
   languages: [java]
   patterns:
-    regex: "(?i)new\\s+URL\\s*\\(\\s*request\\.getParameter"
+    - regex: '(?i)new\\s+URL\\s*\\(\\s*request\\.getParameter'
   severity: high
   description: "SSRF via URL with user input"
   remediation: "Validate and restrict URL protocols"
@@ -944,7 +944,7 @@
 - id: spring-ssrf-okhttp
   languages: [java]
   patterns:
-    regex: "(?i)new\\s+Request\\.Builder\\(\\).*url\\s*\\(\\s*request"
+    - regex: '(?i)new\\s+Request\\.Builder\\(\\).*url\\s*\\(\\s*request'
   severity: high
   description: "SSRF via OkHttp with user-controlled URL"
   remediation: "Validate URLs against allowlist"
@@ -954,7 +954,7 @@
 - id: spring-ssrf-apache-httpclient
   languages: [java]
   patterns:
-    regex: "(?i)HttpGet\\s*\\(\\s*request\\.getParameter|HttpPost\\s*\\(\\s*request"
+    - regex: '(?i)HttpGet\\s*\\(\\s*request\\.getParameter|HttpPost\\s*\\(\\s*request'
   severity: high
   description: "SSRF via Apache HttpClient with user input"
   remediation: "Validate URLs before HTTP requests"
@@ -964,7 +964,7 @@
 - id: spring-ssrf-socket
   languages: [java]
   patterns:
-    regex: "(?i)new\\s+Socket\\s*\\(\\s*request\\.getParameter"
+    - regex: '(?i)new\\s+Socket\\s*\\(\\s*request\\.getParameter'
   severity: high
   description: "SSRF via Socket with user-controlled host"
   remediation: "Validate host and port"
@@ -974,7 +974,7 @@
 - id: spring-ssrf-datagram-socket
   languages: [java]
   patterns:
-    regex: "(?i)new\\s+DatagramSocket\\s*\\(\\s*request"
+    - regex: '(?i)new\\s+DatagramSocket\\s*\\(\\s*request'
   severity: high
   description: "SSRF via DatagramSocket with user input"
   remediation: "Validate destination address"
@@ -984,7 +984,7 @@
 - id: spring-ssrf-http-client-builder
   languages: [java]
   patterns:
-    regex: "(?i)HttpClient\\.newBuilder\\(\\).*build\\(\\).*send"
+    - regex: '(?i)HttpClient\\.newBuilder\\(\\).*build\\(\\).*send'
   severity: medium
   description: "Java 11+ HttpClient usage"
   remediation: "Validate URLs in requests"
@@ -994,7 +994,7 @@
 - id: spring-ssrf-feign-client
   languages: [java]
   patterns:
-    regex: "(?i)@FeignClient.*url\\s*=\\s*\\\"\\$\\{"
+    - regex: '(?i)@FeignClient.*url\\s*=\\s*\\\"\\$\\{'
   severity: high
   description: "Feign client with dynamic URL"
   remediation: "Validate Feign client URLs"
@@ -1004,7 +1004,7 @@
 - id: spring-ssrf-retrofit
   languages: [java]
   patterns:
-    regex: "(?i)@GET\\s*\\(\\s*\\\"\\$\\{|@POST\\s*\\(\\s*\\\"\\$\\{"
+    - regex: '(?i)@GET\\s*\\(\\s*\\\"\\$\\{|@POST\\s*\\(\\s*\\\"\\$\\{'
   severity: high
   description: "Retrofit with dynamic endpoint"
   remediation: "Validate Retrofit endpoints"
@@ -1014,7 +1014,7 @@
 - id: spring-ssrf-webflux-webclient
   languages: [java]
   patterns:
-    regex: "(?i)WebClient\\.builder\\(\\).*baseUrl\\s*\\(\\s*\\$\\{"
+    - regex: '(?i)WebClient\\.builder\\(\\).*baseUrl\\s*\\(\\s*\\$\\{'
   severity: high
   description: "WebFlux WebClient with dynamic base URL"
   remediation: "Validate base URL configuration"
@@ -1024,7 +1024,7 @@
 - id: spring-ssrf-jersey-client
   languages: [java]
   patterns:
-    regex: "(?i)ClientBuilder\\.newClient\\(\\).*target\\s*\\(\\s*\\$\\{"
+    - regex: '(?i)ClientBuilder\\.newClient\\(\\).*target\\s*\\(\\s*\\$\\{'
   severity: high
   description: "JAX-RS client with dynamic target"
   remediation: "Validate target URIs"
@@ -1034,7 +1034,7 @@
 - id: spring-ssrf-apache-http-async
   languages: [java]
   patterns:
-    regex: "(?i)HttpAsyncClients\\.createDefault\\(\\).*execute"
+    - regex: '(?i)HttpAsyncClients\\.createDefault\\(\\).*execute'
   severity: medium
   description: "Apache HTTP Async Client usage"
   remediation: "Validate URLs in async requests"
@@ -1044,7 +1044,7 @@
 - id: spring-ssrf-okhttp-interceptor
   languages: [java]
   patterns:
-    regex: "(?i)class.*implements.*Interceptor.*intercept"
+    - regex: '(?i)class.*implements.*Interceptor.*intercept'
   severity: medium
   description: "OkHttp interceptor detected"
   remediation: "Validate URLs in interceptors"
@@ -1054,7 +1054,7 @@
 - id: spring-ssrf-rest-template-interceptor
   languages: [java]
   patterns:
-    regex: "(?i)ClientHttpRequestInterceptor|ClientHttpRequestFactory"
+    - regex: '(?i)ClientHttpRequestInterceptor|ClientHttpRequestFactory'
   severity: medium
   description: "RestTemplate request interceptor"
   remediation: "Validate URLs in interceptors"
@@ -1065,7 +1065,7 @@
 - id: spring-misconfig-debug-enabled
   languages: [java, properties]
   patterns:
-    regex: "(?i)debug\\.enabled\\s*=\\s*true|logging\\.level\\.root\\s*=\\s*DEBUG"
+    - regex: '(?i)debug\\.enabled\\s*=\\s*true|logging\\.level\\.root\\s*=\\s*DEBUG'
   severity: high
   description: "Debug logging enabled in production"
   remediation: "Disable debug logging in production"
@@ -1075,7 +1075,7 @@
 - id: spring-misconfig-actuator-exposed
   languages: [java, properties]
   patterns:
-    regex: "(?i)management\\.endpoints\\.web\\.exposure\\.include\\s*=\\s*\\*"
+    - regex: '(?i)management\\.endpoints\\.web\\.exposure\\.include\\s*=\\s*\\*'
   severity: high
   description: "All Actuator endpoints exposed"
   remediation: "Expose only necessary endpoints"
@@ -1085,7 +1085,7 @@
 - id: spring-misconfig-actuator-env
   languages: [java, properties]
   patterns:
-    regex: "(?i)management\\.endpoint\\.env\\.enabled\\s*=\\s*true"
+    - regex: '(?i)management\\.endpoint\\.env\\.enabled\\s*=\\s*true'
   severity: high
   description: "Actuator env endpoint enabled"
   remediation: "Disable env endpoint or secure it"
@@ -1095,7 +1095,7 @@
 - id: spring-misconfig-actuator-heapdump
   languages: [java, properties]
   patterns:
-    regex: "(?i)management\\.endpoint\\.heapdump\\.enabled\\s*=\\s*true"
+    - regex: '(?i)management\\.endpoint\\.heapdump\\.enabled\\s*=\\s*true'
   severity: high
   description: "Actuator heapdump endpoint enabled"
   remediation: "Disable heapdump endpoint in production"
@@ -1105,7 +1105,7 @@
 - id: spring-misconfig-actuator-threaddump
   languages: [java, properties]
   patterns:
-    regex: "(?i)management\\.endpoint\\.threaddump\\.enabled\\s*=\\s*true"
+    - regex: '(?i)management\\.endpoint\\.threaddump\\.enabled\\s*=\\s*true'
   severity: high
   description: "Actuator threaddump endpoint enabled"
   remediation: "Disable threaddump endpoint in production"
@@ -1115,7 +1115,7 @@
 - id: spring-misconfig-actuator-mappings
   languages: [java, properties]
   patterns:
-    regex: "(?i)management\\.endpoint\\.mappings\\.enabled\\s*=\\s*true"
+    - regex: '(?i)management\\.endpoint\\.mappings\\.enabled\\s*=\\s*true'
   severity: high
   description: "Actuator mappings endpoint enabled"
   remediation: "Disable mappings endpoint in production"
@@ -1125,7 +1125,7 @@
 - id: spring-misconfig-actuator-beans
   languages: [java, properties]
   patterns:
-    regex: "(?i)management\\.endpoint\\.beans\\.enabled\\s*=\\s*true"
+    - regex: '(?i)management\\.endpoint\\.beans\\.enabled\\s*=\\s*true'
   severity: high
   description: "Actuator beans endpoint enabled"
   remediation: "Disable beans endpoint in production"
@@ -1135,7 +1135,7 @@
 - id: spring-misconfig-actuator-configprops
   languages: [java, properties]
   patterns:
-    regex: "(?i)management\\.endpoint\\.configprops\\.enabled\\s*=\\s*true"
+    - regex: '(?i)management\\.endpoint\\.configprops\\.enabled\\s*=\\s*true'
   severity: high
   description: "Actuator configprops endpoint enabled"
   remediation: "Disable configprops endpoint in production"
@@ -1145,7 +1145,7 @@
 - id: spring-misconfig-actuator-shutdown
   languages: [java, properties]
   patterns:
-    regex: "(?i)management\\.endpoint\\.shutdown\\.enabled\\s*=\\s*true"
+    - regex: '(?i)management\\.endpoint\\.shutdown\\.enabled\\s*=\\s*true'
   severity: critical
   description: "Actuator shutdown endpoint enabled"
   remediation: "Disable shutdown endpoint or secure it"
@@ -1155,7 +1155,7 @@
 - id: spring-misconfig-actuator-restart
   languages: [java, properties]
   patterns:
-    regex: "(?i)management\\.endpoint\\.restart\\.enabled\\s*=\\s*true"
+    - regex: '(?i)management\\.endpoint\\.restart\\.enabled\\s*=\\s*true'
   severity: critical
   description: "Actuator restart endpoint enabled"
   remediation: "Disable restart endpoint or secure it"
@@ -1165,7 +1165,7 @@
 - id: spring-misconfig-error-whitelabel
   languages: [java, properties]
   patterns:
-    regex: "(?i)server\\.error\\.whitelabel\\.enabled\\s*=\\s*true"
+    - regex: '(?i)server\\.error\\.whitelabel\\.enabled\\s*=\\s*true'
   severity: medium
   description: "Whitelabel error page enabled"
   remediation: "Implement custom error page"
@@ -1175,7 +1175,7 @@
 - id: spring-misconfig-include-error-details
   languages: [java, properties]
   patterns:
-    regex: "(?i)server\\.error\\.include-exception\\s*=\\s*true|include-message\\s*=\\s*always"
+    - regex: '(?i)server\\.error\\.include-exception\\s*=\\s*true|include-message\\s*=\\s*always'
   severity: high
   description: "Error details exposed in responses"
   remediation: "Disable error details in production"
@@ -1185,7 +1185,7 @@
 - id: spring-misconfig-trace-enabled
   languages: [java, properties]
   patterns:
-    regex: "(?i)management\\.endpoint\\.trace\\.enabled\\s*=\\s*true"
+    - regex: '(?i)management\\.endpoint\\.trace\\.enabled\\s*=\\s*true'
   severity: high
   description: "Actuator trace endpoint enabled"
   remediation: "Disable trace endpoint in production"
@@ -1195,7 +1195,7 @@
 - id: spring-misconfig-httptrace-enabled
   languages: [java, properties]
   patterns:
-    regex: "(?i)management\\.endpoint\\.httptrace\\.enabled\\s*=\\s*true"
+    - regex: '(?i)management\\.endpoint\\.httptrace\\.enabled\\s*=\\s*true'
   severity: high
   description: "HTTP trace endpoint enabled"
   remediation: "Disable httptrace endpoint in production"
@@ -1205,7 +1205,7 @@
 - id: spring-misconfig-metrics-unsecured
   languages: [java, properties]
   patterns:
-    regex: "(?i)management\\.endpoint\\.metrics\\.enabled\\s*=\\s*true.*security.*false"
+    - regex: '(?i)management\\.endpoint\\.metrics\\.enabled\\s*=\\s*true.*security.*false'
   severity: medium
   description: "Metrics endpoint without security"
   remediation: "Secure metrics endpoint"
@@ -1215,7 +1215,7 @@
 - id: spring-misconfig-prometheus-unsecured
   languages: [java, properties]
   patterns:
-    regex: "(?i)management\\.prometheus\\.metrics\\.export\\.enabled\\s*=\\s*true"
+    - regex: '(?i)management\\.prometheus\\.metrics\\.export\\.enabled\\s*=\\s*true'
   severity: medium
   description: "Prometheus metrics export enabled"
   remediation: "Secure Prometheus endpoint"
@@ -1225,7 +1225,7 @@
 - id: spring-misconfig-health-unsecured
   languages: [java, properties]
   patterns:
-    regex: "(?i)management\\.endpoint\\.health\\.show-details\\s*=\\s*always"
+    - regex: '(?i)management\\.endpoint\\.health\\.show-details\\s*=\\s*always'
   severity: medium
   description: "Health endpoint shows detailed info"
   remediation: "Show health details only for authorized users"
@@ -1235,7 +1235,7 @@
 - id: spring-misconfig-info-unsecured
   languages: [java, properties]
   patterns:
-    regex: "(?i)management\\.endpoint\\.info\\.enabled\\s*=\\s*true"
+    - regex: '(?i)management\\.endpoint\\.info\\.enabled\\s*=\\s*true'
   severity: medium
   description: "Info endpoint enabled"
   remediation: "Review info endpoint exposure"
@@ -1245,7 +1245,7 @@
 - id: spring-misconfig-loggers-unsecured
   languages: [java, properties]
   patterns:
-    regex: "(?i)management\\.endpoint\\.loggers\\.enabled\\s*=\\s*true"
+    - regex: '(?i)management\\.endpoint\\.loggers\\.enabled\\s*=\\s*true'
   severity: high
   description: "Loggers endpoint enabled"
   remediation: "Disable loggers endpoint in production"
@@ -1255,7 +1255,7 @@
 - id: spring-misconfig-conditions-unsecured
   languages: [java, properties]
   patterns:
-    regex: "(?i)management\\.endpoint\\.conditions\\.enabled\\s*=\\s*true"
+    - regex: '(?i)management\\.endpoint\\.conditions\\.enabled\\s*=\\s*true'
   severity: medium
   description: "Conditions endpoint enabled"
   remediation: "Disable conditions endpoint in production"
@@ -1266,7 +1266,7 @@
 - id: spring-crypto-weak-algorithm-md5
   languages: [java]
   patterns:
-    regex: "(?i)MessageDigest\\.getInstance\\s*\\(\\s*\\\"MD5"
+    - regex: '(?i)MessageDigest\\.getInstance\\s*\\(\\s*\\\"MD5'
   severity: medium
   description: "MD5 hash algorithm used"
   remediation: "Use SHA-256 or stronger"
@@ -1276,7 +1276,7 @@
 - id: spring-crypto-weak-algorithm-sha1
   languages: [java]
   patterns:
-    regex: "(?i)MessageDigest\\.getInstance\\s*\\(\\s*\\\"SHA-1"
+    - regex: '(?i)MessageDigest\\.getInstance\\s*\\(\\s*\\\"SHA-1'
   severity: medium
   description: "SHA-1 hash algorithm used"
   remediation: "Use SHA-256 or stronger"
@@ -1286,7 +1286,7 @@
 - id: spring-crypto-weak-cipher-des
   languages: [java]
   patterns:
-    regex: "(?i)Cipher\\.getInstance\\s*\\(\\s*\\\"DES"
+    - regex: '(?i)Cipher\\.getInstance\\s*\\(\\s*\\\"DES'
   severity: high
   description: "DES encryption algorithm used"
   remediation: "Use AES-256-GCM"
@@ -1296,7 +1296,7 @@
 - id: spring-crypto-weak-cipher-rc4
   languages: [java]
   patterns:
-    regex: "(?i)Cipher\\.getInstance\\s*\\(\\s*\\\"RC4"
+    - regex: '(?i)Cipher\\.getInstance\\s*\\(\\s*\\\"RC4'
   severity: high
   description: "RC4 encryption algorithm used"
   remediation: "Use AES-256-GCM"
@@ -1306,7 +1306,7 @@
 - id: spring-crypto-ecb-mode
   languages: [java]
   patterns:
-    regex: "(?i)Cipher\\.getInstance\\s*\\(\\s*\\\".*/ECB/"
+    - regex: '(?i)Cipher\\.getInstance\\s*\\(\\s*\\\".*/ECB/'
   severity: high
   description: "ECB mode encryption used"
   remediation: "Use GCM or CBC mode with IV"
@@ -1316,7 +1316,7 @@
 - id: spring-crypto-hardcoded-key
   languages: [java]
   patterns:
-    regex: "(?i)new\\s+SecretKeySpec\\s*\\(\\s*\\\"[^\\\"]+\\\"\\.getBytes"
+    - regex: '(?i)new\\s+SecretKeySpec\\s*\\(\\s*\\\"[^\\\"]+\\\"\\.getBytes'
   severity: critical
   description: "Hardcoded encryption key"
   remediation: "Use KeyStore or environment variables"
@@ -1326,7 +1326,7 @@
 - id: spring-crypto-hardcoded-iv
   languages: [java]
   patterns:
-    regex: "(?i)new\\s+IvParameterSpec\\s*\\(\\s*\\\"[^\\\"]+\\\"\\.getBytes"
+    - regex: '(?i)new\\s+IvParameterSpec\\s*\\(\\s*\\\"[^\\\"]+\\\"\\.getBytes'
   severity: high
   description: "Hardcoded initialization vector"
   remediation: "Generate random IV for each encryption"
@@ -1336,7 +1336,7 @@
 - id: spring-crypto-insecure-random
   languages: [java]
   patterns:
-    regex: "(?i)new\\s+Random\\s*\\("
+    - regex: '(?i)new\\s+Random\\s*\\('
   severity: medium
   description: "Insecure Random for cryptographic operations"
   remediation: "Use SecureRandom for crypto operations"
@@ -1346,7 +1346,7 @@
 - id: spring-crypto-password-encoder-none
   languages: [java]
   patterns:
-    regex: "(?i)NoOpPasswordEncoder\\.getInstance\\s*\\("
+    - regex: '(?i)NoOpPasswordEncoder\\.getInstance\\s*\\('
   severity: critical
   description: "NoOpPasswordEncoder stores plain text passwords"
   remediation: "Use BCryptPasswordEncoder"
@@ -1356,7 +1356,7 @@
 - id: spring-crypto-password-encoder-sha
   languages: [java]
   patterns:
-    regex: "(?i)ShaPasswordEncoder|StandardPasswordEncoder"
+    - regex: '(?i)ShaPasswordEncoder|StandardPasswordEncoder'
   severity: medium
   description: "SHA-based password encoder (weak)"
   remediation: "Use BCryptPasswordEncoder"
@@ -1366,7 +1366,7 @@
 - id: spring-crypto-tls-ssl3
   languages: [java, properties]
   patterns:
-    regex: "(?i)ssl\\.enabled\\.protocols.*SSLv3|tls\\.protocols.*SSLv3"
+    - regex: '(?i)ssl\\.enabled\\.protocols.*SSLv3|tls\\.protocols.*SSLv3'
   severity: critical
   description: "SSLv3 protocol enabled"
   remediation: "Disable SSLv3, use TLS 1.2+"
@@ -1376,7 +1376,7 @@
 - id: spring-crypto-tls-tls10
   languages: [java, properties]
   patterns:
-    regex: "(?i)tls\\.protocols.*TLSv1\\.0|tls1"
+    - regex: '(?i)tls\\.protocols.*TLSv1\\.0|tls1'
   severity: high
   description: "TLS 1.0 protocol enabled"
   remediation: "Disable TLS 1.0, use TLS 1.2+"
@@ -1386,7 +1386,7 @@
 - id: spring-crypto-tls-tls11
   languages: [java, properties]
   patterns:
-    regex: "(?i)tls\\.protocols.*TLSv1\\.1|tls11"
+    - regex: '(?i)tls\\.protocols.*TLSv1\\.1|tls11'
   severity: high
   description: "TLS 1.1 protocol enabled"
   remediation: "Disable TLS 1.1, use TLS 1.2+"
@@ -1396,7 +1396,7 @@
 - id: spring-crypto-certificate-validation-disabled
   languages: [java]
   patterns:
-    regex: "(?i)setVerifyHostname\\s*\\(\\s*false\\s*\\)|TrustAllCertificates"
+    - regex: '(?i)setVerifyHostname\\s*\\(\\s*false\\s*\\)|TrustAllCertificates'
   severity: critical
   description: "Certificate validation disabled"
   remediation: "Enable certificate validation"
@@ -1406,7 +1406,7 @@
 - id: spring-crypto-key-length-short
   languages: [java]
   patterns:
-    regex: "(?i)KeyGenerator\\.getInstance.*init\\s*\\(\\s*128\\s*\\)"
+    - regex: '(?i)KeyGenerator\\.getInstance.*init\\s*\\(\\s*128\\s*\\)'
   severity: medium
   description: "Short key length for encryption"
   remediation: "Use minimum 256-bit keys"
@@ -1417,7 +1417,7 @@
 - id: spring-file-path-traversal-read
   languages: [java]
   patterns:
-    regex: "(?i)Files\\.readAllBytes\\s*\\(\\s*Paths\\.get\\s*\\(\\s*request"
+    - regex: '(?i)Files\\.readAllBytes\\s*\\(\\s*Paths\\.get\\s*\\(\\s*request'
   severity: high
   description: "Path traversal in file read operation"
   remediation: "Validate and sanitize file paths"
@@ -1427,7 +1427,7 @@
 - id: spring-file-path-traversal-write
   languages: [java]
   patterns:
-    regex: "(?i)Files\\.write\\s*\\(\\s*Paths\\.get\\s*\\(\\s*request"
+    - regex: '(?i)Files\\.write\\s*\\(\\s*Paths\\.get\\s*\\(\\s*request'
   severity: high
   description: "Path traversal in file write operation"
   remediation: "Validate and sanitize file paths"
@@ -1437,7 +1437,7 @@
 - id: spring-file-upload-no-size-limit
   languages: [java, properties]
   patterns:
-    regex: "(?i)spring\\.servlet\\.multipart\\.max-file-size\\s*=\\s*-1"
+    - regex: '(?i)spring\\.servlet\\.multipart\\.max-file-size\\s*=\\s*-1'
   severity: high
   description: "No file size limit configured"
   remediation: "Set appropriate file size limits"
@@ -1447,7 +1447,7 @@
 - id: spring-file-upload-no-type-validation
   languages: [java]
   patterns:
-    regex: "(?i)MultipartFile.*getOriginalFilename\\(\\).*\\.(?!isValid|validate)"
+    - regex: '(?i)MultipartFile.*getOriginalFilename\\(\\).*\\.(?!isValid|validate)'
   severity: high
   description: "File upload without type validation"
   remediation: "Validate file content type and extension"
@@ -1457,7 +1457,7 @@
 - id: spring-file-upload-executable-extensions
   languages: [java]
   patterns:
-    regex: "(?i)\\.jsp|\\.jspx|\\.jspx|\\.jspx|\\.war|\\.exe|\\.bat|\\.sh"
+    - regex: '(?i)\\.jsp|\\.jspx|\\.jspx|\\.jspx|\\.war|\\.exe|\\.bat|\\.sh'
   severity: critical
   description: "Executable file extension in upload"
   remediation: "Block executable file extensions"
@@ -1467,7 +1467,7 @@
 - id: spring-file-temp-directory
   languages: [java]
   patterns:
-    regex: "(?i)Files\\.createTempFile|File\\.createTempFile"
+    - regex: '(?i)Files\\.createTempFile|File\\.createTempFile'
   severity: low
   description: "Temporary file creation"
   remediation: "Ensure temp files are cleaned up"
@@ -1477,7 +1477,7 @@
 - id: spring-file-delete-user-input
   languages: [java]
   patterns:
-    regex: "(?i)Files\\.delete\\s*\\(\\s*Paths\\.get\\s*\\(\\s*request"
+    - regex: '(?i)Files\\.delete\\s*\\(\\s*Paths\\.get\\s*\\(\\s*request'
   severity: high
   description: "File deletion with user input"
   remediation: "Validate file paths before deletion"
@@ -1487,7 +1487,7 @@
 - id: spring-file-copy-user-input
   languages: [java]
   patterns:
-    regex: "(?i)Files\\.copy\\s*\\(\\s*Paths\\.get\\s*\\(\\s*request"
+    - regex: '(?i)Files\\.copy\\s*\\(\\s*Paths\\.get\\s*\\(\\s*request'
   severity: high
   description: "File copy with user input"
   remediation: "Validate source and destination paths"
@@ -1497,7 +1497,7 @@
 - id: spring-file-move-user-input
   languages: [java]
   patterns:
-    regex: "(?i)Files\\.move\\s*\\(\\s*Paths\\.get\\s*\\(\\s*request"
+    - regex: '(?i)Files\\.move\\s*\\(\\s*Paths\\.get\\s*\\(\\s*request'
   severity: high
   description: "File move with user input"
   remediation: "Validate source and destination paths"
@@ -1507,7 +1507,7 @@
 - id: spring-file-exists-user-input
   languages: [java]
   patterns:
-    regex: "(?i)Files\\.exists\\s*\\(\\s*Paths\\.get\\s*\\(\\s*request"
+    - regex: '(?i)Files\\.exists\\s*\\(\\s*Paths\\.get\\s*\\(\\s*request'
   severity: medium
   description: "File existence check with user input"
   remediation: "Validate file paths"
@@ -1517,7 +1517,7 @@
 - id: spring-file-mkdirs-user-input
   languages: [java]
   patterns:
-    regex: "(?i)Files\\.createDirectories\\s*\\(\\s*Paths\\.get\\s*\\(\\s*request"
+    - regex: '(?i)Files\\.createDirectories\\s*\\(\\s*Paths\\.get\\s*\\(\\s*request'
   severity: high
   description: "Directory creation with user input"
   remediation: "Validate directory paths"
@@ -1527,7 +1527,7 @@
 - id: spring-file-list-user-input
   languages: [java]
   patterns:
-    regex: "(?i)Files\\.list\\s*\\(\\s*Paths\\.get\\s*\\(\\s*request"
+    - regex: '(?i)Files\\.list\\s*\\(\\s*Paths\\.get\\s*\\(\\s*request'
   severity: medium
   description: "Directory listing with user input"
   remediation: "Validate directory paths"
@@ -1537,7 +1537,7 @@
 - id: spring-file-walk-user-input
   languages: [java]
   patterns:
-    regex: "(?i)Files\\.walk\\s*\\(\\s*Paths\\.get\\s*\\(\\s*request"
+    - regex: '(?i)Files\\.walk\\s*\\(\\s*Paths\\.get\\s*\\(\\s*request'
   severity: high
   description: "Directory walk with user input"
   remediation: "Validate directory paths"
@@ -1547,7 +1547,7 @@
 - id: spring-file-attributes-user-input
   languages: [java]
   patterns:
-    regex: "(?i)Files\\.getAttributes\\s*\\(\\s*Paths\\.get\\s*\\(\\s*request"
+    - regex: '(?i)Files\\.getAttributes\\s*\\(\\s*Paths\\.get\\s*\\(\\s*request'
   severity: medium
   description: "File attributes with user input"
   remediation: "Validate file paths"
@@ -1557,7 +1557,7 @@
 - id: spring-file-permissions-user-input
   languages: [java]
   patterns:
-    regex: "(?i)Files\\.setPosixFilePermissions\\s*\\(\\s*Paths\\.get\\s*\\(\\s*request"
+    - regex: '(?i)Files\\.setPosixFilePermissions\\s*\\(\\s*Paths\\.get\\s*\\(\\s*request'
   severity: high
   description: "File permissions with user input"
   remediation: "Validate file paths and permissions"
@@ -1568,7 +1568,7 @@
 - id: spring-redirect-sendredirect
   languages: [java]
   patterns:
-    regex: "(?i)response\\.sendRedirect\\s*\\(\\s*request\\.getParameter"
+    - regex: '(?i)response\\.sendRedirect\\s*\\(\\s*request\\.getParameter'
   severity: high
   description: "Open redirect via sendRedirect"
   remediation: "Validate redirect URLs against allowlist"
@@ -1578,7 +1578,7 @@
 - id: spring-redirect-response-entity
   languages: [java]
   patterns:
-    regex: "(?i)ResponseEntity\\.status\\s*\\(\\s*302\\s*\\)\\.location"
+    - regex: '(?i)ResponseEntity\\.status\\s*\\(\\s*302\\s*\\)\\.location'
   severity: high
   description: "Open redirect via ResponseEntity"
   remediation: "Validate redirect URLs"
@@ -1588,7 +1588,7 @@
 - id: spring-redirect-redirect-view
   languages: [java]
   patterns:
-    regex: "(?i)return\\s+\\\"redirect:\\\"\\s*\\+.*request"
+    - regex: '(?i)return\\s+\\\"redirect:\\\"\\s*\\+.*request'
   severity: high
   description: "Open redirect via redirect: prefix"
   remediation: "Validate redirect URLs"
@@ -1598,7 +1598,7 @@
 - id: spring-redirect-forward-view
   languages: [java]
   patterns:
-    regex: "(?i)return\\s+\\\"forward:\\\"\\s*\\+.*request"
+    - regex: '(?i)return\\s+\\\"forward:\\\"\\s*\\+.*request'
   severity: medium
   description: "Forward with user-controlled path"
   remediation: "Validate forward paths"
@@ -1608,7 +1608,7 @@
 - id: spring-redirect-modelandview
   languages: [java]
   patterns:
-    regex: "(?i)new\\s+ModelAndView\\s*\\(\\s*\\\"redirect:"
+    - regex: '(?i)new\\s+ModelAndView\\s*\\(\\s*\\\"redirect:'
   severity: high
   description: "Open redirect via ModelAndView"
   remediation: "Validate redirect URLs in ModelAndView"
@@ -1618,7 +1618,7 @@
 - id: spring-redirect-uri-builder
   languages: [java]
   patterns:
-    regex: "(?i)UriComponentsBuilder.*queryParam.*request\\.getParameter"
+    - regex: '(?i)UriComponentsBuilder.*queryParam.*request\\.getParameter'
   severity: medium
   description: "URI building with user input"
   remediation: "Validate URI components"
@@ -1628,7 +1628,7 @@
 - id: spring-redirect-uri-components
   languages: [java]
   patterns:
-    regex: "(?i)UriComponents\\.fromUriString\\s*\\(\\s*request"
+    - regex: '(?i)UriComponents\\.fromUriString\\s*\\(\\s*request'
   severity: medium
   description: "URI components from user input"
   remediation: "Validate URI strings"
@@ -1638,7 +1638,7 @@
 - id: spring-redirect-url-validator
   languages: [java]
   patterns:
-    regex: "(?i)UrlPathHelper|UrlPathHelper\\.getDefaultInstance"
+    - regex: '(?i)UrlPathHelper|UrlPathHelper\\.getDefaultInstance'
   severity: low
   description: "URL path helper usage"
   remediation: "Configure URL path helper securely"
@@ -1648,7 +1648,7 @@
 - id: spring-redirect-servlet-context
   languages: [java]
   patterns:
-    regex: "(?i)ServletContext\\.getContext\\s*\\("
+    - regex: '(?i)ServletContext\\.getContext\\s*\\('
   severity: medium
   description: "Servlet context from external context"
   remediation: "Validate context paths"
@@ -1658,7 +1658,7 @@
 - id: spring-redirect-request-dispatcher
   languages: [java]
   patterns:
-    regex: "(?i)RequestDispatcher\\.forward\\s*\\(\\s*request"
+    - regex: '(?i)RequestDispatcher\\.forward\\s*\\(\\s*request'
   severity: medium
   description: "Request dispatcher with user input"
   remediation: "Validate forward paths"
@@ -1669,7 +1669,7 @@
 - id: spring-log-injection-param
   languages: [java]
   patterns:
-    regex: "(?i)logger\\.info\\s*\\(\\s*request\\.getParameter"
+    - regex: '(?i)logger\\.info\\s*\\(\\s*request\\.getParameter'
   severity: medium
   description: "Log injection via request parameter"
   remediation: "Sanitize user input before logging"
@@ -1679,7 +1679,7 @@
 - id: spring-log-injection-header
   languages: [java]
   patterns:
-    regex: "(?i)logger\\.info\\s*\\(\\s*request\\.getHeader"
+    - regex: '(?i)logger\\.info\\s*\\(\\s*request\\.getHeader'
   severity: medium
   description: "Log injection via request header"
   remediation: "Sanitize headers before logging"
@@ -1689,7 +1689,7 @@
 - id: spring-log-injection-body
   languages: [java]
   patterns:
-    regex: "(?i)logger\\.info\\s*\\(\\s*request\\.getBody"
+    - regex: '(?i)logger\\.info\\s*\\(\\s*request\\.getBody'
   severity: medium
   description: "Log injection via request body"
   remediation: "Sanitize body content before logging"
@@ -1699,7 +1699,7 @@
 - id: spring-log-injection-attribute
   languages: [java]
   patterns:
-    regex: "(?i)logger\\.info\\s*\\(\\s*request\\.getAttribute"
+    - regex: '(?i)logger\\.info\\s*\\(\\s*request\\.getAttribute'
   severity: medium
   description: "Log injection via request attribute"
   remediation: "Sanitize attributes before logging"
@@ -1709,7 +1709,7 @@
 - id: spring-log-injection-session
   languages: [java]
   patterns:
-    regex: "(?i)logger\\.info\\s*\\(\\s*session\\.getAttribute"
+    - regex: '(?i)logger\\.info\\s*\\(\\s*session\\.getAttribute'
   severity: medium
   description: "Log injection via session attribute"
   remediation: "Sanitize session data before logging"
@@ -1719,7 +1719,7 @@
 - id: spring-log-sensitive-password
   languages: [java]
   patterns:
-    regex: "(?i)logger\\..*password|log.*password"
+    - regex: '(?i)logger\\..*password|log.*password'
   severity: high
   description: "Password logged"
   remediation: "Never log passwords"
@@ -1729,7 +1729,7 @@
 - id: spring-log-sensitive-token
   languages: [java]
   patterns:
-    regex: "(?i)logger\\..*token|log.*token"
+    - regex: '(?i)logger\\..*token|log.*token'
   severity: high
   description: "Token logged"
   remediation: "Never log tokens"
@@ -1739,7 +1739,7 @@
 - id: spring-log-sensitive-secret
   languages: [java]
   patterns:
-    regex: "(?i)logger\\..*secret|log.*secret"
+    - regex: '(?i)logger\\..*secret|log.*secret'
   severity: high
   description: "Secret logged"
   remediation: "Never log secrets"
@@ -1749,7 +1749,7 @@
 - id: spring-log-sensitive-api-key
   languages: [java]
   patterns:
-    regex: "(?i)logger\\..*apiKey|log.*api.*key"
+    - regex: '(?i)logger\\..*apiKey|log.*api.*key'
   severity: high
   description: "API key logged"
   remediation: "Never log API keys"
@@ -1759,7 +1759,7 @@
 - id: spring-log-sensitive-credit-card
   languages: [java]
   patterns:
-    regex: "(?i)logger\\..*card|log.*credit"
+    - regex: '(?i)logger\\..*card|log.*credit'
   severity: high
   description: "Credit card data logged"
   remediation: "Never log credit card data"
@@ -1770,7 +1770,7 @@
 - id: spring-ldap-injection
   languages: [java]
   patterns:
-    regex: "(?i)ldapTemplate\\.search\\s*\\(\\s*\\\".*\\+.*\\+"
+    - regex: '(?i)ldapTemplate\\.search\\s*\\(\\s*\\\".*\\+.*\\+'
   severity: critical
   description: "LDAP injection via string concatenation"
   remediation: "Use LDAP filters with proper escaping"
@@ -1780,7 +1780,7 @@
 - id: spring-ldap-filter-injection
   languages: [java]
   patterns:
-    regex: "(?i)AndFilter|OrFilter.*request\\.getParameter"
+    - regex: '(?i)AndFilter|OrFilter.*request\\.getParameter'
   severity: high
   description: "LDAP filter with user input"
   remediation: "Escape LDAP filter special characters"
@@ -1790,7 +1790,7 @@
 - id: spring-xpath-injection
   languages: [java]
   patterns:
-    regex: "(?i)xpath\\s*\\(\\s*\\\".*\\+.*\\+|XPathExpression.*evaluate.*request"
+    - regex: '(?i)xpath\\s*\\(\\s*\\\".*\\+.*\\+|XPathExpression.*evaluate.*request'
   severity: critical
   description: "XPath injection via string concatenation"
   remediation: "Use XPath variables"
@@ -1800,7 +1800,7 @@
 - id: spring-el-injection
   languages: [java]
   patterns:
-    regex: "(?i)ExpressionParser\\.parseExpression\\s*\\(\\s*request"
+    - regex: '(?i)ExpressionParser\\.parseExpression\\s*\\(\\s*request'
   severity: critical
   description: "SpEL injection with user input"
   remediation: "Never evaluate user input as SpEL"
@@ -1810,7 +1810,7 @@
 - id: spring-ognl-injection
   languages: [java]
   patterns:
-    - regex: "(?i)Ognl\\.getValue\\s*\\(\\s*request"
+    - regex: '(?i)Ognl\\.getValue\\s*\\(\\s*request'
   severity: critical
   description: "OGNL injection with user input"
   remediation: "Never evaluate user input as OGNL"
@@ -1820,7 +1820,7 @@
 - id: spring-mvel-injection
   languages: [java]
   patterns:
-    - regex: "(?i)MVEL\\.eval\\s*\\(\\s*request"
+    - regex: '(?i)MVEL\\.eval\\s*\\(\\s*request'
   severity: critical
   description: "MVEL injection with user input"
   remediation: "Never evaluate user input as MVEL"
@@ -1830,7 +1830,7 @@
 - id: spring-groovy-injection
   languages: [java]
   patterns:
-    - regex: "(?i)GroovyShell\\.evaluate\\s*\\(\\s*request"
+    - regex: '(?i)GroovyShell\\.evaluate\\s*\\(\\s*request'
   severity: critical
   description: "Groovy injection with user input"
   remediation: "Use SecureGroovyScriptEngine"
@@ -1840,7 +1840,7 @@
 - id: spring-beanshell-injection
   languages: [java]
   patterns:
-    - regex: "(?i)bsh\\.Interpreter\\.eval\\s*\\(\\s*request"
+    - regex: '(?i)bsh\\.Interpreter\\.eval\\s*\\(\\s*request'
   severity: critical
   description: "BeanShell injection with user input"
   remediation: "Remove BeanShell or restrict access"
@@ -1850,7 +1850,7 @@
 - id: spring-javascript-engine-injection
   languages: [java]
   patterns:
-    - regex: "(?i)ScriptEngine\\.eval\\s*\\(\\s*request"
+    - regex: '(?i)ScriptEngine\\.eval\\s*\\(\\s*request'
   severity: critical
   description: "JavaScript engine injection"
   remediation: "Never evaluate user input as script"
@@ -1860,7 +1860,7 @@
 - id: spring-rce-runtime-exec
   languages: [java]
   patterns:
-    - regex: "(?i)Runtime\\.getRuntime\\(\\)\\.exec\\s*\\("
+    - regex: '(?i)Runtime\\.getRuntime\\(\\)\\.exec\\s*\\('
   severity: critical
   description: "Runtime.exec for command execution"
   remediation: "Avoid command execution, use safe APIs"
@@ -1871,7 +1871,7 @@
 - id: spring-secret-hardcoded-password
   languages: [java, properties]
   patterns:
-    regex: "(?i)password\\s*=\\s*['\"][^'\"]{8,}['\"]"
+    - regex: '(?i)password\\s*=\\s*['\"][^'\"]{8,}['\"]'
   severity: high
   description: "Hardcoded password in configuration"
   remediation: "Use environment variables or vault"
@@ -1881,7 +1881,7 @@
 - id: spring-secret-hardcoded-api-key
   languages: [java, properties]
   patterns:
-    regex: "(?i)api\\.key\\s*=\\s*[a-zA-Z0-9]{16,}"
+    - regex: '(?i)api\\.key\\s*=\\s*[a-zA-Z0-9]{16,}'
   severity: high
   description: "Hardcoded API key"
   remediation: "Use environment variables"
@@ -1891,7 +1891,7 @@
 - id: spring-secret-hardcoded-secret
   languages: [java, properties]
   patterns:
-    regex: "(?i)secret\\s*=\\s*[a-zA-Z0-9]{8,}"
+    - regex: '(?i)secret\\s*=\\s*[a-zA-Z0-9]{8,}'
   severity: high
   description: "Hardcoded secret"
   remediation: "Use environment variables"
@@ -1901,7 +1901,7 @@
 - id: spring-secret-hardcoded-token
   languages: [java, properties]
   patterns:
-    regex: "(?i)token\\s*=\\s*[a-zA-Z0-9_-]{20,}"
+    - regex: '(?i)token\\s*=\\s*[a-zA-Z0-9_-]{20,}'
   severity: high
   description: "Hardcoded token"
   remediation: "Use environment variables"
@@ -1911,7 +1911,7 @@
 - id: spring-secret-hardcoded-access-key
   languages: [java, properties]
   patterns:
-    regex: "(?i)access\\.key\\s*=\\s*[A-Z0-9]{16,}"
+    - regex: '(?i)access\\.key\\s*=\\s*[A-Z0-9]{16,}'
   severity: high
   description: "Hardcoded access key"
   remediation: "Use IAM roles or secrets manager"
@@ -1921,7 +1921,7 @@
 - id: spring-secret-hardcoded-private-key
   languages: [java]
   patterns:
-    regex: "(?i)-----BEGIN.*PRIVATE KEY-----"
+    - regex: '(?i)-----BEGIN.*PRIVATE KEY-----'
   severity: critical
   description: "Private key in source code"
   remediation: "Use KeyStore or secrets manager"
@@ -1931,7 +1931,7 @@
 - id: spring-secret-hardcoded-certificate
   languages: [java]
   patterns:
-    regex: "(?i)-----BEGIN.*CERTIFICATE-----"
+    - regex: '(?i)-----BEGIN.*CERTIFICATE-----'
   severity: medium
   description: "Certificate in source code"
   remediation: "Use KeyStore for certificates"
@@ -1941,7 +1941,7 @@
 - id: spring-secret-database-url
   languages: [java, properties]
   patterns:
-    regex: "(?i)jdbc:.*:.*@"
+    - regex: '(?i)jdbc:.*:.*@'
   severity: high
   description: "Database URL with credentials"
   remediation: "Separate credentials from URL"
@@ -1951,7 +1951,7 @@
 - id: spring-secret-aws-credentials
   languages: [java, properties]
   patterns:
-    regex: "AKIA[0-9A-Z]{16}"
+    - regex: 'AKIA[0-9A-Z]{16}'
   severity: critical
   description: "AWS access key ID"
   remediation: "Use IAM roles"
@@ -1961,7 +1961,7 @@
 - id: spring-secret-azure-connection-string
   languages: [java, properties]
   patterns:
-    regex: "(?i)DefaultEndpointsProtocol.*AccountKey"
+    - regex: '(?i)DefaultEndpointsProtocol.*AccountKey'
   severity: high
   description: "Azure connection string with key"
   remediation: "Use managed identities"
@@ -1971,7 +1971,7 @@
 - id: spring-secret-gcp-credentials
   languages: [java, properties]
   patterns:
-    regex: "(?i)\"type\":\\s*\"service_account\""
+    - regex: '(?i)\"type\":\\s*\"service_account\"'
   severity: high
   description: "GCP service account credentials"
   remediation: "Use workload identity"
@@ -1981,7 +1981,7 @@
 - id: spring-secret-jwt-signing-key
   languages: [java, properties]
   patterns:
-    regex: "(?i)jwt\\.signing\\.key\\s*=\\s*[a-zA-Z0-9]{16,}"
+    - regex: '(?i)jwt\\.signing\\.key\\s*=\\s*[a-zA-Z0-9]{16,}'
   severity: high
   description: "Hardcoded JWT signing key"
   remediation: "Use environment variables"
@@ -1991,7 +1991,7 @@
 - id: spring-secret-oauth-client-secret
   languages: [java, properties]
   patterns:
-    regex: "(?i)oauth\\.client\\.secret\\s*=\\s*[a-zA-Z0-9]{8,}"
+    - regex: '(?i)oauth\\.client\\.secret\\s*=\\s*[a-zA-Z0-9]{8,}'
   severity: high
   description: "Hardcoded OAuth client secret"
   remediation: "Use environment variables"
@@ -2001,7 +2001,7 @@
 - id: spring-secret-encryption-key
   languages: [java, properties]
   patterns:
-    regex: "(?i)encryption\\.key\\s*=\\s*[a-zA-Z0-9+/=]{16,}"
+    - regex: '(?i)encryption\\.key\\s*=\\s*[a-zA-Z0-9+/=]{16,}'
   severity: high
   description: "Hardcoded encryption key"
   remediation: "Use KeyStore or secrets manager"
@@ -2011,7 +2011,7 @@
 - id: spring-secret-signing-key
   languages: [java, properties]
   patterns:
-    regex: "(?i)signing\\.key\\s*=\\s*[a-zA-Z0-9+/=]{16,}"
+    - regex: '(?i)signing\\.key\\s*=\\s*[a-zA-Z0-9+/=]{16,}'
   severity: high
   description: "Hardcoded signing key"
   remediation: "Use KeyStore or secrets manager"

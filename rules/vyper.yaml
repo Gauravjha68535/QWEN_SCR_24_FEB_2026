@@ -1,7 +1,7 @@
 - id: vyper-raw-call
   languages: [vyper]
   patterns:
-    - regex: "(?i)raw_call\\s*\\("
+    - regex: '(?i)raw_call\\s*\\('
   severity: critical
   description: "Raw call - reentrancy and logic risks"
   remediation: "Validate raw calls rigorously"
@@ -11,7 +11,7 @@
 - id: vyper-delegate-call
   languages: [vyper]
   patterns:
-    - regex: "(?i)raw_call\\s*\\(.*is_delegate_call\\s*=\\s*True"
+    - regex: '(?i)raw_call\\s*\\(.*is_delegate_call\\s*=\\s*True'
   severity: critical
   description: "Delegate call risk"
   remediation: "Ensure target contract is trusted"
@@ -21,7 +21,7 @@
 - id: vyper-send-ether
   languages: [vyper]
   patterns:
-    - regex: "(?i)send\\s*\\("
+    - regex: '(?i)send\\s*\\('
   severity: high
   description: "Ether send - reentrancy risk"
   remediation: "Ensure state is updated before send"
@@ -31,7 +31,7 @@
 - id: vyper-selfdestruct
   languages: [vyper]
   patterns:
-    - regex: "(?i)selfdestruct\\s*\\("
+    - regex: '(?i)selfdestruct\\s*\\('
   severity: high
   description: "Selfdestruct operation"
   remediation: "Protect with strong access control"
@@ -41,7 +41,7 @@
 - id: vyper-block-timestamp
   languages: [vyper]
   patterns:
-    - regex: "(?i)block\\.timestamp"
+    - regex: '(?i)block\\.timestamp'
   severity: medium
   description: "Time dependence"
   remediation: "Do not use for critical randomness"
@@ -51,7 +51,7 @@
 - id: vyper-tx-origin
   languages: [vyper]
   patterns:
-    - regex: "(?i)tx\\.origin"
+    - regex: '(?i)tx\\.origin'
   severity: high
   description: "tx.origin for auth (phishing risk)"
   remediation: "Use msg.sender instead"
@@ -61,7 +61,7 @@
 - id: vyper-zero-address-check
   languages: [vyper]
   patterns:
-    - regex: "(?i)def\\s+transfer\\s*\\(.*?to\\s*:\\s*address(?!.*assert.*to.*!=.*ZERO_ADDRESS)"
+    - regex: '(?i)def\\s+transfer\\s*\\(.*?to\\s*:\\s*address(?!.*assert.*to.*!=.*ZERO_ADDRESS)'
   severity: medium
   description: "Missing zero address check"
   remediation: "Check for ZERO_ADDRESS"
@@ -72,7 +72,7 @@
 - id: vyper-integer-overflow
   languages: [vyper]
   patterns:
-    - regex: "(?i)(?:\w+\s*=\s*\w+\s*[\+\-\*]\s*\w+)(?!.*assert)"
+    - regex: '(?i)(?:\w+\s*=\s*\w+\s*[\+\-\*]\s*\w+)(?!.*assert)'
   severity: medium
   description: "Potential integer overflow/underflow (pre-0.3.0)"
   remediation: "Use SafeMath or verify Vyper version >= 0.3.0"
@@ -82,7 +82,7 @@
 - id: vyper-reentrancy-no-lock
   languages: [vyper]
   patterns:
-    - regex: "(?i)def\s+\w+\s*\([\s\S]*?\)[\s\S]*?(?:send\s*\([\s\S]*?\)|raw_call\s*\([\s\S]*?\))(?!.*@nonreentrant)"
+    - regex: '(?i)def\s+\w+\s*\([\s\S]*?\)[\s\S]*?(?:send\s*\([\s\S]*?\)|raw_call\s*\([\s\S]*?\))(?!.*@nonreentrant)'
   severity: critical
   description: "External call without reentrancy guard"
   remediation: "Add @nonreentrant('lock') decorator"
@@ -92,7 +92,7 @@
 - id: vyper-unchecked-return
   languages: [vyper]
   patterns:
-    - regex: "(?i)(?:raw_call|send)\s*\([\s\S]*?\)(?!.*assert[\s\S]*?==[\s\S]*?True)"
+    - regex: '(?i)(?:raw_call|send)\s*\([\s\S]*?\)(?!.*assert[\s\S]*?==[\s\S]*?True)'
   severity: high
   description: "Unchecked return value from external call"
   remediation: "Wrap external call in assert or check return boolean"
@@ -102,7 +102,7 @@
 - id: vyper-default-visibility
   languages: [vyper]
   patterns:
-    - regex: "(?i)def\s+\w+\s*\([\s\S]*?\)\s*:(?!.*@(?:public|view|pure|payable|external|internal))"
+    - regex: '(?i)def\s+\w+\s*\([\s\S]*?\)\s*:(?!.*@(?:public|view|pure|payable|external|internal))'
   severity: low
   description: "Missing explicit visibility"
   remediation: "Add @public or @internal"
@@ -112,7 +112,7 @@
 - id: vyper-suicide-authorization
   languages: [vyper]
   patterns:
-    - regex: "(?i)selfdestruct\\s*\\([\\s\\S]*?\\)(?!.*assert[\\s\\S]*?msg\\.sender[\\s\\S]*?==)"
+    - regex: '(?i)selfdestruct\\s*\\([\\s\\S]*?\\)(?!.*assert[\\s\\S]*?msg\\.sender[\\s\\S]*?==)'
   severity: critical
   description: "Selfdestruct allows unauthorized execution"
   remediation: "Assert msg.sender is owner before selfdestruct"
@@ -123,7 +123,7 @@
 - id: vyper-weak-random
   languages: [vyper]
   patterns:
-    - regex: "(?i)block\\.timestamp.*%\\s*\\d+"
+    - regex: '(?i)block\\.timestamp.*%\\s*\\d+'
   severity: medium
   description: "Weak randomness from block timestamp"
   remediation: "Use chainlink VRF for secure randomness"
@@ -134,7 +134,7 @@
 - id: vyper-unchecked-call
   languages: [vyper]
   patterns:
-    - regex: "(?i)raw_call\\s*\\(.*gas\\s*=\\s*[^0-9]"
+    - regex: '(?i)raw_call\\s*\\(.*gas\\s*=\\s*[^0-9]'
   severity: high
   description: "Unchecked low-level call with gas"
   remediation: "Check return value or use sufficient gas"
@@ -145,7 +145,7 @@
 - id: vyper-ether-balance
   languages: [vyper]
   patterns:
-    - regex: "(?i)self\\.balance.*\\+|\\.balance\\s*<\\s*msg\\.value"
+    - regex: '(?i)self\\.balance.*\\+|\\.balance\\s*<\\s*msg\\.value'
   severity: high
   description: "Missing balance check in payable function"
   remediation: "Verify contract balance meets requirements"
@@ -156,7 +156,7 @@
 - id: vyper-access-control
   languages: [vyper]
   patterns:
-    - regex: "(?i)@external\\s+def\\s+\\w+(?!.*owner|.*auth|.*only)"
+    - regex: '(?i)@external\\s+def\\s+\\w+(?!.*owner|.*auth|.*only)'
   severity: high
   description: "External function missing access control"
   remediation: "Add access control modifiers"
@@ -167,7 +167,7 @@
 - id: vyper-arithmetic-overflow
   languages: [vyper]
   patterns:
-    - regex: "(?i)\\w+\\s*\\+\\s*\\w+|\\w+\\s*\\-\\s*\\w+|\\w+\\s*\\*\\s*\\w+"
+    - regex: '(?i)\\w+\\s*\\+\\s*\\w+|\\w+\\s*\\-\\s*\\w+|\\w+\\s*\\*\\s*\\w+'
   severity: medium
   description: "Arithmetic operation without overflow check"
   remediation: "Use SafeMath or Vyper 0.3.0+ for built-in checks"
@@ -178,7 +178,7 @@
 - id: vyper-immutable-bypass
   languages: [vyper]
   patterns:
-    - regex: "(?i)@ immutable\\s*\\(.*\\)\\s*:\\s*\\w+\\s*="
+    - regex: '(?i)@ immutable\\s*\\(.*\\)\\s*:\\s*\\w+\\s*='
   severity: medium
   description: "Immutable variable initialized in constructor"
   remediation: "Ensure immutable variables are set correctly"
@@ -189,7 +189,7 @@
 - id: vyper-abi-encoding
   languages: [vyper]
   patterns:
-    - regex: "(?i)@ external\\s+def.*\\.decode|abi\\.decode.*dynamic"
+    - regex: '(?i)@ external\\s+def.*\\.decode|abi\\.decode.*dynamic'
   severity: medium
   description: "Dynamic ABI decoding - potential bytes32 confusion"
   remediation: "Validate decoded data types"
@@ -200,7 +200,7 @@
 - id: vyper-ether-transfer
   languages: [vyper]
   patterns:
-    - regex: "(?i)selfdestruct.*msg\\.sender|suicide.*msg\\.sender"
+    - regex: '(?i)selfdestruct.*msg\\.sender|suicide.*msg\\.sender'
   severity: critical
   description: "Unauthorized selfdestruct"
   remediation: "Add access control"
@@ -211,7 +211,7 @@
 - id: vyper-msg-sender-check
   languages: [vyper]
   patterns:
-    - regex: "(?i)@ external\\s+def.*(?!.*msg\\.sender|.*auth|.*owner)"
+    - regex: '(?i)@ external\\s+def.*(?!.*msg\\.sender|.*auth|.*owner)'
   severity: high
   description: "External function missing sender check"
   remediation: "Add msg.sender verification"
@@ -222,7 +222,7 @@
 - id: vyper-event-emit
   languages: [vyper]
   patterns:
-    - regex: "(?i)log\\.Transfer|log\\.Approval(?!.*indexed)"
+    - regex: '(?i)log\\.Transfer|log\\.Approval(?!.*indexed)'
   severity: low
   description: "Event missing indexed fields"
   remediation: "Use indexed for event fields"
@@ -233,7 +233,7 @@
 - id: vyper-division
   languages: [vyper]
   patterns:
-    - regex: "(?i)\\w+\\s*/\\s*\\w+|\\w+\\s*%\\s*\\w+"
+    - regex: '(?i)\\w+\\s*/\\s*\\w+|\\w+\\s*%\\s*\\w+'
   severity: medium
   description: "Division/modulo without zero check"
   remediation: "Check denominator is non-zero"
@@ -244,7 +244,7 @@
 - id: vyper-msg-value
   languages: [vyper]
   patterns:
-    - regex: "(?i)@ external\\s+def.*(?!.*msg\\.value)"
+    - regex: '(?i)@ external\\s+def.*(?!.*msg\\.value)'
   severity: medium
   description: "Payable function without value check"
   remediation: "Verify msg.value meets requirements"

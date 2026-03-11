@@ -1,7 +1,7 @@
 - id: perl-hardcoded-password
   languages: [perl]
   patterns:
-    - regex: "(?i)(password|passwd|pwd)\\s*=\\s*['\"][^'\"]{8,}['\"]"
+    - regex: '(?i)(password|passwd|pwd)\\s*=\\s*['\"][^'\"]{8,}['\"]'
   severity: high
   description: "Hardcoded password detected in Perl source code"
   remediation: "Use environment variables ($ENV{PASSWORD}) or a configuration manager"
@@ -11,7 +11,7 @@
 - id: perl-hardcoded-api-key
   languages: [perl]
   patterns:
-    - regex: "(?i)(api[_-]?key|apikey)\\s*=\\s*['\"][a-zA-Z0-9]{16,}['\"]"
+    - regex: '(?i)(api[_-]?key|apikey)\\s*=\\s*['\"][a-zA-Z0-9]{16,}['\"]'
   severity: high
   description: "Hardcoded API key detected in Perl source code"
   remediation: "Store API keys in environment variables or encrypted config"
@@ -22,7 +22,7 @@
 - id: perl-sql-injection
   languages: [perl]
   patterns:
-    - regex: "(?i)(do|execute|prepare)\\s*\\(\\s*['\"].*\\$"
+    - regex: '(?i)(do|execute|prepare)\\s*\\(\\s*['\"].*\\$'
   severity: critical
   description: "SQL injection via variable interpolation in Perl DBI"
   remediation: "Use DBI placeholders: $dbh->prepare('SELECT * FROM users WHERE id = ?'); $sth->execute($id)"
@@ -32,7 +32,7 @@
 - id: perl-sql-injection-concat
   languages: [perl]
   patterns:
-    - regex: "(?i)(do|execute)\\s*\\(\\s*['\"].*\\s*\\.\\s*\\$"
+    - regex: '(?i)(do|execute)\\s*\\(\\s*['\"].*\\s*\\.\\s*\\$'
   severity: critical
   description: "SQL injection via string concatenation in DBI query"
   remediation: "Use parameterized queries with ? placeholders in DBI"
@@ -43,7 +43,7 @@
 - id: perl-command-injection-system
   languages: [perl]
   patterns:
-    - regex: "(?i)system\\s*\\(\\s*['\"].*\\$|system\\s*\\(\\s*\\$"
+    - regex: '(?i)system\\s*\\(\\s*['\"].*\\$|system\\s*\\(\\s*\\$'
   severity: critical
   description: "Command injection via system() with variable input"
   remediation: "Use list form of system: system('cmd', @args) or IPC::Run for safe execution"
@@ -53,7 +53,7 @@
 - id: perl-command-injection-backtick
   languages: [perl]
   patterns:
-    - regex: "`.*\\$.*`|qx/.*\\$/"
+    - regex: '`.*\\$.*`|qx/.*\\$/'
   severity: critical
   description: "Command injection via backticks or qx// with variable interpolation"
   remediation: "Avoid backticks with user input. Use IPC::Run or open3 with argument lists"
@@ -63,7 +63,7 @@
 - id: perl-command-injection-open
   languages: [perl]
   patterns:
-    - regex: "open\\s*\\(\\s*\\w+\\s*,\\s*['\"]\\|.*\\$|open\\s*\\(\\s*\\w+\\s*,\\s*['\"].*\\$.*\\|"
+    - regex: 'open\\s*\\(\\s*\\w+\\s*,\\s*['\"]\\|.*\\$|open\\s*\\(\\s*\\w+\\s*,\\s*['\"].*\\$.*\\|'
   severity: critical
   description: "Command injection via two-argument open with pipe"
   remediation: "Use three-argument open: open(my $fh, '-|', 'cmd', @args)"
@@ -74,7 +74,7 @@
 - id: perl-dangerous-eval
   languages: [perl]
   patterns:
-    - regex: "\\beval\\s*[{(\"].*\\$"
+    - regex: '\\beval\\s*[{(\"].*\\$'
   severity: high
   description: "eval with variable input allows arbitrary code execution"
   remediation: "Avoid eval with user input. Use Safe module or specific parsers"
@@ -85,7 +85,7 @@
 - id: perl-file-inclusion
   languages: [perl]
   patterns:
-    - regex: "(?i)(require|do)\\s+\\$"
+    - regex: '(?i)(require|do)\\s+\\$'
   severity: high
   description: "Dynamic file inclusion via variable-controlled require/do"
   remediation: "Use allowlist of permitted modules. Never load files based on user input"
@@ -96,7 +96,7 @@
 - id: perl-path-traversal
   languages: [perl]
   patterns:
-    - regex: "open\\s*\\(\\s*\\w+\\s*,\\s*['\"]?\\s*\\$"
+    - regex: 'open\\s*\\(\\s*\\w+\\s*,\\s*['\"]?\\s*\\$'
   severity: high
   description: "File open with user-controlled path — potential path traversal"
   remediation: "Validate file paths. Use File::Spec->canonpath and check against base directory"
@@ -107,7 +107,7 @@
 - id: perl-xss-cgi
   languages: [perl]
   patterns:
-    - regex: "print\\s+.*\\$query->param|print\\s+.*param\\s*\\("
+    - regex: 'print\\s+.*\\$query->param|print\\s+.*param\\s*\\('
   severity: high
   description: "XSS via direct output of CGI parameter"
   remediation: "Use HTML::Entities::encode_entities() to escape user input before output"
@@ -118,7 +118,7 @@
 - id: perl-insecure-storable
   languages: [perl]
   patterns:
-    - regex: "Storable::thaw|Storable::retrieve\\s*\\(\\s*\\$"
+    - regex: 'Storable::thaw|Storable::retrieve\\s*\\(\\s*\\$'
   severity: high
   description: "Storable deserialization of untrusted data can execute code"
   remediation: "Use JSON or YAML for untrusted data. Never deserialize untrusted Storable data"
@@ -129,7 +129,7 @@
 - id: perl-ldap-injection
   languages: [perl]
   patterns:
-    - regex: "Net::LDAP.*search\\s*\\(.*filter.*\\$"
+    - regex: 'Net::LDAP.*search\\s*\\(.*filter.*\\$'
   severity: critical
   description: "LDAP injection via user input in search filter"
   remediation: "Use Net::LDAP::Filter for safe filter construction"
@@ -140,7 +140,7 @@
 - id: perl-weak-crypto-md5
   languages: [perl]
   patterns:
-    - regex: "(?i)(Digest::MD5|Digest::SHA1|md5_hex)"
+    - regex: '(?i)(Digest::MD5|Digest::SHA1|md5_hex)'
   severity: medium
   description: "Use of weak cryptographic hash (MD5/SHA1)"
   remediation: "Use Digest::SHA256 or Crypt::Argon2 for password hashing"
@@ -151,7 +151,7 @@
 - id: perl-insecure-random
   languages: [perl]
   patterns:
-    - regex: "\\brand\\s*\\(|int\\s*\\(\\s*rand"
+    - regex: '\\brand\\s*\\(|int\\s*\\(\\s*rand'
   severity: medium
   description: "Perl rand() is not cryptographically secure"
   remediation: "Use Crypt::Random or Math::Random::Secure for security-sensitive random"
@@ -162,7 +162,7 @@
 - id: perl-redos
   languages: [perl]
   patterns:
-    - regex: "=~\\s*/.*\\(\\?.*\\+.*\\+|=~\\s*/.*\\{\\d+,\\}.*\\{\\d+,\\}"
+    - regex: '=~\\s*/.*\\(\\?.*\\+.*\\+|=~\\s*/.*\\{\\d+,\\}.*\\{\\d+,\\}'
   severity: medium
   description: "Regular expression vulnerable to ReDoS attacks"
   remediation: "Avoid nested quantifiers. Use re2 engine for untrusted patterns"
@@ -173,7 +173,7 @@
 - id: perl-open-redirect
   languages: [perl]
   patterns:
-    - regex: "(?i)redirect\\s*\\(\\s*\\$|print\\s+.*Location:.*\\$"
+    - regex: '(?i)redirect\\s*\\(\\s*\\$|print\\s+.*Location:.*\\$'
   severity: high
   description: "Open redirect via user-controlled URL"
   remediation: "Validate redirect URLs against allowlist"
@@ -184,7 +184,7 @@
 - id: perl-format-string
   languages: [perl]
   patterns:
-    - regex: "sprintf\\s*\\(\\s*\\$"
+    - regex: 'sprintf\\s*\\(\\s*\\$'
   severity: medium
   description: "Format string vulnerability via user-controlled format"
   remediation: "Never use user input as format string: use sprintf('%s', $input)"
@@ -254,7 +254,7 @@
 - id: perl-cgi-param-direct
   languages: [perl]
   patterns:
-    - regex: "(?i)param\\s*\\(\\s*['\"][^'\"]+['\"]\\s*\\)"
+    - regex: '(?i)param\\s*\\(\\s*['\"][^'\"]+['\"]\\s*\\)'
   severity: medium
   description: "CGI param access without validation"
   remediation: "Validate and sanitize all CGI parameters"
@@ -264,7 +264,7 @@
 - id: perl-cgi-param-hash
   languages: [perl]
   patterns:
-    - regex: "(?i)\\$cgi->param\\s*\\("
+    - regex: '(?i)\\$cgi->param\\s*\\('
   severity: medium
   description: "CGI.pm param method usage"
   remediation: "Validate parameter values"
@@ -274,7 +274,7 @@
 - id: perl-cgi-query-object
   languages: [perl]
   patterns:
-    - regex: "(?i)CGI->new|new CGI"
+    - regex: '(?i)CGI->new|new CGI'
   severity: low
   description: "CGI query object creation"
   remediation: "Use CGI in functional mode or modern alternatives"
@@ -284,7 +284,7 @@
 - id: perl-cgi-header
   languages: [perl]
   patterns:
-    - regex: "(?i)header\\s*\\(|->header\\s*\\("
+    - regex: '(?i)header\\s*\\(|->header\\s*\\('
   severity: low
   description: "CGI header generation"
   remediation: "Set appropriate content type"
@@ -294,7 +294,7 @@
 - id: perl-cgi-cookie
   languages: [perl]
   patterns:
-    - regex: "(?i)cookie\\s*\\(|->cookie\\s*\\("
+    - regex: '(?i)cookie\\s*\\(|->cookie\\s*\\('
   severity: medium
   description: "CGI cookie handling"
   remediation: "Set secure and httponly flags"
@@ -304,7 +304,7 @@
 - id: perl-cgi-redirect
   languages: [perl]
   patterns:
-    - regex: "(?i)redirect\\s*\\(|->redirect\\s*\\("
+    - regex: '(?i)redirect\\s*\\(|->redirect\\s*\\('
   severity: medium
   description: "CGI redirect"
   remediation: "Validate redirect URLs"
@@ -314,7 +314,7 @@
 - id: perl-cgi-start-html
   languages: [perl]
   patterns:
-    - regex: "(?i)start_html\\s*\\(|->start_html\\s*\\("
+    - regex: '(?i)start_html\\s*\\(|->start_html\\s*\\('
   severity: low
   description: "CGI HTML generation"
   remediation: "Escape output properly"
@@ -324,7 +324,7 @@
 - id: perl-cgi-end-html
   languages: [perl]
   patterns:
-    - regex: "(?i)end_html\\s*\\(|->end_html\\s*\\("
+    - regex: '(?i)end_html\\s*\\(|->end_html\\s*\\('
   severity: low
   description: "CGI HTML end"
   remediation: "Ensure proper HTML structure"
@@ -334,7 +334,7 @@
 - id: perl-cgi-hidden
   languages: [perl]
   patterns:
-    - regex: "(?i)hidden\\s*\\(|->hidden\\s*\\("
+    - regex: '(?i)hidden\\s*\\(|->hidden\\s*\\('
   severity: low
   description: "CGI hidden field"
   remediation: "Don't store sensitive data in hidden fields"
@@ -344,7 +344,7 @@
 - id: perl-cgi-textfield
   languages: [perl]
   patterns:
-    - regex: "(?i)textfield\\s*\\(|->textfield\\s*\\("
+    - regex: '(?i)textfield\\s*\\(|->textfield\\s*\\('
   severity: low
   description: "CGI text field"
   remediation: "Validate text field input"
@@ -354,7 +354,7 @@
 - id: perl-cgi-password
   languages: [perl]
   patterns:
-    - regex: "(?i)password_field\\s*\\(|->password_field\\s*\\("
+    - regex: '(?i)password_field\\s*\\(|->password_field\\s*\\('
   severity: low
   description: "CGI password field"
   remediation: "Use HTTPS for password fields"
@@ -364,7 +364,7 @@
 - id: perl-cgi-checkbox
   languages: [perl]
   patterns:
-    - regex: "(?i)checkbox\\s*\\(|->checkbox\\s*\\("
+    - regex: '(?i)checkbox\\s*\\(|->checkbox\\s*\\('
   severity: low
   description: "CGI checkbox"
   remediation: "Validate checkbox values"
@@ -374,7 +374,7 @@
 - id: perl-cgi-radio
   languages: [perl]
   patterns:
-    - regex: "(?i)radio_group\\s*\\(|->radio_group\\s*\\("
+    - regex: '(?i)radio_group\\s*\\(|->radio_group\\s*\\('
   severity: low
   description: "CGI radio group"
   remediation: "Validate radio group selection"
@@ -384,7 +384,7 @@
 - id: perl-cgi-popup
   languages: [perl]
   patterns:
-    - regex: "(?i)popup_menu\\s*\\(|->popup_menu\\s*\\("
+    - regex: '(?i)popup_menu\\s*\\(|->popup_menu\\s*\\('
   severity: low
   description: "CGI popup menu"
   remediation: "Validate menu selection"
@@ -394,7 +394,7 @@
 - id: perl-cgi-scrolling
   languages: [perl]
   patterns:
-    - regex: "(?i)scrolling_list\\s*\\(|->scrolling_list\\s*\\("
+    - regex: '(?i)scrolling_list\\s*\\(|->scrolling_list\\s*\\('
   severity: low
   description: "CGI scrolling list"
   remediation: "Validate list selection"
@@ -404,7 +404,7 @@
 - id: perl-cgi-textarea
   languages: [perl]
   patterns:
-    - regex: "(?i)textarea\\s*\\(|->textarea\\s*\\("
+    - regex: '(?i)textarea\\s*\\(|->textarea\\s*\\('
   severity: low
   description: "CGI textarea"
   remediation: "Validate textarea content"
@@ -414,7 +414,7 @@
 - id: perl-cgi-file
   languages: [perl]
   patterns:
-    - regex: "(?i)filefield\\s*\\(|->filefield\\s*\\("
+    - regex: '(?i)filefield\\s*\\(|->filefield\\s*\\('
   severity: medium
   description: "CGI file upload field"
   remediation: "Validate file uploads"
@@ -424,7 +424,7 @@
 - id: perl-cgi-upload
   languages: [perl]
   patterns:
-    - regex: "(?i)upload\\s*\\(|->upload\\s*\\("
+    - regex: '(?i)upload\\s*\\(|->upload\\s*\\('
   severity: medium
   description: "CGI file upload"
   remediation: "Validate uploaded files"
@@ -434,7 +434,7 @@
 - id: perl-cgi-multipart
   languages: [perl]
   patterns:
-    - regex: "(?i)multipart/form-data"
+    - regex: '(?i)multipart/form-data'
   severity: low
   description: "CGI multipart form"
   remediation: "Handle multipart data securely"
@@ -444,7 +444,7 @@
 - id: perl-cgi-deprecated
   languages: [perl]
   patterns:
-    - regex: "(?i)use CGI"
+    - regex: '(?i)use CGI'
   severity: low
   description: "CGI.pm module usage (deprecated)"
   remediation: "Consider modern alternatives like PSGI"
@@ -455,7 +455,7 @@
 - id: perl-dbi-connect
   languages: [perl]
   patterns:
-    - regex: "(?i)DBI->connect|connect\\s*\\("
+    - regex: '(?i)DBI->connect|connect\\s*\\('
   severity: medium
   description: "DBI database connection"
   remediation: "Use environment variables for credentials"
@@ -465,7 +465,7 @@
 - id: perl-dbi-prepare
   languages: [perl]
   patterns:
-    - regex: "(?i)prepare\\s*\\(|->prepare\\s*\\("
+    - regex: '(?i)prepare\\s*\\(|->prepare\\s*\\('
   severity: low
   description: "DBI prepared statement"
   remediation: "Use placeholders for parameters"
@@ -475,7 +475,7 @@
 - id: perl-dbi-execute
   languages: [perl]
   patterns:
-    - regex: "(?i)execute\\s*\\(|->execute\\s*\\("
+    - regex: '(?i)execute\\s*\\(|->execute\\s*\\('
   severity: low
   description: "DBI statement execute"
   remediation: "Bind parameters before execute"
@@ -485,7 +485,7 @@
 - id: perl-dbi-fetch
   languages: [perl]
   patterns:
-    - regex: "(?i)fetchrow|->fetch\\s*\\("
+    - regex: '(?i)fetchrow|->fetch\\s*\\('
   severity: low
   description: "DBI fetch row"
   remediation: "Validate fetched data"
@@ -495,7 +495,7 @@
 - id: perl-dbi-selectall
   languages: [perl]
   patterns:
-    - regex: "(?i)selectall_arrayref|selectall_hashref"
+    - regex: '(?i)selectall_arrayref|selectall_hashref'
   severity: low
   description: "DBI select all"
   remediation: "Use parameterized queries"
@@ -505,7 +505,7 @@
 - id: perl-dbi-selectrow
   languages: [perl]
   patterns:
-    - regex: "(?i)selectrow_array|selectrow_hashref"
+    - regex: '(?i)selectrow_array|selectrow_hashref'
   severity: low
   description: "DBI select row"
   remediation: "Use parameterized queries"
@@ -515,7 +515,7 @@
 - id: perl-dbi-do
   languages: [perl]
   patterns:
-    - regex: "(?i)->do\\s*\\("
+    - regex: '(?i)->do\\s*\\('
   severity: medium
   description: "DBI do statement"
   remediation: "Use prepare/execute for user input"
@@ -525,7 +525,7 @@
 - id: perl-dbi-transaction
   languages: [perl]
   patterns:
-    - regex: "(?i)begin_work|commit|rollback"
+    - regex: '(?i)begin_work|commit|rollback'
   severity: low
   description: "DBI transaction"
   remediation: "Handle transactions properly"
@@ -535,7 +535,7 @@
 - id: perl-dbi-raise-error
   languages: [perl]
   patterns:
-    - regex: "(?i)RaiseError\\s*=\\s*1|PrintError"
+    - regex: '(?i)RaiseError\\s*=\\s*1|PrintError'
   severity: low
   description: "DBI error handling"
   remediation: "Configure error handling appropriately"
@@ -545,7 +545,7 @@
 - id: perl-dbi-auto-commit
   languages: [perl]
   patterns:
-    - regex: "(?i)AutoCommit\\s*=\\s*0|AutoCommit\\s*=\\s*1"
+    - regex: '(?i)AutoCommit\\s*=\\s*0|AutoCommit\\s*=\\s*1'
   severity: low
   description: "DBI AutoCommit setting"
   remediation: "Configure AutoCommit appropriately"
@@ -555,7 +555,7 @@
 - id: perl-dbi-dsn
   languages: [perl]
   patterns:
-    - regex: "(?i)DBI:|dbi:"
+    - regex: '(?i)DBI:|dbi:'
   severity: medium
   description: "DBI DSN string"
   remediation: "Don't hardcode DSN credentials"
@@ -565,7 +565,7 @@
 - id: perl-dbi-mysql
   languages: [perl]
   patterns:
-    - regex: "(?i)dbi:mysql"
+    - regex: '(?i)dbi:mysql'
   severity: low
   description: "DBI MySQL driver"
   remediation: "Use MySQL prepared statements"
@@ -575,7 +575,7 @@
 - id: perl-dbi-pg
   languages: [perl]
   patterns:
-    - regex: "(?i)dbi:Pg"
+    - regex: '(?i)dbi:Pg'
   severity: low
   description: "DBI PostgreSQL driver"
   remediation: "Use PostgreSQL prepared statements"
@@ -585,7 +585,7 @@
 - id: perl-dbi-sqlite
   languages: [perl]
   patterns:
-    - regex: "(?i)dbi:SQLite"
+    - regex: '(?i)dbi:SQLite'
   severity: low
   description: "DBI SQLite driver"
   remediation: "Use SQLite prepared statements"
@@ -595,7 +595,7 @@
 - id: perl-dbi-oracle
   languages: [perl]
   patterns:
-    - regex: "(?i)dbi:Oracle"
+    - regex: '(?i)dbi:Oracle'
   severity: low
   description: "DBI Oracle driver"
   remediation: "Use Oracle prepared statements"
@@ -605,7 +605,7 @@
 - id: perl-dbi-disconnect
   languages: [perl]
   patterns:
-    - regex: "(?i)disconnect\\s*\\(|->disconnect"
+    - regex: '(?i)disconnect\\s*\\(|->disconnect'
   severity: low
   description: "DBI disconnect"
   remediation: "Close database connections"
@@ -615,7 +615,7 @@
 - id: perl-dbi-quote
   languages: [perl]
   patterns:
-    - regex: "(?i)->quote\\s*\\("
+    - regex: '(?i)->quote\\s*\\('
   severity: medium
   description: "DBI quote method"
   remediation: "Use placeholders instead of quote"
@@ -625,7 +625,7 @@
 - id: perl-dbi-bind-param
   languages: [perl]
   patterns:
-    - regex: "(?i)bind_param\\s*\\("
+    - regex: '(?i)bind_param\\s*\\('
   severity: low
   description: "DBI bind parameter"
   remediation: "Specify parameter types"
@@ -635,7 +635,7 @@
 - id: perl-dbi-rows
   languages: [perl]
   patterns:
-    - regex: "(?i)->rows|rows\\s*\\("
+    - regex: '(?i)->rows|rows\\s*\\('
   severity: low
   description: "DBI rows affected"
   remediation: "Check rows affected"
@@ -645,7 +645,7 @@
 - id: perl-dbi-last-insert-id
   languages: [perl]
   patterns:
-    - regex: "(?i)last_insert_id|->last_insert_id"
+    - regex: '(?i)last_insert_id|->last_insert_id'
   severity: low
   description: "DBI last insert ID"
   remediation: "Use last_insert_id properly"
@@ -656,7 +656,7 @@
 - id: perl-tt-process
   languages: [perl]
   patterns:
-    - regex: "(?i)Template->process|->process\\s*\\("
+    - regex: '(?i)Template->process|->process\\s*\\('
   severity: medium
   description: "Template Toolkit process"
   remediation: "Validate template variables"
@@ -666,7 +666,7 @@
 - id: perl-tt-new
   languages: [perl]
   patterns:
-    - regex: "(?i)Template->new|new Template"
+    - regex: '(?i)Template->new|new Template'
   severity: low
   description: "Template Toolkit creation"
   remediation: "Configure TT securely"
@@ -676,7 +676,7 @@
 - id: perl-tt-config
   languages: [perl]
   patterns:
-    - regex: "(?i)INCLUDE_PATH|TEMPLATE_EXTENSION"
+    - regex: '(?i)INCLUDE_PATH|TEMPLATE_EXTENSION'
   severity: low
   description: "Template Toolkit config"
   remediation: "Secure template paths"
@@ -686,7 +686,7 @@
 - id: perl-tt-plugin
   languages: [perl]
   patterns:
-    - regex: "(?i)PLUGINS\\s*=|LOAD_PLUGINS"
+    - regex: '(?i)PLUGINS\\s*=|LOAD_PLUGINS'
   severity: low
   description: "Template Toolkit plugins"
   remediation: "Review plugin security"
@@ -696,7 +696,7 @@
 - id: perl-tt-filter
   languages: [perl]
   patterns:
-    - regex: "(?i)FILTER\\s*=|FILTERS\\s*="
+    - regex: '(?i)FILTER\\s*=|FILTERS\\s*='
   severity: low
   description: "Template Toolkit filters"
   remediation: "Use HTML escape filter"
@@ -706,7 +706,7 @@
 - id: perl-tt-directive
   languages: [perl]
   patterns:
-    - regex: "(?i)\\[%\\s*\\w+\\s*%\\]"
+    - regex: '(?i)\\[%\\s*\\w+\\s*%\\]'
   severity: low
   description: "Template Toolkit directive"
   remediation: "Escape output in templates"
@@ -716,7 +716,7 @@
 - id: perl-tt-variable
   languages: [perl]
   patterns:
-    - regex: "(?i)\\[%\\s*\\$\\w+\\s*%\\]"
+    - regex: '(?i)\\[%\\s*\\$\\w+\\s*%\\]'
   severity: low
   description: "Template Toolkit variable"
   remediation: "Validate template variables"
@@ -726,7 +726,7 @@
 - id: perl-tt-loop
   languages: [perl]
   patterns:
-    - regex: "(?i)\\[%\\s*FOREACH|FOREACH\\s*\\w+"
+    - regex: '(?i)\\[%\\s*FOREACH|FOREACH\\s*\\w+'
   severity: low
   description: "Template Toolkit loop"
   remediation: "Validate loop data"
@@ -736,7 +736,7 @@
 - id: perl-tt-if
   languages: [perl]
   patterns:
-    - regex: "(?i)\\[%\\s*IF|IF\\s*\\w+"
+    - regex: '(?i)\\[%\\s*IF|IF\\s*\\w+'
   severity: low
   description: "Template Toolkit conditional"
   remediation: "Validate condition data"
@@ -746,7 +746,7 @@
 - id: perl-tt-include
   languages: [perl]
   patterns:
-    - regex: "(?i)\\[%\\s*INCLUDE|INCLUDE\\s*\\w+"
+    - regex: '(?i)\\[%\\s*INCLUDE|INCLUDE\\s*\\w+'
   severity: medium
   description: "Template Toolkit include"
   remediation: "Validate include paths"
@@ -756,7 +756,7 @@
 - id: perl-tt-process-inline
   languages: [perl]
   patterns:
-    - regex: "(?i)PROCESS\\s*\\w+|\\[%\\s*PROCESS"
+    - regex: '(?i)PROCESS\\s*\\w+|\\[%\\s*PROCESS'
   severity: medium
   description: "Template Toolkit process"
   remediation: "Validate process targets"
@@ -766,7 +766,7 @@
 - id: perl-tt-wrapper
   languages: [perl]
   patterns:
-    - regex: "(?i)WRAPPER\\s*\\w+|\\[%\\s*WRAPPER"
+    - regex: '(?i)WRAPPER\\s*\\w+|\\[%\\s*WRAPPER'
   severity: low
   description: "Template Toolkit wrapper"
   remediation: "Validate wrapper templates"
@@ -776,7 +776,7 @@
 - id: perl-tt-block
   languages: [perl]
   patterns:
-    - regex: "(?i)\\[%\\s*BLOCK|BLOCK\\s*\\w+"
+    - regex: '(?i)\\[%\\s*BLOCK|BLOCK\\s*\\w+'
   severity: low
   description: "Template Toolkit block"
   remediation: "Validate block content"
@@ -786,7 +786,7 @@
 - id: perl-tt-macro
   languages: [perl]
   patterns:
-    - regex: "(?i)\\[%\\s*MACRO|MACRO\\s*\\w+"
+    - regex: '(?i)\\[%\\s*MACRO|MACRO\\s*\\w+'
   severity: low
   description: "Template Toolkit macro"
   remediation: "Validate macro definitions"
@@ -796,7 +796,7 @@
 - id: perl-tt-perl
   languages: [perl]
   patterns:
-    - regex: "(?i)EVAL_PERL\\s*=\\s*1|PERL\\s*\\w+"
+    - regex: '(?i)EVAL_PERL\\s*=\\s*1|PERL\\s*\\w+'
   severity: high
   description: "Template Toolkit Perl evaluation"
   remediation: "Disable EVAL_PERL in production"
@@ -806,7 +806,7 @@
 - id: perl-tt-debug
   languages: [perl]
   patterns:
-    - regex: "(?i)DEBUG\\s*=|debug\\s*\\("
+    - regex: '(?i)DEBUG\\s*=|debug\\s*\\('
   severity: medium
   description: "Template Toolkit debug"
   remediation: "Disable debug in production"
@@ -816,7 +816,7 @@
 - id: perl-tt-interpolate
   languages: [perl]
   patterns:
-    - regex: "(?i)INTERPOLATE\\s*=|interpolate\\s*\\("
+    - regex: '(?i)INTERPOLATE\\s*=|interpolate\\s*\\('
   severity: low
   description: "Template Toolkit interpolation"
   remediation: "Review interpolation settings"
@@ -826,7 +826,7 @@
 - id: perl-tt-compile-dir
   languages: [perl]
   patterns:
-    - regex: "(?i)COMPILE_DIR|compile_dir"
+    - regex: '(?i)COMPILE_DIR|compile_dir'
   severity: low
   description: "Template Toolkit compile dir"
   remediation: "Secure compile directory"
@@ -836,7 +836,7 @@
 - id: perl-tt-cache-size
   languages: [perl]
   patterns:
-    - regex: "(?i)CACHE_SIZE|cache_size"
+    - regex: '(?i)CACHE_SIZE|cache_size'
   severity: low
   description: "Template Toolkit cache"
   remediation: "Configure cache appropriately"
@@ -846,7 +846,7 @@
 - id: perl-tt-recursion-limit
   languages: [perl]
   patterns:
-    - regex: "(?i)RECURSION|recursion_limit"
+    - regex: '(?i)RECURSION|recursion_limit'
   severity: low
   description: "Template Toolkit recursion"
   remediation: "Set recursion limit"
@@ -857,7 +857,7 @@
 - id: perl-moose-has
   languages: [perl]
   patterns:
-    - regex: "(?i)has\\s+['\"]\\w+['\"]"
+    - regex: '(?i)has\\s+['\"]\\w+['\"]'
   severity: low
   description: "Moose attribute declaration"
   remediation: "Validate attribute values"
@@ -867,7 +867,7 @@
 - id: perl-moose-extends
   languages: [perl]
   patterns:
-    - regex: "(?i)extends\\s+['\"]\\w+['\"]"
+    - regex: '(?i)extends\\s+['\"]\\w+['\"]'
   severity: low
   description: "Moose class extension"
   remediation: "Review parent class security"
@@ -877,7 +877,7 @@
 - id: perl-moose-with
   languages: [perl]
   patterns:
-    - regex: "(?i)with\\s+['\"]\\w+['\"]"
+    - regex: '(?i)with\\s+['\"]\\w+['\"]'
   severity: low
   description: "Moose role composition"
   remediation: "Review role security"
@@ -887,7 +887,7 @@
 - id: perl-moose-method
   languages: [perl]
   patterns:
-    - regex: "(?i)sub\\s+\\w+\\s*\\{|->can\\s*\\("
+    - regex: '(?i)sub\\s+\\w+\\s*\\{|->can\\s*\\('
   severity: low
   description: "Moose method"
   remediation: "Validate method parameters"
@@ -897,7 +897,7 @@
 - id: perl-moose-builder
   languages: [perl]
   patterns:
-    - regex: "(?i)builder\\s*=>|BUILD\\s*\\("
+    - regex: '(?i)builder\\s*=>|BUILD\\s*\\('
   severity: low
   description: "Moose builder"
   remediation: "Validate builder data"
@@ -907,7 +907,7 @@
 - id: perl-moose-trigger
   languages: [perl]
   patterns:
-    - regex: "(?i)trigger\\s*=>|after\\s+['\"]\\w+['\"]"
+    - regex: '(?i)trigger\\s*=>|after\\s+['\"]\\w+['\"]'
   severity: low
   description: "Moose attribute trigger"
   remediation: "Validate trigger data"
@@ -917,7 +917,7 @@
 - id: perl-moose-coerce
   languages: [perl]
   patterns:
-    - regex: "(?i)coerce\\s*=>|coerce\\s+\\w+"
+    - regex: '(?i)coerce\\s*=>|coerce\\s+\\w+'
   severity: low
   description: "Moose type coercion"
   remediation: "Validate coercion rules"
@@ -927,7 +927,7 @@
 - id: perl-moose-type
   languages: [perl]
   patterns:
-    - regex: "(?i)isa\\s*=>|Str|Int|ArrayRef"
+    - regex: '(?i)isa\\s*=>|Str|Int|ArrayRef'
   severity: low
   description: "Moose type constraint"
   remediation: "Use appropriate type constraints"
@@ -937,7 +937,7 @@
 - id: perl-moose-required
   languages: [perl]
   patterns:
-    - regex: "(?i)required\\s*=>\\s*1"
+    - regex: '(?i)required\\s*=>\\s*1'
   severity: low
   description: "Moose required attribute"
   remediation: "Validate required attributes"
@@ -947,7 +947,7 @@
 - id: perl-moose-default
   languages: [perl]
   patterns:
-    - regex: "(?i)default\\s*=>|default\\s+sub"
+    - regex: '(?i)default\\s*=>|default\\s+sub'
   severity: low
   description: "Moose default value"
   remediation: "Validate default values"
@@ -957,7 +957,7 @@
 - id: perl-moose-lazy
   languages: [perl]
   patterns:
-    - regex: "(?i)lazy\\s*=>\\s*1"
+    - regex: '(?i)lazy\\s*=>\\s*1'
   severity: low
   description: "Moose lazy attribute"
   remediation: "Validate lazy builders"
@@ -967,7 +967,7 @@
 - id: perl-moose-clearer
   languages: [perl]
   patterns:
-    - regex: "(?i)clearer\\s*=>|clearer\\s+\\w+"
+    - regex: '(?i)clearer\\s*=>|clearer\\s+\\w+'
   severity: low
   description: "Moose attribute clearer"
   remediation: "Validate clearer usage"
@@ -977,7 +977,7 @@
 - id: perl-moose-predicate
   languages: [perl]
   patterns:
-    - regex: "(?i)predicate\\s*=>|predicate\\s+\\w+"
+    - regex: '(?i)predicate\\s*=>|predicate\\s+\\w+'
   severity: low
   description: "Moose attribute predicate"
   remediation: "Validate predicate usage"
@@ -987,7 +987,7 @@
 - id: perl-moose-handle
   languages: [perl]
   patterns:
-    - regex: "(?i)handles\\s*=>|handles\\s+\\w+"
+    - regex: '(?i)handles\\s*=>|handles\\s+\\w+'
   severity: low
   description: "Moose attribute delegation"
   remediation: "Validate delegated methods"
@@ -997,7 +997,7 @@
 - id: perl-moose-weak-ref
   languages: [perl]
   patterns:
-    - regex: "(?i)weak_ref\\s*=>\\s*1"
+    - regex: '(?i)weak_ref\\s*=>\\s*1'
   severity: low
   description: "Moose weak reference"
   remediation: "Handle weak refs properly"
@@ -1007,7 +1007,7 @@
 - id: perl-moose-metaclass
   languages: [perl]
   patterns:
-    - regex: "(?i)metaclass\\s*=>|meta->"
+    - regex: '(?i)metaclass\\s*=>|meta->'
   severity: low
   description: "Moose metaclass"
   remediation: "Review metaclass usage"
@@ -1017,7 +1017,7 @@
 - id: perl-moo-has
   languages: [perl]
   patterns:
-    - regex: "(?i)has\\s+['\"]\\w+['\"]"
+    - regex: '(?i)has\\s+['\"]\\w+['\"]'
   severity: low
   description: "Moo attribute"
   remediation: "Validate attribute values"
@@ -1027,7 +1027,7 @@
 - id: perl-moo-with
   languages: [perl]
   patterns:
-    - regex: "(?i)with\\s+['\"]\\w+['\"]"
+    - regex: '(?i)with\\s+['\"]\\w+['\"]'
   severity: low
   description: "Moo role"
   remediation: "Review role security"
@@ -1037,7 +1037,7 @@
 - id: perl-moo-build
   languages: [perl]
   patterns:
-    - regex: "(?i)BUILD\\s*\\("
+    - regex: '(?i)BUILD\\s*\\('
   severity: low
   description: "Moo BUILD method"
   remediation: "Validate BUILD data"
@@ -1047,7 +1047,7 @@
 - id: perl-moo-lazy-build
   languages: [perl]
   patterns:
-    - regex: "(?i)lazy_build\\s*=>|_build_\\w+"
+    - regex: '(?i)lazy_build\\s*=>|_build_\\w+'
   severity: low
   description: "Moo lazy builder"
   remediation: "Validate lazy builders"
@@ -1058,7 +1058,7 @@
 - id: perl-psgi-app
   languages: [perl]
   patterns:
-    - regex: "(?i)sub\\s*\\{\\s*my\\s*\\$env"
+    - regex: '(?i)sub\\s*\\{\\s*my\\s*\\$env'
   severity: low
   description: "PSGI application"
   remediation: "Validate PSGI environment"
@@ -1068,7 +1068,7 @@
 - id: perl-plack-run
   languages: [perl]
   patterns:
-    - regex: "(?i)Plack::Runner|plackup"
+    - regex: '(?i)Plack::Runner|plackup'
   severity: low
   description: "Plack runner"
   remediation: "Configure Plack securely"
@@ -1078,7 +1078,7 @@
 - id: perl-plack-builder
   languages: [perl]
   patterns:
-    - regex: "(?i)Plack::Builder|builder\\s*\\{"
+    - regex: '(?i)Plack::Builder|builder\\s*\\{'
   severity: low
   description: "Plack builder"
   remediation: "Configure middleware securely"
@@ -1088,7 +1088,7 @@
 - id: perl-plack-middleware
   languages: [perl]
   patterns:
-    - regex: "(?i)enable\\s+['\"]\\w+['\"]|Plack::Middleware"
+    - regex: '(?i)enable\\s+['\"]\\w+['\"]|Plack::Middleware'
   severity: low
   description: "Plack middleware"
   remediation: "Review middleware security"
@@ -1098,7 +1098,7 @@
 - id: perl-plack-session
   languages: [perl]
   patterns:
-    - regex: "(?i)Plack::Middleware::Session"
+    - regex: '(?i)Plack::Middleware::Session'
   severity: low
   description: "Plack session middleware"
   remediation: "Configure session securely"
@@ -1108,7 +1108,7 @@
 - id: perl-plack-auth
   languages: [perl]
   patterns:
-    - regex: "(?i)Plack::Middleware::Auth"
+    - regex: '(?i)Plack::Middleware::Auth'
   severity: low
   description: "Plack auth middleware"
   remediation: "Configure authentication securely"
@@ -1118,7 +1118,7 @@
 - id: perl-plack-static
   languages: [perl]
   patterns:
-    - regex: "(?i)Plack::Middleware::Static"
+    - regex: '(?i)Plack::Middleware::Static'
   severity: low
   description: "Plack static middleware"
   remediation: "Secure static file serving"
@@ -1128,7 +1128,7 @@
 - id: perl-plack-proxy
   languages: [perl]
   patterns:
-    - regex: "(?i)Plack::Middleware::ReverseProxy"
+    - regex: '(?i)Plack::Middleware::ReverseProxy'
   severity: low
   description: "Plack reverse proxy"
   remediation: "Configure proxy securely"
@@ -1138,7 +1138,7 @@
 - id: perl-plack-lint
   languages: [perl]
   patterns:
-    - regex: "(?i)Plack::Middleware::Lint"
+    - regex: '(?i)Plack::Middleware::Lint'
   severity: low
   description: "Plack lint middleware"
   remediation: "Use in development only"
@@ -1148,7 +1148,7 @@
 - id: perl-plack-debug
   languages: [perl]
   patterns:
-    - regex: "(?i)Plack::Middleware::Debug"
+    - regex: '(?i)Plack::Middleware::Debug'
   severity: medium
   description: "Plack debug middleware"
   remediation: "Disable in production"
@@ -1158,7 +1158,7 @@
 - id: perl-plack-access-log
   languages: [perl]
   patterns:
-    - regex: "(?i)Plack::Middleware::AccessLog"
+    - regex: '(?i)Plack::Middleware::AccessLog'
   severity: low
   description: "Plack access log"
   remediation: "Configure logging securely"
@@ -1168,7 +1168,7 @@
 - id: perl-plack-log-requests
   languages: [perl]
   patterns:
-    - regex: "(?i)Plack::Middleware::LogRequests"
+    - regex: '(?i)Plack::Middleware::LogRequests'
   severity: low
   description: "Plack request logging"
   remediation: "Don't log sensitive data"
@@ -1178,7 +1178,7 @@
 - id: perl-plack-log-errors
   languages: [perl]
   patterns:
-    - regex: "(?i)Plack::Middleware::LogErrors"
+    - regex: '(?i)Plack::Middleware::LogErrors'
   severity: low
   description: "Plack error logging"
   remediation: "Don't log sensitive data"
@@ -1188,7 +1188,7 @@
 - id: perl-plack-file
   languages: [perl]
   patterns:
-    - regex: "(?i)Plack::App::File"
+    - regex: '(?i)Plack::App::File'
   severity: low
   description: "Plack file app"
   remediation: "Secure file serving"
@@ -1198,7 +1198,7 @@
 - id: perl-plack-directory
   languages: [perl]
   patterns:
-    - regex: "(?i)Plack::App::Directory"
+    - regex: '(?i)Plack::App::Directory'
   severity: medium
   description: "Plack directory app"
   remediation: "Don't expose directories"
@@ -1208,7 +1208,7 @@
 - id: perl-plack-proxy-app
   languages: [perl]
   patterns:
-    - regex: "(?i)Plack::App::Proxy"
+    - regex: '(?i)Plack::App::Proxy'
   severity: low
   description: "Plack proxy app"
   remediation: "Configure proxy securely"
@@ -1218,7 +1218,7 @@
 - id: perl-plack-urlmap
   languages: [perl]
   patterns:
-    - regex: "(?i)Plack::App::URLMap"
+    - regex: '(?i)Plack::App::URLMap'
   severity: low
   description: "Plack URL map"
   remediation: "Review URL mappings"
@@ -1228,7 +1228,7 @@
 - id: perl-plack-mount
   languages: [perl]
   patterns:
-    - regex: "(?i)mount\\s*\\{|Plack::Mount"
+    - regex: '(?i)mount\\s*\\{|Plack::Mount'
   severity: low
   description: "Plack mount"
   remediation: "Review mount points"
@@ -1238,7 +1238,7 @@
 - id: perl-plack-test
   languages: [perl]
   patterns:
-    - regex: "(?i)Plack::Test|test_psgi"
+    - regex: '(?i)Plack::Test|test_psgi'
   severity: low
   description: "Plack testing"
   remediation: "Don't run tests in production"
@@ -1248,7 +1248,7 @@
 - id: perl-plack-server
   languages: [perl]
   patterns:
-    - regex: "(?i)Plack::Server|plackup.*-s"
+    - regex: '(?i)Plack::Server|plackup.*-s'
   severity: low
   description: "Plack server"
   remediation: "Choose appropriate server"
@@ -1259,7 +1259,7 @@
 - id: perl-catalyst-controller
   languages: [perl]
   patterns:
-    - regex: "(?i)use\\s+Catalyst|Catalyst::Controller"
+    - regex: '(?i)use\\s+Catalyst|Catalyst::Controller'
   severity: low
   description: "Catalyst controller"
   remediation: "Implement authorization"
@@ -1269,7 +1269,7 @@
 - id: perl-catalyst-model
   languages: [perl]
   patterns:
-    - regex: "(?i)Catalyst::Model::DBIC"
+    - regex: '(?i)Catalyst::Model::DBIC'
   severity: low
   description: "Catalyst DBIC model"
   remediation: "Use parameterized queries"
@@ -1279,7 +1279,7 @@
 - id: perl-catalyst-view
   languages: [perl]
   patterns:
-    - regex: "(?i)Catalyst::View::TT|Catalyst::View::Mason"
+    - regex: '(?i)Catalyst::View::TT|Catalyst::View::Mason'
   severity: low
   description: "Catalyst view"
   remediation: "Escape output properly"
@@ -1289,7 +1289,7 @@
 - id: perl-catalyst-plugin
   languages: [perl]
   patterns:
-    - regex: "(?i) Catalyst::Plugin::"
+    - regex: '(?i) Catalyst::Plugin::'
   severity: low
   description: "Catalyst plugin"
   remediation: "Review plugin security"
@@ -1299,7 +1299,7 @@
 - id: perl-catalyst-auth
   languages: [perl]
   patterns:
-    - regex: "(?i)Catalyst::Plugin::Authentication"
+    - regex: '(?i)Catalyst::Plugin::Authentication'
   severity: low
   description: "Catalyst authentication"
   remediation: "Configure auth securely"
@@ -1309,7 +1309,7 @@
 - id: perl-catalyst-session
   languages: [perl]
   patterns:
-    - regex: "(?i)Catalyst::Plugin::Session"
+    - regex: '(?i)Catalyst::Plugin::Session'
   severity: low
   description: "Catalyst session"
   remediation: "Configure session securely"
@@ -1319,7 +1319,7 @@
 - id: perl-catalyst-static
   languages: [perl]
   patterns:
-    - regex: "(?i)Catalyst::Plugin::Static"
+    - regex: '(?i)Catalyst::Plugin::Static'
   severity: low
   description: "Catalyst static files"
   remediation: "Secure static file serving"
@@ -1329,7 +1329,7 @@
 - id: perl-catalyst-log
   languages: [perl]
   patterns:
-    - regex: "(?i)->log->|Catalyst::Log"
+    - regex: '(?i)->log->|Catalyst::Log'
   severity: low
   description: "Catalyst logging"
   remediation: "Don't log sensitive data"
@@ -1339,7 +1339,7 @@
 - id: perl-catalyst-request
   languages: [perl]
   patterns:
-    - regex: "(?i)->request->|Catalyst::Request"
+    - regex: '(?i)->request->|Catalyst::Request'
   severity: low
   description: "Catalyst request"
   remediation: "Validate request data"
@@ -1349,7 +1349,7 @@
 - id: perl-catalyst-response
   languages: [perl]
   patterns:
-    - regex: "(?i)->response->|Catalyst::Response"
+    - regex: '(?i)->response->|Catalyst::Response'
   severity: low
   description: "Catalyst response"
   remediation: "Set appropriate headers"
@@ -1359,7 +1359,7 @@
 - id: perl-catalyst-uri-for
   languages: [perl]
   patterns:
-    - regex: "(?i)uri_for\\s*\\("
+    - regex: '(?i)uri_for\\s*\\('
   severity: low
   description: "Catalyst URI generation"
   remediation: "Validate URI parameters"
@@ -1369,7 +1369,7 @@
 - id: perl-catalyst-redirect
   languages: [perl]
   patterns:
-    - regex: "(?i)->redirect\\s*\\("
+    - regex: '(?i)->redirect\\s*\\('
   severity: medium
   description: "Catalyst redirect"
   remediation: "Validate redirect URLs"
@@ -1379,7 +1379,7 @@
 - id: perl-catalyst-forward
   languages: [perl]
   patterns:
-    - regex: "(?i)->forward\\s*\\("
+    - regex: '(?i)->forward\\s*\\('
   severity: low
   description: "Catalyst forward"
   remediation: "Validate forward targets"
@@ -1389,7 +1389,7 @@
 - id: perl-catalyst-detach
   languages: [perl]
   patterns:
-    - regex: "(?i)->detach\\s*\\("
+    - regex: '(?i)->detach\\s*\\('
   severity: low
   description: "Catalyst detach"
   remediation: "Handle detach properly"
@@ -1399,7 +1399,7 @@
 - id: perl-catalyst-component
   languages: [perl]
   patterns:
-    - regex: "(?i)COMPONENT\\s*\\(|config\\s*\\("
+    - regex: '(?i)COMPONENT\\s*\\(|config\\s*\\('
   severity: low
   description: "Catalyst component"
   remediation: "Review component config"
@@ -1409,7 +1409,7 @@
 - id: perl-catalyst-action
   languages: [perl]
   patterns:
-    - regex: "(?i)sub\\s+\\w+\\s*:\\s*(?:Chained|Path|Local)"
+    - regex: '(?i)sub\\s+\\w+\\s*:\\s*(?:Chained|Path|Local)'
   severity: low
   description: "Catalyst action"
   remediation: "Implement authorization"
@@ -1419,7 +1419,7 @@
 - id: perl-catalyst-chained
   languages: [perl]
   patterns:
-    - regex: "(?i)Chained\\s*\\(|:Chained"
+    - regex: '(?i)Chained\\s*\\(|:Chained'
   severity: low
   description: "Catalyst chained action"
   remediation: "Validate chain parameters"
@@ -1429,7 +1429,7 @@
 - id: perl-catalyst-args
   languages: [perl]
   patterns:
-    - regex: "(?i)->req->args|\\$c->req->args"
+    - regex: '(?i)->req->args|\\$c->req->args'
   severity: low
   description: "Catalyst action args"
   remediation: "Validate action arguments"
@@ -1439,7 +1439,7 @@
 - id: perl-catalyst-stash
   languages: [perl]
   patterns:
-    - regex: "(?i)->stash|stash\\s*\\("
+    - regex: '(?i)->stash|stash\\s*\\('
   severity: low
   description: "Catalyst stash"
   remediation: "Don't store sensitive data in stash"
@@ -1449,7 +1449,7 @@
 - id: perl-catalyst-finalize
   languages: [perl]
   patterns:
-    - regex: "(?i)->finalize\\s*\\("
+    - regex: '(?i)->finalize\\s*\\('
   severity: low
   description: "Catalyst finalize"
   remediation: "Ensure proper finalization"
@@ -1460,7 +1460,7 @@
 - id: perl-dancer-route
   languages: [perl]
   patterns:
-    - regex: "(?i)get\\s*['\"]|post\\s*['\"]|put\\s*['\"]"
+    - regex: '(?i)get\\s*['\"]|post\\s*['\"]|put\\s*['\"]'
   severity: low
   description: "Dancer route"
   remediation: "Implement authorization"
@@ -1470,7 +1470,7 @@
 - id: perl-dancer-template
   languages: [perl]
   patterns:
-    - regex: "(?i)template\\s*['\"]|template\\s*\\("
+    - regex: '(?i)template\\s*['\"]|template\\s*\\('
   severity: low
   description: "Dancer template"
   remediation: "Escape template output"
@@ -1480,7 +1480,7 @@
 - id: perl-dancer-param
   languages: [perl]
   patterns:
-    - regex: "(?i)param\\s*['\"]|param\\s*\\("
+    - regex: '(?i)param\\s*['\"]|param\\s*\\('
   severity: medium
   description: "Dancer parameter"
   remediation: "Validate parameters"
@@ -1490,7 +1490,7 @@
 - id: perl-dancer-session
   languages: [perl]
   patterns:
-    - regex: "(?i)session\\s*\\(|session\\s*\\["
+    - regex: '(?i)session\\s*\\(|session\\s*\\['
   severity: low
   description: "Dancer session"
   remediation: "Configure session securely"
@@ -1500,7 +1500,7 @@
 - id: perl-dancer-cookie
   languages: [perl]
   patterns:
-    - regex: "(?i)cookie\\s*['\"]|cookie\\s*\\("
+    - regex: '(?i)cookie\\s*['\"]|cookie\\s*\\('
   severity: low
   description: "Dancer cookie"
   remediation: "Set secure cookie flags"
@@ -1510,7 +1510,7 @@
 - id: perl-dancer-redirect
   languages: [perl]
   patterns:
-    - regex: "(?i)redirect\\s*\\("
+    - regex: '(?i)redirect\\s*\\('
   severity: medium
   description: "Dancer redirect"
   remediation: "Validate redirect URLs"
@@ -1520,7 +1520,7 @@
 - id: perl-dancer-send-file
   languages: [perl]
   patterns:
-    - regex: "(?i)send_file\\s*\\("
+    - regex: '(?i)send_file\\s*\\('
   severity: medium
   description: "Dancer send file"
   remediation: "Validate file paths"
@@ -1530,7 +1530,7 @@
 - id: perl-dancer-send-error
   languages: [perl]
   patterns:
-    - regex: "(?i)send_error\\s*\\("
+    - regex: '(?i)send_error\\s*\\('
   severity: low
   description: "Dancer error response"
   remediation: "Don't expose error details"
@@ -1540,7 +1540,7 @@
 - id: perl-dancer-halt
   languages: [perl]
   patterns:
-    - regex: "(?i)halt\\s*\\("
+    - regex: '(?i)halt\\s*\\('
   severity: low
   description: "Dancer halt"
   remediation: "Handle halt properly"
@@ -1550,7 +1550,7 @@
 - id: perl-dancer-pass
   languages: [perl]
   patterns:
-    - regex: "(?i)pass\\s*\\("
+    - regex: '(?i)pass\\s*\\('
   severity: low
   description: "Dancer pass"
   remediation: "Handle pass properly"
@@ -1560,7 +1560,7 @@
 - id: perl-dancer-hook
   languages: [perl]
   patterns:
-    - regex: "(?i)hook\\s*['\"]|before\\s*|after\\s*"
+    - regex: '(?i)hook\\s*['\"]|before\\s*|after\\s*'
   severity: low
   description: "Dancer hook"
   remediation: "Review hook security"
@@ -1570,7 +1570,7 @@
 - id: perl-dancer-filter
   languages: [perl]
   patterns:
-    - regex: "(?i)filter\\s*\\("
+    - regex: '(?i)filter\\s*\\('
   severity: low
   description: "Dancer filter"
   remediation: "Review filter security"
@@ -1580,7 +1580,7 @@
 - id: perl-dancer-mime
   languages: [perl]
   patterns:
-    - regex: "(?i)mime_type\\s*\\("
+    - regex: '(?i)mime_type\\s*\\('
   severity: low
   description: "Dancer MIME type"
   remediation: "Validate MIME types"
@@ -1590,7 +1590,7 @@
 - id: perl-dancer-layout
   languages: [perl]
   patterns:
-    - regex: "(?i)layout\\s*['\"]|layout\\s*\\("
+    - regex: '(?i)layout\\s*['\"]|layout\\s*\\('
   severity: low
   description: "Dancer layout"
   remediation: "Validate layout templates"
@@ -1600,7 +1600,7 @@
 - id: perl-dancer-config
   languages: [perl]
   patterns:
-    - regex: "(?i)config\\s*\\(|set\\s+['\"]\\w+['\"]"
+    - regex: '(?i)config\\s*\\(|set\\s+['\"]\\w+['\"]'
   severity: low
   description: "Dancer configuration"
   remediation: "Secure configuration"
@@ -1611,7 +1611,7 @@
 - id: perl-cpan-outdated
   languages: [perl]
   patterns:
-    - regex: "(?i)use\\s+\\w+\\s+v?\\d+\\.\\d"
+    - regex: '(?i)use\\s+\\w+\\s+v?\\d+\\.\\d'
   severity: low
   description: "CPAN module with version"
   remediation: "Update to latest version"
@@ -1621,7 +1621,7 @@
 - id: perl-cpan-eval
   languages: [perl]
   patterns:
-    - regex: "(?i)eval\\s*\\{\\s*use\\s+"
+    - regex: '(?i)eval\\s*\\{\\s*use\\s+'
   severity: medium
   description: "CPAN module eval use"
   remediation: "Avoid eval for module loading"
@@ -1631,7 +1631,7 @@
 - id: perl-cpan-autoload
   languages: [perl]
   patterns:
-    - regex: "(?i)use\\s+autoload|AUTOLOAD\\s*\\("
+    - regex: '(?i)use\\s+autoload|AUTOLOAD\\s*\\('
   severity: low
   description: "Perl autoload"
   remediation: "Review autoload security"
@@ -1641,7 +1641,7 @@
 - id: perl-cpan-tie
   languages: [perl]
   patterns:
-    - regex: "(?i)tie\\s+\\$|tie\\s+\\@"
+    - regex: '(?i)tie\\s+\\$|tie\\s+\\@'
   severity: low
   description: "Perl tie"
   remediation: "Review tied class security"
@@ -1651,7 +1651,7 @@
 - id: perl-cpan-bless
   languages: [perl]
   patterns:
-    - regex: "(?i)bless\\s+\\$|bless\\s+\\{"
+    - regex: '(?i)bless\\s+\\$|bless\\s+\\{'
   severity: low
   description: "Perl bless"
   remediation: "Review blessed class"
@@ -1661,7 +1661,7 @@
 - id: perl-cpan-ref
   languages: [perl]
   patterns:
-    - regex: "(?i)ref\\s*\\(|\\$\\w+->"
+    - regex: '(?i)ref\\s*\\(|\\$\\w+->'
   severity: low
   description: "Perl reference"
   remediation: "Validate references"
@@ -1671,7 +1671,7 @@
 - id: perl-cpan-glob
   languages: [perl]
   patterns:
-    - regex: "(?i)glob\\s*\\(|<[^>]+>"
+    - regex: '(?i)glob\\s*\\(|<[^>]+>'
   severity: medium
   description: "Perl glob"
   remediation: "Validate glob patterns"
@@ -1681,7 +1681,7 @@
 - id: perl-cpan-opendir
   languages: [perl]
   patterns:
-    - regex: "(?i)opendir\\s*\\(|readdir\\s*\\("
+    - regex: '(?i)opendir\\s*\\(|readdir\\s*\\('
   severity: low
   description: "Perl directory operations"
   remediation: "Validate directory paths"
@@ -1691,7 +1691,7 @@
 - id: perl-cpan-chdir
   languages: [perl]
   patterns:
-    - regex: "(?i)chdir\\s*\\("
+    - regex: '(?i)chdir\\s*\\('
   severity: medium
   description: "Perl chdir"
   remediation: "Validate directory changes"
@@ -1701,7 +1701,7 @@
 - id: perl-cpan-umask
   languages: [perl]
   patterns:
-    - regex: "(?i)umask\\s*\\("
+    - regex: '(?i)umask\\s*\\('
   severity: low
   description: "Perl umask"
   remediation: "Set appropriate umask"
@@ -1711,7 +1711,7 @@
 - id: perl-cpan-fork
   languages: [perl]
   patterns:
-    - regex: "(?i)fork\\s*\\("
+    - regex: '(?i)fork\\s*\\('
   severity: low
   description: "Perl fork"
   remediation: "Handle fork properly"
@@ -1721,7 +1721,7 @@
 - id: perl-cpan-wait
   languages: [perl]
   patterns:
-    - regex: "(?i)wait\\s*\\(|waitpid\\s*\\("
+    - regex: '(?i)wait\\s*\\(|waitpid\\s*\\('
   severity: low
   description: "Perl wait"
   remediation: "Handle child processes"
@@ -1731,7 +1731,7 @@
 - id: perl-cpan-kill
   languages: [perl]
   patterns:
-    - regex: "(?i)kill\\s*\\("
+    - regex: '(?i)kill\\s*\\('
   severity: low
   description: "Perl kill signal"
   remediation: "Validate signal targets"
@@ -1741,7 +1741,7 @@
 - id: perl-cpan-alarm
   languages: [perl]
   patterns:
-    - regex: "(?i)alarm\\s*\\("
+    - regex: '(?i)alarm\\s*\\('
   severity: low
   description: "Perl alarm"
   remediation: "Handle alarm properly"
@@ -1751,7 +1751,7 @@
 - id: perl-cpan-sleep
   languages: [perl]
   patterns:
-    - regex: "(?i)sleep\\s*\\("
+    - regex: '(?i)sleep\\s*\\('
   severity: low
   description: "Perl sleep"
   remediation: "Review sleep usage"
@@ -1762,7 +1762,7 @@
 - id: perl-taint-bypass
   languages: [perl]
   patterns:
-    - regex: "(?i)no\\s+warnings\\s+'untie'"
+    - regex: '(?i)no\\s+warnings\\s+'untie''
   severity: high
   description: "Taint mode warning disabled"
   remediation: "Enable taint warnings"
@@ -1773,7 +1773,7 @@
 - id: perl-eval-userinput
   languages: [perl]
   patterns:
-    - regex: "(?i)eval\\s*\\(.*\\$ARGV|eval\\s*\\(.*\\$input"
+    - regex: '(?i)eval\\s*\\(.*\\$ARGV|eval\\s*\\(.*\\$input'
   severity: critical
   description: "Eval with user input"
   remediation: "Never eval user-controlled input"
@@ -1784,7 +1784,7 @@
 - id: perl-system-unsafe
   languages: [perl]
   patterns:
-    - regex: "(?i)system\\s+@ARGV|exec\\s+@ARGV"
+    - regex: '(?i)system\\s+@ARGV|exec\\s+@ARGV'
   severity: critical
   description: "Command injection via ARGV"
   remediation: "Validate ARGV before execution"
@@ -1795,7 +1795,7 @@
 - id: perl-dbi-injection
   languages: [perl]
   patterns:
-    - regex: "(?i)\\$dbh->do\\s*\\(.*\\$\\|\\.="
+    - regex: '(?i)\\$dbh->do\\s*\\(.*\\$\\|\\.='
   severity: critical
   description: "SQL injection via DBI"
   remediation: "Use placeholders"
@@ -1806,7 +1806,7 @@
 - id: perl-regex-dos
   languages: [perl]
   patterns:
-    - regex: "(?i)\\$str =~ /.*\\+\\|.*\\*/"
+    - regex: '(?i)\\$str =~ /.*\\+\\|.*\\*/'
   severity: medium
   description: "Potential ReDoS"
   remediation: "Avoid nested quantifiers"

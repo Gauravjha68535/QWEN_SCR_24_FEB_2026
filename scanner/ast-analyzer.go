@@ -187,6 +187,9 @@ func (aa *ASTAnalyzer) checkPythonFunctionCall(node *treeSitter.Node, content []
 		}
 	}
 
+	// Detect PII Logging via Privacy Guard
+	findings = append(findings, aa.checkPIILogging(node, content, filePath, srNo, lineRef, functionName)...)
+
 	return findings
 }
 
@@ -322,6 +325,9 @@ func (aa *ASTAnalyzer) checkJSFunctionCall(node *treeSitter.Node, content []byte
 		})
 		*srNo++
 	}
+
+	// Detect PII Logging via Privacy Guard
+	findings = append(findings, aa.checkPIILogging(node, content, filePath, srNo, lineRef, functionName)...)
 
 	return findings
 }
@@ -739,4 +745,132 @@ func ScanWithAST(targetDir string) ([]reporter.Finding, error) {
 	})
 
 	return findings, err
+}
+
+// IsFunctionReachable quickly scans the AST of an entire directory to see if a specific library or function is ever called.
+// This is used for SCA Reachability Analysis to reduce false positives for unused dependencies.
+func (aa *ASTAnalyzer) IsFunctionReachable(targetDir string, functionOrLibName string) bool {
+	reachable := false
+	functionOrLibName = strings.ToLower(functionOrLibName)
+
+	filepath.Walk(targetDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil || reachable || info.IsDir() {
+			return nil
+		}
+
+		lang := getLanguageFromPath(path)
+		if lang == "" || aa.parsers[lang] == nil {
+			return nil
+		}
+
+		content, err := os.ReadFile(path)
+		if err != nil {
+			return nil
+		}
+
+		parser := aa.parsers[lang]
+		tree := parser.Parse(nil, content)
+		if tree == nil {
+			return nil
+		}
+		defer tree.Close()
+
+		// Search the tree for the target string
+		if aa.searchNodeForText(tree.RootNode(), content, functionOrLibName) {
+			reachable = true
+			return filepath.SkipDir // Stop walking once found
+		}
+
+		return nil
+	})
+
+	return reachable
+}
+
+// searchNodeForText recursively searches AST nodes for specific text content
+func (aa *ASTAnalyzer) searchNodeForText(node *treeSitter.Node, content []byte, target string) bool {
+	nodeText := strings.ToLower(node.Content(content))
+
+	// Fast path: if the target is entirely missing from this node's raw text, skip children
+	if !strings.Contains(nodeText, target) {
+		return false
+	}
+
+	// If it's a specific identifier or string that matches exactly or closely
+	if node.Type() == "identifier" || node.Type() == "string" || node.Type() == "property_identifier" {
+		if strings.Contains(nodeText, target) {
+			return true
+		}
+	}
+
+	for i := 0; i < int(node.ChildCount()); i++ {
+		if aa.searchNodeForText(node.Child(i), content, target) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// checkPIILogging detects if sensitive information is being logged/printed
+func (aa *ASTAnalyzer) checkPIILogging(node *treeSitter.Node, content []byte, filePath string, srNo *int, lineRef string, functionName string) []reporter.Finding {
+	var findings []reporter.Finding
+
+	// Logging/Printing patterns
+	logPattern := strings.ToLower(functionName)
+	isLogging := strings.Contains(logPattern, "print") ||
+		strings.Contains(logPattern, "log") ||
+		strings.Contains(logPattern, "fmt.pr") ||
+		strings.Contains(logPattern, "console.") ||
+		strings.Contains(logPattern, "write")
+
+	if !isLogging {
+		return findings
+	}
+
+	// Arguments to the function
+	var argsNode *treeSitter.Node
+	if node.Type() == "call" || node.Type() == "call_expression" {
+		argsNode = node.ChildByFieldName("arguments")
+	}
+
+	if argsNode == nil {
+		// Fallback: look for children that might be arguments
+		for i := 0; i < int(node.ChildCount()); i++ {
+			child := node.Child(i)
+			if child.Type() == "argument_list" || child.Type() == "arguments" {
+				argsNode = child
+				break
+			}
+		}
+	}
+
+	if argsNode != nil {
+		piiKeywords := []string{"ssn", "social_security", "credit_card", "password", "secret", "api_key", "token", "dob", "birth_date", "email"}
+		argsText := strings.ToLower(argsNode.Content(content))
+
+		for _, keyword := range piiKeywords {
+			if strings.Contains(argsText, keyword) {
+				findings = append(findings, reporter.Finding{
+					SrNo:        *srNo,
+					IssueName:   "Privacy Guard: PII Logging Detected",
+					FilePath:    filePath,
+					Description: fmt.Sprintf("Sensitive information (keyword: '%s') detected in logging statement via %s() - risk of PII leakage", keyword, functionName),
+					Severity:    "medium",
+					LineNumber:  lineRef,
+					AiValidated: "No",
+					Remediation: "Ensure PII is masked or encrypted before logging. Avoid logging passwords, tokens, or SSNs in plain text.",
+					RuleID:      "ast-privacy-pii-logging",
+					Source:      "ast-analyzer",
+					CWE:         "CWE-532",
+					OWASP:       "A04:2021-Insecure-Design",
+					Confidence:  0.85,
+				})
+				*srNo++
+				break // One finding per logging statement
+			}
+		}
+	}
+
+	return findings
 }

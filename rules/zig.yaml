@@ -1,7 +1,7 @@
 - id: zig-unsafe-allowzero
   languages: [zig]
   patterns:
-    - regex: "(?i)allowzero"
+    - regex: '(?i)allowzero'
   severity: high
   description: "Pointer with allowzero - null dereference risk"
   remediation: "Avoid allowzero pointers, use optional pointers"
@@ -12,7 +12,7 @@
 - id: zig-undefined
   languages: [zig]
   patterns:
-    - regex: "(?i)=\\s*undefined\\b"
+    - regex: '(?i)=\\s*undefined\\b'
   severity: medium
   description: "Uninitialized variable via undefined"
   remediation: "Initialize variables explicitly"
@@ -23,7 +23,7 @@
 - id: zig-unreachable
   languages: [zig]
   patterns:
-    - regex: "(?i)\\bunreachable\\b"
+    - regex: '(?i)\\bunreachable\\b'
   severity: medium
   description: "Unreachable assertion - UB if reached at runtime"
   remediation: "Handle edge cases instead of assuming unreachable"
@@ -34,7 +34,7 @@
 - id: zig-align-cast
   languages: [zig]
   patterns:
-    - regex: "(?i)@alignCast\\s*\\("
+    - regex: '(?i)@alignCast\\s*\\('
   severity: medium
   description: "Alignment cast - potential undefined behavior"
   remediation: "Verify alignment requirements before casting"
@@ -45,7 +45,7 @@
 - id: zig-ptr-cast
   languages: [zig]
   patterns:
-    - regex: "(?i)@ptrCast\\s*\\("
+    - regex: '(?i)@ptrCast\\s*\\('
   severity: high
   description: "Pointer cast - potential type confusion"
   remediation: "Validate pointer types before casting"
@@ -56,7 +56,7 @@
 - id: zig-int-to-ptr
   languages: [zig]
   patterns:
-    - regex: "(?i)@intToPtr\\s*\\("
+    - regex: '(?i)@intToPtr\\s*\\('
   severity: high
   description: "Integer to pointer conversion"
   remediation: "Validate integer values before conversion"
@@ -67,7 +67,7 @@
 - id: zig-ptr-to-int
   languages: [zig]
   patterns:
-    - regex: "(?i)@ptrToInt\\s*\\("
+    - regex: '(?i)@ptrToInt\\s*\\('
   severity: medium
   description: "Pointer to integer - address leakage"
   remediation: "Avoid exposing pointer values"
@@ -78,7 +78,7 @@
 - id: zig-c-import
   languages: [zig]
   patterns:
-    - regex: "(?i)@cImport\\s*\\("
+    - regex: '(?i)@cImport\\s*\\('
   severity: medium
   description: "C FFI import - inherits C unsafety"
   remediation: "Wrap C FFI calls with safety checks"
@@ -89,7 +89,7 @@
 - id: zig-c-ptr
   languages: [zig]
   patterns:
-    - regex: "(?i)\\[\\*c\\]"
+    - regex: '(?i)\\[\\*c\\]'
   severity: medium
   description: "C pointer type - no bounds checking"
   remediation: "Use Zig slices instead of C pointers"
@@ -100,7 +100,7 @@
 - id: zig-no-suspend
   languages: [zig]
   patterns:
-    - regex: "(?i)@noSuspend\\s*\\("
+    - regex: '(?i)@noSuspend\\s*\\('
   severity: medium
   description: "Async suspension disabled"
   remediation: "Avoid noSuspend in production code"
@@ -111,7 +111,7 @@
 - id: zig-set-eval-branch-quota
   languages: [zig]
   patterns:
-    - regex: "(?i)@setEvalBranchQuota\\s*\\("
+    - regex: '(?i)@setEvalBranchQuota\\s*\\('
   severity: low
   description: "Comptime evaluation quota increased"
   remediation: "Review for potential compilation DoS"
@@ -122,7 +122,7 @@
 - id: zig-inline-asm
   languages: [zig]
   patterns:
-    - regex: "(?i)asm\\s+volatile"
+    - regex: '(?i)asm\\s+volatile'
   severity: high
   description: "Inline assembly - bypasses safety checks"
   remediation: "Minimize inline assembly usage"
@@ -133,7 +133,7 @@
 - id: zig-extern-fn
   languages: [zig]
   patterns:
-    - regex: "(?i)extern\\s+fn\\s+"
+    - regex: '(?i)extern\\s+fn\\s+'
   severity: medium
   description: "External function declaration - FFI boundary"
   remediation: "Validate all inputs at FFI boundary"
@@ -144,7 +144,7 @@
 - id: zig-hardcoded-secret
   languages: [zig]
   patterns:
-    - regex: "(?i)(?:secret|password|api_?key|token).*=\\s*\\"[a-zA-Z0-9_-]{12,}\\""
+    - regex: '(?i)(?:secret|password|api_?key|token).*=\\s*\"[a-zA-Z0-9_-]{12,}\"'
   severity: high
   description: "Hardcoded secret detected"
   remediation: "Use environment variables"
@@ -155,7 +155,7 @@
 - id: zig-truncate
   languages: [zig]
   patterns:
-    - regex: "(?i)@truncate\\s*\\("
+    - regex: '(?i)@truncate\\s*\\('
   severity: medium
   description: "Integer truncation - potential data loss"
   remediation: "Validate value range before truncation"
@@ -166,7 +166,7 @@
 - id: zig-bit-cast
   languages: [zig]
   patterns:
-    - regex: "(?i)@bitCast\\s*\\("
+    - regex: '(?i)@bitCast\\s*\\('
   severity: medium
   description: "Bit-level reinterpret cast"
   remediation: "Verify source and destination types are compatible"
@@ -177,7 +177,7 @@
 - id: zig-error-discard
   languages: [zig]
   patterns:
-    - regex: "(?i)_\\s*=.*catch"
+    - regex: '(?i)_\\s*=.*catch'
   severity: medium
   description: "Error silently discarded"
   remediation: "Handle errors explicitly"
@@ -188,7 +188,7 @@
 - id: zig-os-exec
   languages: [zig]
   patterns:
-    - regex: "(?i)std\\.os\\.execv|std\\.ChildProcess\\.spawn"
+    - regex: '(?i)std\\.os\\.execv|std\\.ChildProcess\\.spawn'
   severity: critical
   description: "OS command execution"
   remediation: "Validate all command arguments"
@@ -199,7 +199,7 @@
 - id: zig-file-access
   languages: [zig]
   patterns:
-    - regex: "(?i)std\\.fs\\.openFile|std\\.fs\\.accessFile"
+    - regex: '(?i)std\\.fs\\.openFile|std\\.fs\\.accessFile'
   severity: medium
   description: "File system access"
   remediation: "Validate file paths before access"
@@ -210,7 +210,7 @@
 - id: zig-heap-allocator
   languages: [zig]
   patterns:
-    - regex: "(?i)std\\.heap\\.page_allocator"
+    - regex: '(?i)std\\.heap\\.page_allocator'
   severity: low
   description: "Using page allocator directly"
   remediation: "Use GeneralPurposeAllocator for safety"
@@ -221,7 +221,7 @@
 - id: zig-ssrf
   languages: [zig]
   patterns:
-    - regex: "(?i)http\\.fetch\\s*\\(.*\\$"
+    - regex: '(?i)http\\.fetch\\s*\\(.*\\$'
   severity: high
   description: "Potential SSRF via HTTP fetch"
   remediation: "Validate URLs against allowlist"
@@ -232,7 +232,7 @@
 - id: zig-insecure-random
   languages: [zig]
   patterns:
-    - regex: "(?i)std\\.rand\\s*\\."
+    - regex: '(?i)std\\.rand\\s*\\.'
   severity: medium
   description: "Insecure random for cryptographic use"
   remediation: "Use std.crypto.random"
@@ -243,7 +243,7 @@
 - id: zig-json-unsafe
   languages: [zig]
   patterns:
-    - regex: "(?i)std\\.json\\.parse\\s*\\(.*any"
+    - regex: '(?i)std\\.json\\.parse\\s*\\(.*any'
   severity: high
   description: "Unsafe JSON parsing"
   remediation: "Validate JSON structure before use"
@@ -254,7 +254,7 @@
 - id: zig-weak-crypto
   languages: [zig]
   patterns:
-    - regex: "(?i)std\\.crypto\\.md5|std\\.crypto\\.sha1"
+    - regex: '(?i)std\\.crypto\\.md5|std\\.crypto\\.sha1'
   severity: medium
   description: "Weak hash algorithm"
   remediation: "Use SHA-256 or better"
@@ -265,7 +265,7 @@
 - id: zig-eval
   languages: [zig]
   patterns:
-    - regex: "(?i)@compileLog\\s*\\("
+    - regex: '(?i)@compileLog\\s*\\('
   severity: medium
   description: "Compile-time code execution"
   remediation: "Avoid compile-time code execution"
@@ -276,7 +276,7 @@
 - id: zig-shell-injection
   languages: [zig]
   patterns:
-    - regex: "(?i)std\\.child_process\\.exec\\s*\\(.*\\$"
+    - regex: '(?i)std\\.child_process\\.exec\\s*\\(.*\\$'
   severity: critical
   description: "Shell command injection"
   remediation: "Use argument arrays, not shell"
@@ -287,7 +287,7 @@
 - id: zig-serialize
   languages: [zig]
   patterns:
-    - regex: "(?i)std\\.json\\.parse.*any|readFile.*json"
+    - regex: '(?i)std\\.json\\.parse.*any|readFile.*json'
   severity: high
   description: "Unsafe JSON deserialization"
   remediation: "Validate JSON structure"
@@ -298,7 +298,7 @@
 - id: zig-hardcoded-creds
   languages: [zig]
   patterns:
-    - regex: "(?i)(?:db|user|pass|key)\\s*:\\s*\\\".{4,}\\\""
+    - regex: '(?i)(?:db|user|pass|key)\\s*:\\s*\\".{4,}\\"'
   severity: high
   description: "Hardcoded credentials"
   remediation: "Use environment variables"
@@ -309,7 +309,7 @@
 - id: zig-ssrf
   languages: [zig]
   patterns:
-    - regex: "(?i)std\\.http\\.fetch\\s*\\(.*url.*="
+    - regex: '(?i)std\\.http\\.fetch\\s*\\(.*url.*='
   severity: high
   description: "Potential SSRF via HTTP fetch"
   remediation: "Validate URLs against allowlist"
@@ -320,7 +320,7 @@
 - id: zig-path-traversal
   languages: [zig]
   patterns:
-    - regex: "(?i)std\\.fs\\.open\\s*\\(.*\\$|std\\.fs\\.readLink\\s*\\(.*\\$"
+    - regex: '(?i)std\\.fs\\.open\\s*\\(.*\\$|std\\.fs\\.readLink\\s*\\(.*\\$'
   severity: high
   description: "Path traversal vulnerability"
   remediation: "Validate and sanitize paths"
@@ -331,7 +331,7 @@
 - id: zig-template-injection
   languages: [zig]
   patterns:
-    - regex: "(?i)std\\.fmt\\.format.*\\$\\{"
+    - regex: '(?i)std\\.fmt\\.format.*\\$\\{'
   severity: high
   description: "Template injection risk"
   remediation: "Sanitize template inputs"
@@ -342,7 +342,7 @@
 - id: zig-unsafe-try
   languages: [zig]
   patterns:
-    - regex: "(?i)\\btry\\s*!|catch\\s+err\\s+return"
+    - regex: '(?i)\\btry\\s*!|catch\\s+err\\s+return'
   severity: medium
   description: "Unsafe error handling"
   remediation: "Properly handle errors"

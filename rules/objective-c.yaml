@@ -1,7 +1,7 @@
 - id: objc-format-string-nslog
   languages: [objective-c]
   patterns:
-    - regex: "(?i)NSLog\\s*\\(\\s*[^@]"
+    - regex: '(?i)NSLog\\s*\\(\\s*[^@]'
   severity: critical
   description: "Format string vulnerability in NSLog - user input passed directly"
   remediation: "Use NSLog(@\"%@\", variable) instead of NSLog(variable)"
@@ -12,7 +12,7 @@
 - id: objc-format-string-stringwithformat
   languages: [objective-c]
   patterns:
-    - regex: "(?i)stringWithFormat:\\s*[^@]"
+    - regex: '(?i)stringWithFormat:\\s*[^@]'
   severity: critical
   description: "Format string vulnerability in stringWithFormat"
   remediation: "Use format specifiers with validated input"
@@ -23,7 +23,7 @@
 - id: objc-exec-system
   languages: [objective-c]
   patterns:
-    - regex: "(?i)\\bsystem\\s*\\("
+    - regex: '(?i)\\bsystem\\s*\\('
   severity: critical
   description: "OS command execution via system()"
   remediation: "Avoid system() calls, use NSTask with validated arguments"
@@ -34,7 +34,7 @@
 - id: objc-exec-popen
   languages: [objective-c]
   patterns:
-    - regex: "(?i)\\bpopen\\s*\\("
+    - regex: '(?i)\\bpopen\\s*\\('
   severity: critical
   description: "OS command execution via popen()"
   remediation: "Avoid popen(), use NSTask with validated arguments"
@@ -45,7 +45,7 @@
 - id: objc-buffer-strcpy
   languages: [objective-c]
   patterns:
-    - regex: "(?i)\\bstrcpy\\s*\\("
+    - regex: '(?i)\\bstrcpy\\s*\\('
   severity: critical
   description: "Buffer overflow via strcpy()"
   remediation: "Use strlcpy() or NSString instead"
@@ -56,7 +56,7 @@
 - id: objc-buffer-strcat
   languages: [objective-c]
   patterns:
-    - regex: "(?i)\\bstrcat\\s*\\("
+    - regex: '(?i)\\bstrcat\\s*\\('
   severity: critical
   description: "Buffer overflow via strcat()"
   remediation: "Use strlcat() or NSMutableString instead"
@@ -67,7 +67,7 @@
 - id: objc-buffer-sprintf
   languages: [objective-c]
   patterns:
-    - regex: "(?i)\\bsprintf\\s*\\("
+    - regex: '(?i)\\bsprintf\\s*\\('
   severity: critical
   description: "Buffer overflow via sprintf()"
   remediation: "Use snprintf() or NSString stringWithFormat instead"
@@ -78,7 +78,7 @@
 - id: objc-buffer-gets
   languages: [objective-c]
   patterns:
-    - regex: "(?i)\\bgets\\s*\\("
+    - regex: '(?i)\\bgets\\s*\\('
   severity: critical
   description: "Buffer overflow via gets()"
   remediation: "Use fgets() with size limit"
@@ -89,7 +89,7 @@
 - id: objc-buffer-scanf
   languages: [objective-c]
   patterns:
-    - regex: "(?i)\\bscanf\\s*\\("
+    - regex: '(?i)\\bscanf\\s*\\('
   severity: high
   description: "Potential buffer overflow via scanf()"
   remediation: "Use width specifiers or NSScanner"
@@ -100,7 +100,7 @@
 - id: objc-insecure-nsuserdefaults
   languages: [objective-c]
   patterns:
-    - regex: "(?i)NSUserDefaults.*(?:password|secret|token|key|credential)"
+    - regex: '(?i)NSUserDefaults.*(?:password|secret|token|key|credential)'
   severity: high
   description: "Sensitive data stored in NSUserDefaults (unencrypted)"
   remediation: "Use Keychain Services for sensitive data"
@@ -111,7 +111,7 @@
 - id: objc-insecure-nsuserdefaults-2
   languages: [objective-c]
   patterns:
-    - regex: "(?i)\\[NSUserDefaults\\s+standardUserDefaults\\].*set.*(?i:password|secret|api.?key|token)"
+    - regex: '(?i)\\[NSUserDefaults\\s+standardUserDefaults\\].*set.*(?i:password|secret|api.?key|token)'
   severity: high
   description: "Storing secrets in NSUserDefaults"
   remediation: "Use SecItemAdd for Keychain storage"
@@ -122,7 +122,7 @@
 - id: objc-hardcoded-password
   languages: [objective-c]
   patterns:
-    - regex: "(?i)(?:password|passwd|pwd)\\s*=\\s*@\\"[^\"]{4,}\\""
+    - regex: '(?i)(?:password|passwd|pwd)\\s*=\\s*@\"[^"]{4,}\"'
   severity: high
   description: "Hardcoded password detected"
   remediation: "Use Keychain or environment variables"
@@ -133,7 +133,7 @@
 - id: objc-hardcoded-secret
   languages: [objective-c]
   patterns:
-    - regex: "(?i)(?:secret|api_?key|token|auth)\\s*=\\s*@\\"[a-zA-Z0-9_-]{12,}\\""
+    - regex: '(?i)(?:secret|api_?key|token|auth)\\s*=\\s*@\"[a-zA-Z0-9_-]{12,}\"'
   severity: high
   description: "Hardcoded secret/API key detected"
   remediation: "Use Keychain or secure configuration"
@@ -144,7 +144,7 @@
 - id: objc-weak-md5
   languages: [objective-c]
   patterns:
-    - regex: "(?i)CC_MD5\\s*\\("
+    - regex: '(?i)CC_MD5\\s*\\('
   severity: medium
   description: "Weak hashing algorithm MD5"
   remediation: "Use CC_SHA256 or CC_SHA512"
@@ -155,7 +155,7 @@
 - id: objc-weak-sha1
   languages: [objective-c]
   patterns:
-    - regex: "(?i)CC_SHA1\\s*\\("
+    - regex: '(?i)CC_SHA1\\s*\\('
   severity: medium
   description: "Weak hashing algorithm SHA1"
   remediation: "Use CC_SHA256 or CC_SHA512"
@@ -166,7 +166,7 @@
 - id: objc-weak-des
   languages: [objective-c]
   patterns:
-    - regex: "(?i)kCCAlgorithmDES\\b"
+    - regex: '(?i)kCCAlgorithmDES\\b'
   severity: medium
   description: "Weak encryption algorithm DES"
   remediation: "Use kCCAlgorithmAES128 or higher"
@@ -177,7 +177,7 @@
 - id: objc-weak-3des
   languages: [objective-c]
   patterns:
-    - regex: "(?i)kCCAlgorithm3DES\\b"
+    - regex: '(?i)kCCAlgorithm3DES\\b'
   severity: medium
   description: "Weak encryption algorithm 3DES"
   remediation: "Use kCCAlgorithmAES128 or higher"
@@ -188,7 +188,7 @@
 - id: objc-weak-ecb
   languages: [objective-c]
   patterns:
-    - regex: "(?i)kCCOptionECBMode\\b"
+    - regex: '(?i)kCCOptionECBMode\\b'
   severity: medium
   description: "ECB mode is insecure for block ciphers"
   remediation: "Use CBC or GCM mode"
@@ -199,7 +199,7 @@
 - id: objc-insecure-random
   languages: [objective-c]
   patterns:
-    - regex: "(?i)\\b(?:rand|random|arc4random)\\s*\\(\\s*\\)"
+    - regex: '(?i)\\b(?:rand|random|arc4random)\\s*\\(\\s*\\)'
   severity: medium
   description: "Insecure random number generation"
   remediation: "Use SecRandomCopyBytes for cryptographic randomness"
@@ -210,7 +210,7 @@
 - id: objc-ats-bypass
   languages: [objective-c]
   patterns:
-    - regex: "(?i)NSAppTransportSecurity.*NSAllowsArbitraryLoads.*true"
+    - regex: '(?i)NSAppTransportSecurity.*NSAllowsArbitraryLoads.*true'
   severity: high
   description: "App Transport Security bypassed - allows HTTP connections"
   remediation: "Remove NSAllowsArbitraryLoads or set to false"
@@ -221,7 +221,7 @@
 - id: objc-ssl-bypass
   languages: [objective-c]
   patterns:
-    - regex: "(?i)allowsInvalidSSLBertificate|setAllowsAnyHTTPSCertificate"
+    - regex: '(?i)allowsInvalidSSLBertificate|setAllowsAnyHTTPSCertificate'
   severity: high
   description: "SSL certificate validation bypassed"
   remediation: "Do not disable SSL validation in production"
@@ -232,7 +232,7 @@
 - id: objc-ssl-pinning-bypass
   languages: [objective-c]
   patterns:
-    - regex: "(?i)continueWithoutCredential|NSURLAuthenticationMethodServerTrust.*completionHandler.*nil"
+    - regex: '(?i)continueWithoutCredential|NSURLAuthenticationMethodServerTrust.*completionHandler.*nil'
   severity: high
   description: "SSL pinning may be bypassed"
   remediation: "Implement proper certificate pinning"
@@ -243,7 +243,7 @@
 - id: objc-deprecated-nsurlconnection
   languages: [objective-c]
   patterns:
-    - regex: "(?i)NSURLConnection\\s+"
+    - regex: '(?i)NSURLConnection\\s+'
   severity: medium
   description: "Deprecated NSURLConnection usage"
   remediation: "Migrate to NSURLSession"
@@ -254,7 +254,7 @@
 - id: objc-webview-javascript
   languages: [objective-c]
   patterns:
-    - regex: "(?i)\\[.*UIWebView.*stringByEvaluatingJavaScriptFromString"
+    - regex: '(?i)\\[.*UIWebView.*stringByEvaluatingJavaScriptFromString'
   severity: high
   description: "JavaScript injection via UIWebView"
   remediation: "Use WKWebView with content security policies"
@@ -265,7 +265,7 @@
 - id: objc-deprecated-uiwebview
   languages: [objective-c]
   patterns:
-    - regex: "(?i)UIWebView\\b"
+    - regex: '(?i)UIWebView\\b'
   severity: medium
   description: "Deprecated UIWebView usage - security vulnerabilities"
   remediation: "Migrate to WKWebView"
@@ -276,7 +276,7 @@
 - id: objc-pasteboard-sensitive
   languages: [objective-c]
   patterns:
-    - regex: "(?i)UIPasteboard.*(?:password|secret|token|ssn|credit)"
+    - regex: '(?i)UIPasteboard.*(?:password|secret|token|ssn|credit)'
   severity: high
   description: "Sensitive data placed on pasteboard"
   remediation: "Avoid placing sensitive data on UIPasteboard"
@@ -287,7 +287,7 @@
 - id: objc-keychain-accessible-always
   languages: [objective-c]
   patterns:
-    - regex: "(?i)kSecAttrAccessibleAlways\\b"
+    - regex: '(?i)kSecAttrAccessibleAlways\\b'
   severity: high
   description: "Keychain item accessible when device is locked"
   remediation: "Use kSecAttrAccessibleWhenUnlockedThisDeviceOnly"
@@ -298,7 +298,7 @@
 - id: objc-sql-injection
   languages: [objective-c]
   patterns:
-    - regex: "(?i)sqlite3_exec\\s*\\(.*stringWithFormat"
+    - regex: '(?i)sqlite3_exec\\s*\\(.*stringWithFormat'
   severity: critical
   description: "SQL injection via string formatting in SQLite"
   remediation: "Use sqlite3_prepare_v2 with bound parameters"
@@ -309,7 +309,7 @@
 - id: objc-log-sensitive
   languages: [objective-c]
   patterns:
-    - regex: "(?i)NSLog\\s*\\(@?\\".*(?:password|token|secret|ssn|credit)"
+    - regex: '(?i)NSLog\\s*\\(@?\".*(?:password|token|secret|ssn|credit)'
   severity: medium
   description: "Sensitive data logged via NSLog"
   remediation: "Remove sensitive data from log statements"
@@ -320,7 +320,7 @@
 - id: objc-file-world-readable
   languages: [objective-c]
   patterns:
-    - regex: "(?i)NSFilePosixPermissions.*0?777"
+    - regex: '(?i)NSFilePosixPermissions.*0?777'
   severity: high
   description: "File created with world-readable permissions"
   remediation: "Use restrictive file permissions (e.g., 0600)"
@@ -331,7 +331,7 @@
 - id: objc-jailbreak-detection-missing
   languages: [objective-c]
   patterns:
-    - regex: "(?i)canOpenURL.*cydia|fileExistsAtPath.*/Applications/Cydia"
+    - regex: '(?i)canOpenURL.*cydia|fileExistsAtPath.*/Applications/Cydia'
   severity: low
   description: "Basic jailbreak detection - easily bypassed"
   remediation: "Use multiple jailbreak detection techniques"
@@ -342,7 +342,7 @@
 - id: objc-insecure-backup
   languages: [objective-c]
   patterns:
-    - regex: "(?i)NSURLIsExcludedFromBackupKey.*NO"
+    - regex: '(?i)NSURLIsExcludedFromBackupKey.*NO'
   severity: medium
   description: "Sensitive files included in device backups"
   remediation: "Set NSURLIsExcludedFromBackupKey to YES for sensitive files"
@@ -353,7 +353,7 @@
 - id: objc-cookie-no-secure
   languages: [objective-c]
   patterns:
-    - regex: "(?i)\\[NSHTTPCookie.*Secure.*NO"
+    - regex: '(?i)\\[NSHTTPCookie.*Secure.*NO'
   severity: medium
   description: "Cookie without Secure flag"
   remediation: "Set Secure flag on cookies"
@@ -364,7 +364,7 @@
 - id: objc-xml-parser-xxe
   languages: [objective-c]
   patterns:
-    - regex: "(?i)NSXMLParser.*setShouldResolveExternalEntities\\s*:\\s*YES"
+    - regex: '(?i)NSXMLParser.*setShouldResolveExternalEntities\\s*:\\s*YES'
   severity: critical
   description: "XXE vulnerability - external entities enabled in XML parser"
   remediation: "Set setShouldResolveExternalEntities:NO"
@@ -375,7 +375,7 @@
 - id: objc-insecure-http
   languages: [objective-c]
   patterns:
-    - regex: "(?i)\\[NSURL\\s+URLWithString:\\s*@\\"http://"
+    - regex: '(?i)\\[NSURL\\s+URLWithString:\\s*@\"http://'
   severity: medium
   description: "Insecure HTTP connection"
   remediation: "Use HTTPS instead of HTTP"
@@ -386,7 +386,7 @@
 - id: objc-uiwebview-deprecated
   languages: [objective-c]
   patterns:
-    - regex: "(?i)\bUIWebView\b"
+    - regex: '(?i)\bUIWebView\b'
   severity: high
   description: "UIWebView is deprecated and susceptible to XSS"
   remediation: "Migrate to WKWebView"
@@ -396,7 +396,7 @@
 - id: objc-wkwebview-allow-universal-access
   languages: [objective-c]
   patterns:
-    - regex: "(?i)setValue:\s*@YES\s*forKey:\s*@"allowUniversalAccessFromFileURLs""
+    - regex: '(?i)setValue:\s*@YES\s*forKey:\s*@"allowUniversalAccessFromFileURLs"'
   severity: critical
   description: "WKWebView allows universal file access"
   remediation: "Set to @NO or do not override default"
@@ -406,7 +406,7 @@
 - id: objc-nsuserdefaults-password
   languages: [objective-c]
   patterns:
-    - regex: "(?i)\[NSUserDefaults\s+standardUserDefaults\](?:(?!\n).)*(?:setObject|setValue):.*forKey:.*@"(?:password|secret|token|key)""
+    - regex: '(?i)\[NSUserDefaults\s+standardUserDefaults\](?:(?!\n).)*(?:setObject|setValue):.*forKey:.*@"(?:password|secret|token|key)"'
   severity: high
   description: "Sensitive data stored in NSUserDefaults"
   remediation: "Store sensitive data in the Keychain"
@@ -416,7 +416,7 @@
 - id: objc-nsurlconnection-sync
   languages: [objective-c]
   patterns:
-    - regex: "(?i)sendSynchronousRequest:.*returningResponse:.*error:"
+    - regex: '(?i)sendSynchronousRequest:.*returningResponse:.*error:'
   severity: low
   description: "Deprecated synchronous networking"
   remediation: "Use NSURLSession dataTaskWithRequest"
@@ -426,7 +426,7 @@
 - id: objc-cc_md5
   languages: [objective-c]
   patterns:
-    - regex: "(?i)\bCC_MD5\s*\("
+    - regex: '(?i)\bCC_MD5\s*\('
   severity: high
   description: "Weak hash algorithm (MD5)"
   remediation: "Use SHA-256 (CC_SHA256)"
@@ -436,7 +436,7 @@
 - id: objc-cc_sha1
   languages: [objective-c]
   patterns:
-    - regex: "(?i)\bCC_SHA1\s*\("
+    - regex: '(?i)\bCC_SHA1\s*\('
   severity: medium
   description: "Weak hash algorithm (SHA-1)"
   remediation: "Use SHA-256 (CC_SHA256)"
@@ -446,7 +446,7 @@
 - id: objc-cc-ecb-mode
   languages: [objective-c]
   patterns:
-    - regex: "(?i)kCCOptionECBMode"
+    - regex: '(?i)kCCOptionECBMode'
   severity: high
   description: "Insecure ECB encryption mode"
   remediation: "Use CBC mode (kCCOptionPKCS7Padding)"
@@ -456,7 +456,7 @@
 - id: objc-sqlite-string-format
   languages: [objective-c]
   patterns:
-    - regex: "(?i)sqlite3_exec\s*\([\s\S]*?\[NSString\s+stringWithFormat:"
+    - regex: '(?i)sqlite3_exec\s*\([\s\S]*?\[NSString\s+stringWithFormat:'
   severity: critical
   description: "SQL injection via NSString formatting"
   remediation: "Use sqlite3_prepare_v2 with bind variables"
@@ -466,7 +466,7 @@
 - id: objc-predicate-format
   languages: [objective-c]
   patterns:
-    - regex: "(?i)NSPredicate\s+predicateWithFormat:\s*(?!@").*%@"
+    - regex: '(?i)NSPredicate\s+predicateWithFormat:\s*(?!@").*%@'
   severity: medium
   description: "Predicate injection via dynamic format string"
   remediation: "Use secure predicate creation methods"
@@ -476,7 +476,7 @@
 - id: objc-nspredicate-format-injection
   languages: [objective-c]
   patterns:
-    - regex: "(?i)\[NSPredicate\s+predicateWithFormat:\s*@.*?%@.*?\]"
+    - regex: '(?i)\[NSPredicate\s+predicateWithFormat:\s*@.*?%@.*?\]'
   severity: high
   description: "Format string vulnerability in NSPredicate"
   remediation: "Use %K for key paths and %@ strictly for values"
@@ -486,7 +486,7 @@
 - id: objc-fprintf-injection
   languages: [objective-c]
   patterns:
-    - regex: "(?i)\b(?:fprintf|printf|sprintf|snprintf)\s*\(\s*(?!@").*%s"
+    - regex: '(?i)\b(?:fprintf|printf|sprintf|snprintf)\s*\(\s*(?!@").*%s'
   severity: high
   description: "C-level format string vulnerability"
   remediation: "Use static format strings"
@@ -496,7 +496,7 @@
 - id: objc-nslog-injection
   languages: [objective-c]
   patterns:
-    - regex: "(?i)NSLog\s*\(\s*[^@"]"
+    - regex: '(?i)NSLog\s*\(\s*[^@"]'
   severity: medium
   description: "Format string vulnerability in NSLog"
   remediation: "Use NSLog(@"%@", variable)"
@@ -506,7 +506,7 @@
 - id: objc-strcpy
   languages: [objective-c]
   patterns:
-    - regex: "(?i)\b(?:strcpy|strcat)\s*\("
+    - regex: '(?i)\b(?:strcpy|strcat)\s*\('
   severity: high
   description: "Unsafe C string function"
   remediation: "Use strncpy or strlcpy"
@@ -516,7 +516,7 @@
 - id: objc-nsdata-url
   languages: [objective-c]
   patterns:
-    - regex: "(?i)dataWithContentsOfURL:"
+    - regex: '(?i)dataWithContentsOfURL:'
   severity: medium
   description: "dataWithContentsOfURL blocks main thread and lacks timeout/validation"
   remediation: "Use NSURLSession"
@@ -526,7 +526,7 @@
 - id: objc-nsmutableurlrequest-http
   languages: [objective-c]
   patterns:
-    - regex: "(?i)NSMutableURLRequest\s+requestWithURL:[\s\S]*?URLWithString:\s*@"http://"
+    - regex: '(?i)NSMutableURLRequest\s+requestWithURL:[\s\S]*?URLWithString:\s*@"http://'
   severity: high
   description: "Insecure HTTP request"
   remediation: "Use HTTPS"
@@ -536,7 +536,7 @@
 - id: objc-secitemadd-accessible
   languages: [objective-c]
   patterns:
-    - regex: "(?i)SecItemAdd\s*\([\s\S]*?(?!kSecAttrAccessible)"
+    - regex: '(?i)SecItemAdd\s*\([\s\S]*?(?!kSecAttrAccessible)'
   severity: medium
   description: "SecItemAdd missing access control"
   remediation: "Specify kSecAttrAccessible attribute"
@@ -546,7 +546,7 @@
 - id: objc-secitemadd-always
   languages: [objective-c]
   patterns:
-    - regex: "(?i)kSecAttrAccessibleAlways"
+    - regex: '(?i)kSecAttrAccessibleAlways'
   severity: high
   description: "Keychain item perpetually accessible"
   remediation: "Use AfterFirstUnlock or WhenUnlocked"
@@ -556,7 +556,7 @@
 - id: objc-sec-random-copy-bytes
   languages: [objective-c]
   patterns:
-    - regex: "(?i)arc4random\s*\("
+    - regex: '(?i)arc4random\s*\('
   severity: low
   description: "Cryptographically insecure PRNG"
   remediation: "Use SecRandomCopyBytes"
@@ -566,7 +566,7 @@
 - id: objc-pasteboard-general
   languages: [objective-c]
   patterns:
-    - regex: "(?i)\[UIPasteboard\s+generalPasteboard\]"
+    - regex: '(?i)\[UIPasteboard\s+generalPasteboard\]'
   severity: low
   description: "Accessing general pasteboard"
   remediation: "Ensure sensitive data is not copied to the general pasteboard"
@@ -576,7 +576,7 @@
 - id: objc-app-transport-security-override
   languages: [objective-c]
   patterns:
-    - regex: "(?i)NSAllowsArbitraryLoads\s*=\s*<true/>"
+    - regex: '(?i)NSAllowsArbitraryLoads\s*=\s*<true/>'
   severity: high
   description: "App Transport Security disabled"
   remediation: "Remove NSAllowsArbitraryLoads to enforce TLS"
@@ -586,7 +586,7 @@
 - id: objc-mach-o-encryption
   languages: [objective-c]
   patterns:
-    - regex: "(?i)-fembed-bitcode"
+    - regex: '(?i)-fembed-bitcode'
   severity: low
   description: "Bitcode embedded (deprecating)"
   remediation: "Disable bitcode and ensure PIE is enabled"
@@ -596,7 +596,7 @@
 - id: objc-swizzling
   languages: [objective-c]
   patterns:
-    - regex: "(?i)method_exchangeImplementations\s*\("
+    - regex: '(?i)method_exchangeImplementations\s*\('
   severity: medium
   description: "Method swizzling detected"
   remediation: "Avoid swizzling as it can introduce logical flaws and bypasses"
@@ -606,7 +606,7 @@
 - id: objc-insecure-malloc
   languages: [objective-c]
   patterns:
-    - regex: "(?i)\bmalloc\s*\(\s*strlen\("
+    - regex: '(?i)\bmalloc\s*\(\s*strlen\('
   severity: high
   description: "Malloc based on strlen without +1 for null terminator"
   remediation: "Add +1 to strlen for null terminator"
@@ -616,7 +616,7 @@
 - id: objc-insecure-nslog-release
   languages: [objective-c]
   patterns:
-    - regex: "(?i)#ifndef\s+NDEBUG\s*\n\s*#define\s+NSLog(?!.*//)"
+    - regex: '(?i)#ifndef\s+NDEBUG\s*\n\s*#define\s+NSLog(?!.*//)'
   severity: low
   description: "NSLog not cleanly stripped in release"
   remediation: "Ensure NSLog is safely macroed out in release builds"
@@ -626,7 +626,7 @@
 - id: objc-keychain-access
   languages: [objective-c]
   patterns:
-    - regex: "(?i)SecItemAdd.*kSecAttrAccessibleWhenUnlocked"
+    - regex: '(?i)SecItemAdd.*kSecAttrAccessibleWhenUnlocked'
   severity: medium
   description: "Keychain access level too permissive"
   remediation: "Use kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly"
@@ -636,7 +636,7 @@
 - id: objc-ats-disabled
   languages: [objective-c]
   patterns:
-    - regex: "(?i)NSAllowsArbitraryLoads\\s*=\\s*YES"
+    - regex: '(?i)NSAllowsArbitraryLoads\\s*=\\s*YES'
   severity: high
   description: "App Transport Security disabled"
   remediation: "Enable ATS or use exceptions sparingly"
@@ -646,7 +646,7 @@
 - id: objc-clipboard-access
   languages: [objective-c]
   patterns:
-    - regex: "(?i)UIPasteboard\\.generalPasteboard"
+    - regex: '(?i)UIPasteboard\\.generalPasteboard'
   severity: medium
   description: "Clipboard access enabled"
   remediation: "Limit clipboard access in sensitive apps"
@@ -656,7 +656,7 @@
 - id: objc-snapshot-bypass
   languages: [objective-c]
   patterns:
-    - regex: "(?i)UIApplicationDidEnterBackgroundNotification"
+    - regex: '(?i)UIApplicationDidEnterBackgroundNotification'
   severity: medium
   description: "Screen snapshot privacy bypass"
   remediation: "Use secure text field for sensitive input"

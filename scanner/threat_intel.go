@@ -18,6 +18,7 @@ type ThreatIntelScanner struct {
 	lastUpdate  time.Time
 	cacheFile   string
 	mitreATTACK map[string]MITRETechnique
+	kevCache    map[string]bool // map of CVE-IDs that are in CISA KEV
 }
 
 // CVEInfo represents CVE information
@@ -48,6 +49,7 @@ func NewThreatIntelScanner() *ThreatIntelScanner {
 		lastUpdate:  time.Time{},
 		cacheFile:   ".threat-intel-cache.json",
 		mitreATTACK: loadMITREATTACK(),
+		kevCache:    make(map[string]bool),
 	}
 }
 
@@ -59,6 +61,7 @@ func (tis *ThreatIntelScanner) ScanWithThreatIntel(findings []reporter.Finding) 
 
 	// Load CVE cache
 	tis.loadCVECache()
+	tis.loadCisaKEV()
 
 	// Check for CVE updates
 	if time.Since(tis.lastUpdate) > 24*time.Hour {
@@ -70,13 +73,39 @@ func (tis *ThreatIntelScanner) ScanWithThreatIntel(findings []reporter.Finding) 
 		enhancedFinding := finding
 
 		// Enrich with CVE data if applicable
-		if strings.Contains(strings.ToUpper(finding.RuleID), "CVE") {
-			cveInfo := tis.getCVEInfo(finding.RuleID)
-			if cveInfo.ID != "" {
-				enhancedFinding.Description = fmt.Sprintf("%s\n\nCVE Details: %s (CVSS: %.1f)",
-					finding.Description, cveInfo.Summary, cveInfo.CVSSScore)
-				enhancedFinding.Remediation = fmt.Sprintf("%s\n\nReferences: %s",
-					finding.Remediation, strings.Join(cveInfo.References, ", "))
+		if strings.Contains(strings.ToUpper(finding.RuleID), "CVE") || strings.Contains(strings.ToUpper(finding.IssueName), "CVE") {
+			// Extract CVE ID loosely
+			cveID := extractCVE(finding.RuleID)
+			if cveID == "" {
+				cveID = extractCVE(finding.IssueName)
+			}
+
+			if cveID != "" {
+				cveInfo := tis.getCVEInfo(cveID)
+				if cveInfo.ID != "" {
+					enhancedFinding.Description = fmt.Sprintf("%s\n\nCVE Details: %s (CVSS: %.1f)",
+						finding.Description, cveInfo.Summary, cveInfo.CVSSScore)
+					enhancedFinding.Remediation = fmt.Sprintf("%s\n\nReferences: %s",
+						finding.Remediation, strings.Join(cveInfo.References, ", "))
+				}
+
+				// Check CISA KEV and EPSS
+				epss, _ := tis.getEPSSScore(cveID)
+				inKEV := tis.kevCache[strings.ToUpper(cveID)]
+
+				if inKEV || epss > 0.05 {
+					enhancedFinding.IssueName = "[ACTIVELY EXPLOITED] " + enhancedFinding.IssueName
+					enhancedFinding.Severity = "critical"
+
+					exploitContext := ""
+					if inKEV {
+						exploitContext += "\n- Found in CISA Known Exploited Vulnerabilities Catalog."
+					}
+					if epss > 0.05 {
+						exploitContext += fmt.Sprintf("\n- High EPSS Probability: %.1f%% chance of exploitation in the next 30 days.", epss*100)
+					}
+					enhancedFinding.Description += fmt.Sprintf("\n\nTHREAT INTEL ALERT: %s", exploitContext)
+				}
 			}
 		}
 
@@ -184,6 +213,74 @@ func (tis *ThreatIntelScanner) getCVEInfo(cveID string) CVEInfo {
 	// Implementation omitted for brevity
 
 	return CVEInfo{}
+}
+
+func extractCVE(text string) string {
+	// Simple regex to extract CVE-YYYY-XXXX
+	// Can be imported via regexp if needed but since strings are short we can just do basic pattern
+	// Let's assume we have strings package
+	parts := strings.Split(strings.ToUpper(text), "-")
+	for i, part := range parts {
+		if part == "CVE" && i+2 < len(parts) {
+			return fmt.Sprintf("CVE-%s-%s", parts[i+1], parts[i+2])
+		}
+	}
+	// Fallback to searching the string
+	return ""
+}
+
+// loadCisaKEV downloads the CISA Known Exploited Vulnerabilities catalog
+func (tis *ThreatIntelScanner) loadCisaKEV() {
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get("https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json")
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+
+	var kevData struct {
+		Vulnerabilities []struct {
+			CveID string `json:"cveID"`
+		} `json:"vulnerabilities"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&kevData); err == nil {
+		for _, vuln := range kevData.Vulnerabilities {
+			tis.kevCache[strings.ToUpper(vuln.CveID)] = true
+		}
+	}
+}
+
+// getEPSSScore queries the FIRST.org EPSS API for real-time exploitation probability
+func (tis *ThreatIntelScanner) getEPSSScore(cveID string) (float64, error) {
+	client := &http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Get(fmt.Sprintf("https://api.first.org/data/v1/epss?cve=%s", cveID))
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return 0, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	var epssData struct {
+		Data []struct {
+			Epss string `json:"epss"`
+		} `json:"data"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&epssData); err != nil {
+		return 0, err
+	}
+
+	if len(epssData.Data) > 0 {
+		var score float64
+		fmt.Sscanf(epssData.Data[0].Epss, "%f", &score)
+		return score, nil
+	}
+
+	return 0, nil
 }
 
 func (tis *ThreatIntelScanner) mapToMITRE(finding reporter.Finding) MITRETechnique {

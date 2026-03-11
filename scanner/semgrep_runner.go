@@ -6,7 +6,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -59,9 +61,24 @@ func RunSemgrep(targetDir string) ([]reporter.Finding, error) {
 		return findings, nil
 	}
 
-	utils.LogInfo("Semgrep detected. Running community rules...")
+	// Auto-detect project frameworks to load targeted rules
+	frameworkConfigs := detectWebFrameworks(targetDir)
 
-	cmd := exec.Command(getSemgrepBin(), "--json", "--config", "auto", "--quiet", targetDir)
+	utils.LogInfo(fmt.Sprintf("Semgrep detected. Running with targeted rules: %v", frameworkConfigs))
+
+	args := []string{"--json", "--quiet"}
+
+	// Always include the default auto config
+	args = append(args, "--config", "auto")
+
+	// Append targeted framework configs
+	for _, conf := range frameworkConfigs {
+		args = append(args, "--config", conf)
+	}
+
+	args = append(args, targetDir)
+
+	cmd := exec.Command(getSemgrepBin(), args...)
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -198,12 +215,71 @@ func mapSemgrepSeverity(severity string) string {
 	}
 }
 
-func extractSemgrepMessage(extra string) string {
-	var msg struct {
-		Message string `json:"message"`
+// detectWebFrameworks inspects package managers to find the framework stack and recommends Semgrep 'p/' configs
+func detectWebFrameworks(targetDir string) []string {
+	var configs []string
+
+	// Check Go
+	if _, err := os.Stat(filepath.Join(targetDir, "go.mod")); err == nil {
+		configs = append(configs, "p/golang")
+
+		content, _ := os.ReadFile(filepath.Join(targetDir, "go.mod"))
+		text := string(content)
+		if strings.Contains(text, "github.com/gin-gonic/gin") {
+			configs = append(configs, "p/gin")
+		}
+		if strings.Contains(text, "github.com/dgrijalva/jwt-go") || strings.Contains(text, "github.com/golang-jwt/jwt") {
+			configs = append(configs, "p/jwt")
+		}
 	}
-	if err := json.Unmarshal([]byte(extra), &msg); err == nil && msg.Message != "" {
-		return msg.Message
+
+	// Check Node.js/JS/TS
+	if _, err := os.Stat(filepath.Join(targetDir, "package.json")); err == nil {
+		content, _ := os.ReadFile(filepath.Join(targetDir, "package.json"))
+		text := string(content)
+
+		if strings.Contains(text, "react") {
+			configs = append(configs, "p/react")
+		}
+		if strings.Contains(text, "express") {
+			configs = append(configs, "p/express")
+		}
+		if strings.Contains(text, "jsonwebtoken") || strings.Contains(text, "jose") {
+			configs = append(configs, "p/jwt")
+		}
+		if strings.Contains(text, "typescript") {
+			configs = append(configs, "p/typescript")
+		}
 	}
-	return extra
+
+	// Check Python
+	if _, err := os.Stat(filepath.Join(targetDir, "requirements.txt")); err == nil {
+		content, _ := os.ReadFile(filepath.Join(targetDir, "requirements.txt"))
+		text := string(content)
+
+		if strings.Contains(text, "Django") || strings.Contains(text, "django") {
+			configs = append(configs, "p/django")
+		}
+		if strings.Contains(text, "Flask") || strings.Contains(text, "flask") {
+			configs = append(configs, "p/flask")
+		}
+		if strings.Contains(text, "fastapi") {
+			configs = append(configs, "p/fastapi")
+		}
+		if strings.Contains(text, "PyJWT") || strings.Contains(text, "python-jose") {
+			configs = append(configs, "p/jwt")
+		}
+	}
+
+	// Check Java
+	if _, err := os.Stat(filepath.Join(targetDir, "pom.xml")); err == nil {
+		content, _ := os.ReadFile(filepath.Join(targetDir, "pom.xml"))
+		text := string(content)
+
+		if strings.Contains(text, "spring-boot") || strings.Contains(text, "springframework") {
+			configs = append(configs, "p/spring")
+		}
+	}
+
+	return configs
 }

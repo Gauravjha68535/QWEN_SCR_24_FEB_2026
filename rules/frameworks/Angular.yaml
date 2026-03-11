@@ -11,7 +11,7 @@
 - id: angular-inner-html
   languages: [typescript, typescript]
   patterns:
-    regex: "\\[innerHTML\\]\\s*="
+    - regex: '\\[innerHTML\\]\\s*='
   severity: high
   description: "innerHTML binding - XSS risk"
   remediation: "Sanitize HTML content before binding"
@@ -21,7 +21,7 @@
 - id: angular-inner-html-dynamic
   languages: [typescript, typescript]
   patterns:
-    regex: "\\[innerHTML\\]\\s*=\\s*\\["
+    - regex: '\\[innerHTML\\]\\s*=\\s*\\['
   severity: high
   description: "Dynamic innerHTML binding"
   remediation: "Sanitize dynamic content"
@@ -31,7 +31,7 @@
 - id: angular-inner-html-property
   languages: [typescript, typescript]
   patterns:
-    regex: "\\[innerHTML\\]\\s*=\\s*\\[\\w+"
+    - regex: '\\[innerHTML\\]\\s*=\\s*\\[\\w+'
   severity: high
   description: "innerHTML with property"
   remediation: "Sanitize property"
@@ -41,7 +41,7 @@
 - id: angular-inner-html-method
   languages: [typescript, typescript]
   patterns:
-    regex: "\\[innerHTML\\]\\s*=\\s*\\[\\w+\\("
+    - regex: '\\[innerHTML\\]\\s*=\\s*\\[\\w+\\('
   severity: high
   description: "innerHTML with method"
   remediation: "Sanitize method return"
@@ -51,7 +51,7 @@
 - id: angular-inner-html-getter
   languages: [typescript, typescript]
   patterns:
-    regex: "\\[innerHTML\\]\\s*=\\s*\\[this\\."
+    - regex: '\\[innerHTML\\]\\s*=\\s*\\[this\\.'
   severity: high
   description: "innerHTML with getter"
   remediation: "Sanitize getter"
@@ -61,7 +61,7 @@
 - id: angular-inner-html-async
   languages: [typescript, typescript]
   patterns:
-    regex: "\\[innerHTML\\]\\s*=\\s*\\[async"
+    - regex: '\\[innerHTML\\]\\s*=\\s*\\[async'
   severity: high
   description: "innerHTML with async"
   remediation: "Sanitize async data"
@@ -71,7 +71,7 @@
 - id: angular-inner-html-observable
   languages: [typescript, typescript]
   patterns:
-    regex: "\\[innerHTML\\]\\s*=\\s*\\|\\s*async"
+    - regex: '\\[innerHTML\\]\\s*=\\s*\\|\\s*async'
   severity: high
   description: "innerHTML with observable"
   remediation: "Sanitize observable"
@@ -81,7 +81,7 @@
 - id: angular-inner-html-pipe
   languages: [typescript, typescript]
   patterns:
-    regex: "\\[innerHTML\\]\\s*=\\s*\\|\\s*\\w+"
+    - regex: '\\[innerHTML\\]\\s*=\\s*\\|\\s*\\w+'
   severity: high
   description: "innerHTML with pipe"
   remediation: "Sanitize pipe output"
@@ -91,7 +91,7 @@
 - id: angular-inner-html-safe-html
   languages: [typescript, typescript]
   patterns:
-    regex: "bypassSecurityTrustHtml"
+    - regex: 'bypassSecurityTrustHtml'
   severity: high
   description: "bypassSecurityTrustHtml - XSS risk"
   remediation: "Sanitize before bypassing"
@@ -101,7 +101,7 @@
 - id: angular-inner-html-safe-script
   languages: [typescript, typescript]
   patterns:
-    regex: "bypassSecurityTrustScript"
+    - regex: 'bypassSecurityTrustScript'
   severity: critical
   description: "bypassSecurityTrustScript - XSS risk"
   remediation: "Never trust script content"
@@ -111,7 +111,7 @@
 - id: angular-inner-html-safe-style
   languages: [typescript, typescript]
   patterns:
-    regex: "bypassSecurityTrustStyle"
+    - regex: 'bypassSecurityTrustStyle'
   severity: high
   description: "bypassSecurityTrustStyle - XSS risk"
   remediation: "Sanitize style content"
@@ -121,7 +121,7 @@
 - id: angular-inner-html-safe-url
   languages: [typescript, typescript]
   patterns:
-    regex: "bypassSecurityTrustUrl"
+    - regex: 'bypassSecurityTrustUrl'
   severity: high
   description: "bypassSecurityTrustUrl - XSS risk"
   remediation: "Sanitize URL"
@@ -131,7 +131,7 @@
 - id: angular-inner-html-safe-resource-url
   languages: [typescript, typescript]
   patterns:
-    regex: "bypassSecurityTrustResourceUrl"
+    - regex: 'bypassSecurityTrustResourceUrl'
   severity: high
   description: "bypassSecurityTrustResourceUrl - XSS risk"
   remediation: "Sanitize resource URL"
@@ -141,7 +141,7 @@
 - id: angular-inner-html-dom-sanitizer
   languages: [typescript, typescript]
   patterns:
-    regex: "DomSanitizer"
+    - regex: 'DomSanitizer'
   severity: low
   description: "DomSanitizer usage"
   remediation: "Use DomSanitizer properly"
@@ -151,7 +151,7 @@
 - id: angular-inner-html-bypass-security
   languages: [typescript, typescript]
   patterns:
-    regex: "bypassSecurityTrust"
+    - regex: 'bypassSecurityTrust'
   severity: high
   description: "bypassSecurityTrust - XSS risk"
   remediation: "Sanitize before bypassing"
@@ -161,7 +161,7 @@
 - id: angular-inner-html-bypass-security-trust
   languages: [typescript, typescript]
   patterns:
-    regex: "bypassSecurityTrust"
+    - regex: 'bypassSecurityTrust'
   severity: high
   description: "bypassSecurityTrust - XSS risk"
   remediation: "Sanitize before bypassing"
@@ -171,7 +171,7 @@
 - id: angular-inner-html-bypass-security-trust-html
   languages: [typescript, typescript]
   patterns:
-    regex: "bypassSecurityTrustHtml"
+    - regex: 'bypassSecurityTrustHtml'
   severity: high
   description: "bypassSecurityTrustHtml - XSS risk"
   remediation: "Sanitize HTML"
@@ -181,7 +181,7 @@
 - id: angular-inner-html-bypass-security-trust-script
   languages: [typescript, typescript]
   patterns:
-    regex: "bypassSecurityTrustScript"
+    - regex: 'bypassSecurityTrustScript'
   severity: critical
   description: "bypassSecurityTrustScript - XSS risk"
   remediation: "Never trust script"
@@ -191,7 +191,7 @@
 - id: angular-inner-html-bypass-security-trust-style
   languages: [typescript, typescript]
   patterns:
-    regex: "bypassSecurityTrustStyle"
+    - regex: 'bypassSecurityTrustStyle'
   severity: high
   description: "bypassSecurityTrustStyle - XSS risk"
   remediation: "Sanitize style"
@@ -201,7 +201,7 @@
 - id: angular-inner-html-bypass-security-trust-url
   languages: [typescript, typescript]
   patterns:
-    regex: "bypassSecurityTrustUrl"
+    - regex: 'bypassSecurityTrustUrl'
   severity: high
   description: "bypassSecurityTrustUrl - XSS risk"
   remediation: "Sanitize URL"
@@ -211,7 +211,7 @@
 - id: angular-inner-html-bypass-security-trust-resource-url
   languages: [typescript, typescript]
   patterns:
-    regex: "bypassSecurityTrustResourceUrl"
+    - regex: 'bypassSecurityTrustResourceUrl'
   severity: high
   description: "bypassSecurityTrustResourceUrl - XSS risk"
   remediation: "Sanitize resource URL"
@@ -221,7 +221,7 @@
 - id: angular-inner-html-bypass-security-trust-html-script
   languages: [typescript, typescript]
   patterns:
-    regex: "bypassSecurityTrustHtml"
+    - regex: 'bypassSecurityTrustHtml'
   severity: high
   description: "bypassSecurityTrustHtml - XSS risk"
   remediation: "Sanitize HTML"
@@ -231,7 +231,7 @@
 - id: angular-inner-html-bypass-security-trust-script-style
   languages: [typescript, typescript]
   patterns:
-    regex: "bypassSecurityTrustScript"
+    - regex: 'bypassSecurityTrustScript'
   severity: critical
   description: "bypassSecurityTrustScript - XSS risk"
   remediation: "Never trust script"
@@ -241,7 +241,7 @@
 - id: angular-inner-html-bypass-security-trust-style-url
   languages: [typescript, typescript]
   patterns:
-    regex: "bypassSecurityTrustStyle"
+    - regex: 'bypassSecurityTrustStyle'
   severity: high
   description: "bypassSecurityTrustStyle - XSS risk"
   remediation: "Sanitize style"
@@ -251,7 +251,7 @@
 - id: angular-inner-html-bypass-security-trust-url-resource
   languages: [typescript, typescript]
   patterns:
-    regex: "bypassSecurityTrustUrl"
+    - regex: 'bypassSecurityTrustUrl'
   severity: high
   description: "bypassSecurityTrustUrl - XSS risk"
   remediation: "Sanitize URL"
@@ -262,7 +262,7 @@
 - id: angular-http-client
   languages: [typescript, typescript]
   patterns:
-    regex: "HttpClient"
+    - regex: 'HttpClient'
   severity: low
   description: "HTTP Client usage"
   remediation: "Configure HTTP client securely"
@@ -272,7 +272,7 @@
 - id: angular-http-client-get
   languages: [typescript, typescript]
   patterns:
-    regex: "http\\.get\\s*\\("
+    - regex: 'http\\.get\\s*\\('
   severity: low
   description: "HTTP GET request"
   remediation: "Validate GET parameters"
@@ -282,7 +282,7 @@
 - id: angular-http-client-post
   languages: [typescript, typescript]
   patterns:
-    regex: "http\\.post\\s*\\("
+    - regex: 'http\\.post\\s*\\('
   severity: low
   description: "HTTP POST request"
   remediation: "Validate POST data"
@@ -292,7 +292,7 @@
 - id: angular-http-client-put
   languages: [typescript, typescript]
   patterns:
-    regex: "http\\.put\\s*\\("
+    - regex: 'http\\.put\\s*\\('
   severity: low
   description: "HTTP PUT request"
   remediation: "Validate PUT data"
@@ -302,7 +302,7 @@
 - id: angular-http-client-delete
   languages: [typescript, typescript]
   patterns:
-    regex: "http\\.delete\\s*\\("
+    - regex: 'http\\.delete\\s*\\('
   severity: low
   description: "HTTP DELETE request"
   remediation: "Validate DELETE"
@@ -312,7 +312,7 @@
 - id: angular-http-client-patch
   languages: [typescript, typescript]
   patterns:
-    regex: "http\\.patch\\s*\\("
+    - regex: 'http\\.patch\\s*\\('
   severity: low
   description: "HTTP PATCH request"
   remediation: "Validate PATCH data"
@@ -322,7 +322,7 @@
 - id: angular-http-client-head
   languages: [typescript, typescript]
   patterns:
-    regex: "http\\.head\\s*\\("
+    - regex: 'http\\.head\\s*\\('
   severity: low
   description: "HTTP HEAD request"
   remediation: "Validate HEAD"
@@ -332,7 +332,7 @@
 - id: angular-http-client-options
   languages: [typescript, typescript]
   patterns:
-    regex: "http\\.options\\s*\\("
+    - regex: 'http\\.options\\s*\\('
   severity: low
   description: "HTTP OPTIONS request"
   remediation: "Validate OPTIONS"
@@ -342,7 +342,7 @@
 - id: angular-http-client-request
   languages: [typescript, typescript]
   patterns:
-    regex: "http\\.request\\s*\\("
+    - regex: 'http\\.request\\s*\\('
   severity: low
   description: "HTTP request"
   remediation: "Validate request"
@@ -352,7 +352,7 @@
 - id: angular-http-client-interceptor
   languages: [typescript, typescript]
   patterns:
-    regex: "HttpInterceptor"
+    - regex: 'HttpInterceptor'
   severity: low
   description: "HTTP Interceptor"
   remediation: "Configure interceptor"
@@ -362,7 +362,7 @@
 - id: angular-http-client-interceptor-get
   languages: [typescript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*req"
+    - regex: 'intercept\\s*\\(\\s*req'
   severity: low
   description: "Interceptor GET"
   remediation: "Validate GET"
@@ -372,7 +372,7 @@
 - id: angular-http-client-interceptor-post
   languages: [typescript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*req"
+    - regex: 'intercept\\s*\\(\\s*req'
   severity: low
   description: "Interceptor POST"
   remediation: "Validate POST"
@@ -382,7 +382,7 @@
 - id: angular-http-client-interceptor-put
   languages: [javascript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*req"
+    - regex: 'intercept\\s*\\(\\s*req'
   severity: low
   description: "Interceptor PUT"
   remediation: "Validate PUT"
@@ -392,7 +392,7 @@
 - id: angular-http-client-interceptor-delete
   languages: [javascript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*req"
+    - regex: 'intercept\\s*\\(\\s*req'
   severity: low
   description: "Interceptor DELETE"
   remediation: "Validate DELETE"
@@ -402,7 +402,7 @@
 - id: angular-http-client-interceptor-patch
   languages: [javascript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*req"
+    - regex: 'intercept\\s*\\(\\s*req'
   severity: low
   description: "Interceptor PATCH"
   remediation: "Validate PATCH"
@@ -412,7 +412,7 @@
 - id: angular-http-client-interceptor-head
   languages: [javascript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*req"
+    - regex: 'intercept\\s*\\(\\s*req'
   severity: low
   description: "Interceptor HEAD"
   remediation: "Validate HEAD"
@@ -422,7 +422,7 @@
 - id: angular-http-client-interceptor-options
   languages: [javascript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*req"
+    - regex: 'intercept\\s*\\(\\s*req'
   severity: low
   description: "Interceptor OPTIONS"
   remediation: "Validate OPTIONS"
@@ -432,7 +432,7 @@
 - id: angular-http-client-interceptor-request
   languages: [javascript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*req"
+    - regex: 'intercept\\s*\\(\\s*req'
   severity: low
   description: "Interceptor request"
   remediation: "Validate request"
@@ -442,7 +442,7 @@
 - id: angular-http-client-interceptor-response
   languages: [javascript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*next\\.handle"
+    - regex: 'intercept\\s*\\(\\s*next\\.handle'
   severity: low
   description: "Interceptor response"
   remediation: "Validate response"
@@ -452,7 +452,7 @@
 - id: angular-http-client-interceptor-handler
   languages: [javascript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*next"
+    - regex: 'intercept\\s*\\(\\s*next'
   severity: low
   description: "Interceptor handler"
   remediation: "Validate handler"
@@ -462,7 +462,7 @@
 - id: angular-http-client-interceptor-next
   languages: [javascript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*next"
+    - regex: 'intercept\\s*\\(\\s*next'
   severity: low
   description: "Interceptor next"
   remediation: "Validate next"
@@ -472,7 +472,7 @@
 - id: angular-http-client-interceptor-handle
   languages: [javascript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*next\\.handle"
+    - regex: 'intercept\\s*\\(\\s*next\\.handle'
   severity: low
   description: "Interceptor handle"
   remediation: "Validate handle"
@@ -482,7 +482,7 @@
 - id: angular-http-client-interceptor-request-response
   languages: [javascript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*req,\\s*next"
+    - regex: 'intercept\\s*\\(\\s*req,\\s*next'
   severity: low
   description: "Interceptor request response"
   remediation: "Validate request response"
@@ -492,7 +492,7 @@
 - id: angular-http-client-interceptor-request-response-handler
   languages: [javascript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*req,\\s*next\\.handle"
+    - regex: 'intercept\\s*\\(\\s*req,\\s*next\\.handle'
   severity: low
   description: "Interceptor request response handler"
   remediation: "Validate request response handler"
@@ -502,7 +502,7 @@
 - id: angular-http-client-interceptor-request-response-handler-next
   languages: [javascript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*req,\\s*next\\.handle\\(req\\)"
+    - regex: 'intercept\\s*\\(\\s*req,\\s*next\\.handle\\(req\\)'
   severity: low
   description: "Interceptor request response handler next"
   remediation: "Validate request response handler next"
@@ -513,7 +513,7 @@
 - id: angular-auth-http-client
   languages: [typescript, typescript]
   patterns:
-    regex: "HttpClient"
+    - regex: 'HttpClient'
   severity: low
   description: "Auth HTTP client"
   remediation: "Configure auth HTTP client"
@@ -523,7 +523,7 @@
 - id: angular-auth-http-interceptor
   languages: [typescript, typescript]
   patterns:
-    regex: "HttpInterceptor"
+    - regex: 'HttpInterceptor'
   severity: low
   description: "Auth HTTP interceptor"
   remediation: "Configure auth interceptor"
@@ -533,7 +533,7 @@
 - id: angular-auth-http-interceptor-intercept
   languages: [typescript, typescript]
   patterns:
-    regex: "intercept\\s*\\("
+    - regex: 'intercept\\s*\\('
   severity: low
   description: "Auth interceptor intercept"
   remediation: "Configure intercept"
@@ -543,7 +543,7 @@
 - id: angular-auth-http-interceptor-intercept-request
   languages: [typescript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*req"
+    - regex: 'intercept\\s*\\(\\s*req'
   severity: low
   description: "Auth interceptor request"
   remediation: "Configure request"
@@ -553,7 +553,7 @@
 - id: angular-auth-http-interceptor-intercept-next
   languages: [typescript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*next"
+    - regex: 'intercept\\s*\\(\\s*next'
   severity: low
   description: "Auth interceptor next"
   remediation: "Configure next"
@@ -563,7 +563,7 @@
 - id: angular-auth-http-interceptor-intercept-next-handle
   languages: [typescript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*next\\.handle"
+    - regex: 'intercept\\s*\\(\\s*next\\.handle'
   severity: low
   description: "Auth interceptor next handle"
   remediation: "Configure next handle"
@@ -573,7 +573,7 @@
 - id: angular-auth-http-interceptor-intercept-next-handle-request
   languages: [typescript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*next\\.handle\\(req\\)"
+    - regex: 'intercept\\s*\\(\\s*next\\.handle\\(req\\)'
   severity: low
   description: "Auth interceptor next handle request"
   remediation: "Configure next handle request"
@@ -583,7 +583,7 @@
 - id: angular-auth-http-interceptor-intercept-next-handle-request-next
   languages: [typescript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*next\\.handle\\(req\\)"
+    - regex: 'intercept\\s*\\(\\s*next\\.handle\\(req\\)'
   severity: low
   description: "Auth interceptor next handle request next"
   remediation: "Configure next handle request next"
@@ -593,7 +593,7 @@
 - id: angular-auth-http-interceptor-intercept-next-handle-request-next-handle
   languages: [typescript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*next\\.handle\\(req\\)"
+    - regex: 'intercept\\s*\\(\\s*next\\.handle\\(req\\)'
   severity: low
   description: "Auth interceptor next handle request next handle"
   remediation: "Configure next handle request next handle"
@@ -603,7 +603,7 @@
 - id: angular-auth-http-interceptor-intercept-next-handle-request-next-handle-next
   languages: [typescript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*next\\.handle\\(req\\)"
+    - regex: 'intercept\\s*\\(\\s*next\\.handle\\(req\\)'
   severity: low
   description: "Auth interceptor next handle request next handle next"
   remediation: "Configure next handle request next handle next"
@@ -613,7 +613,7 @@
 - id: angular-auth-http-interceptor-intercept-next-handle-request-next-handle-next-handle
   languages: [typescript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*next\\.handle\\(req\\)"
+    - regex: 'intercept\\s*\\(\\s*next\\.handle\\(req\\)'
   severity: low
   description: "Auth interceptor next handle request next handle next handle"
   remediation: "Configure next handle request next handle next handle"
@@ -623,7 +623,7 @@
 - id: angular-auth-http-interceptor-intercept-next-handle-request-next-handle-next-handle-next
   languages: [typescript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*next\\.handle\\(req\\)"
+    - regex: 'intercept\\s*\\(\\s*next\\.handle\\(req\\)'
   severity: low
   description: "Auth interceptor next handle request next handle next handle next"
   remediation: "Configure next handle request next handle next handle next"
@@ -633,7 +633,7 @@
 - id: angular-auth-http-interceptor-intercept-next-handle-request-next-handle-next-handle-next-handle
   languages: [typescript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*next\\.handle\\(req\\)"
+    - regex: 'intercept\\s*\\(\\s*next\\.handle\\(req\\)'
   severity: low
   description: "Auth interceptor next handle request next handle next handle next handle"
   remediation: "Configure next handle request next handle next handle next handle"
@@ -643,7 +643,7 @@
 - id: angular-auth-http-interceptor-intercept-next-handle-request-next-handle-next-handle-next-handle-next
   languages: [typescript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*next\\.handle\\(req\\)"
+    - regex: 'intercept\\s*\\(\\s*next\\.handle\\(req\\)'
   severity: low
   description: "Auth interceptor next handle request next handle next handle next handle next"
   remediation: "Configure next handle request next handle next handle next handle next"
@@ -653,7 +653,7 @@
 - id: angular-auth-http-interceptor-intercept-next-handle-request-next-handle-next-handle-next-handle-next-handle
   languages: [typescript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*next\\.handle\\(req\\)"
+    - regex: 'intercept\\s*\\(\\s*next\\.handle\\(req\\)'
   severity: low
   description: "Auth interceptor next handle request next handle next handle next handle next handle"
   remediation: "Configure next handle request next handle next handle next handle next handle"
@@ -663,7 +663,7 @@
 - id: angular-auth-http-interceptor-intercept-next-handle-request-next-handle-next-handle-next-handle-next-handle-next
   languages: [typescript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*next\\.handle\\(req\\)"
+    - regex: 'intercept\\s*\\(\\s*next\\.handle\\(req\\)'
   severity: low
   description: "Auth interceptor next handle request next handle next handle next handle next handle next"
   remediation: "Configure next handle request next handle next handle next handle next handle next"
@@ -673,7 +673,7 @@
 - id: angular-auth-http-interceptor-intercept-next-handle-request-next-handle-next-handle-next-handle-next-handle-next-handle
   languages: [typescript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*next\\.handle\\(req\\)"
+    - regex: 'intercept\\s*\\(\\s*next\\.handle\\(req\\)'
   severity: low
   description: "Auth interceptor next handle request next handle next handle next handle next handle next handle"
   remediation: "Configure next handle request next handle next handle next handle next handle next handle"
@@ -683,7 +683,7 @@
 - id: angular-auth-http-interceptor-intercept-next-handle-request-next-handle-next-handle-next-handle-next-handle-next-handle-next
   languages: [typescript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*next\\.handle\\(req\\)"
+    - regex: 'intercept\\s*\\(\\s*next\\.handle\\(req\\)'
   severity: low
   description: "Auth interceptor next handle request next handle next handle next handle next handle next handle next"
   remediation: "Configure next handle request next handle next handle next handle next handle next handle next"
@@ -693,7 +693,7 @@
 - id: angular-auth-http-interceptor-intercept-next-handle-request-next-handle-next-handle-next-handle-next-handle-next-handle-next-handle
   languages: [typescript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*next\\.handle\\(req\\)"
+    - regex: 'intercept\\s*\\(\\s*next\\.handle\\(req\\)'
   severity: low
   description: "Auth interceptor next handle request next handle next handle next handle next handle next handle next handle"
   remediation: "Configure next handle request next handle next handle next handle next handle next handle next handle"
@@ -703,7 +703,7 @@
 - id: angular-auth-http-interceptor-intercept-next-handle-request-next-handle-next-handle-next-handle-next-handle-next-handle-next-handle-next
   languages: [typescript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*next\\.handle\\(req\\)"
+    - regex: 'intercept\\s*\\(\\s*next\\.handle\\(req\\)'
   severity: low
   description: "Auth interceptor next handle request next handle next handle next handle next handle next handle next handle next"
   remediation: "Configure next handle request next handle next handle next handle next handle next handle next handle next"
@@ -713,7 +713,7 @@
 - id: angular-auth-http-interceptor-intercept-next-handle-request-next-handle-next-handle-next-handle-next-handle-next-handle-next-handle-next-handle
   languages: [typescript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*next\\.handle\\(req\\)"
+    - regex: 'intercept\\s*\\(\\s*next\\.handle\\(req\\)'
   severity: low
   description: "Auth interceptor next handle request next handle next handle next handle next handle next handle next handle next handle"
   remediation: "Configure next handle request next handle next handle next handle next handle next handle next handle next handle"
@@ -723,7 +723,7 @@
 - id: angular-auth-http-interceptor-intercept-next-handle-request-next-handle-next-handle-next-handle-next-handle-next-handle-next-handle-next-handle-next
   languages: [typescript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*next\\.handle\\(req\\)"
+    - regex: 'intercept\\s*\\(\\s*next\\.handle\\(req\\)'
   severity: low
   description: "Auth interceptor next handle request next handle next handle next handle next handle next handle next handle next handle next"
   remediation: "Configure next handle request next handle next handle next handle next handle next handle next handle next handle next"
@@ -733,7 +733,7 @@
 - id: angular-auth-http-interceptor-intercept-next-handle-request-next-handle-next-handle-next-handle-next-handle-next-handle-next-handle-next-handle-next-handle
   languages: [typescript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*next\\.handle\\(req\\)"
+    - regex: 'intercept\\s*\\(\\s*next\\.handle\\(req\\)'
   severity: low
   description: "Auth interceptor next handle request next handle next handle next handle next handle next handle next handle next handle next handle"
   remediation: "Configure next handle request next handle next handle next handle next handle next handle next handle next handle next handle"
@@ -743,7 +743,7 @@
 - id: angular-auth-http-interceptor-intercept-next-handle-request-next-handle-next-handle-next-handle-next-handle-next-handle-next-handle-next-handle-next-handle-next
   languages: [typescript, typescript]
   patterns:
-    regex: "intercept\\s*\\(\\s*next\\.handle\\(req\\)"
+    - regex: 'intercept\\s*\\(\\s*next\\.handle\\(req\\)'
   severity: low
   description: "Auth interceptor next handle request next handle next handle next handle next handle next handle next handle next handle next handle next"
   remediation: "Configure next handle request next handle next handle next handle next handle next handle next handle next handle next handle next"
@@ -754,7 +754,7 @@
 - id: angular-router
   languages: [typescript, typescript]
   patterns:
-    regex: "RouterModule"
+    - regex: 'RouterModule'
   severity: low
   description: "Router module"
   remediation: "Configure router"
@@ -764,7 +764,7 @@
 - id: angular-router-module
   languages: [typescript, typescript]
   patterns:
-    regex: "RouterModule\\.forRoot"
+    - regex: 'RouterModule\\.forRoot'
   severity: low
   description: "Router module forRoot"
   remediation: "Configure forRoot"
@@ -774,7 +774,7 @@
 - id: angular-router-module-for-child
   languages: [typescript, typescript]
   patterns:
-    regex: "RouterModule\\.forChild"
+    - regex: 'RouterModule\\.forChild'
   severity: low
   description: "Router module forChild"
   remediation: "Configure forChild"
@@ -784,7 +784,7 @@
 - id: angular-router-config
   languages: [typescript, typescript]
   patterns:
-    regex: "Routes\\s*="
+    - regex: 'Routes\\s*='
   severity: low
   description: "Routes configuration"
   remediation: "Configure routes"
@@ -794,7 +794,7 @@
 - id: angular-router-config-routes
   languages: [typescript, typescript]
   patterns:
-    regex: "const\\s+routes\\s*:"
+    - regex: 'const\\s+routes\\s*:'
   severity: low
   description: "Routes constant"
   remediation: "Configure routes"
@@ -804,7 +804,7 @@
 - id: angular-router-config-route
   languages: [typescript, typescript]
   patterns:
-    regex: "path\\s*:"
+    - regex: 'path\\s*:'
   severity: low
   description: "Route path"
   remediation: "Configure path"
@@ -814,7 +814,7 @@
 - id: angular-router-config-component
   languages: [typescript, typescript]
   patterns:
-    regex: "component\\s*:"
+    - regex: 'component\\s*:'
   severity: low
   description: "Route component"
   remediation: "Configure component"
@@ -824,7 +824,7 @@
 - id: angular-router-config-children
   languages: [typescript, typescript]
   patterns:
-    regex: "children\\s*:"
+    - regex: 'children\\s*:'
   severity: low
   description: "Route children"
   remediation: "Configure children"
@@ -834,7 +834,7 @@
 - id: angular-router-config-children-route
   languages: [typescript, typescript]
   patterns:
-    regex: "children\\s*:\\s*\\["
+    - regex: 'children\\s*:\\s*\\['
   severity: low
   description: "Route children array"
   remediation: "Configure children"
@@ -844,7 +844,7 @@
 - id: angular-router-config-children-route-path
   languages: [typescript, typescript]
   patterns:
-    regex: "path\\s*:\\s*['\"]"
+    - regex: 'path\\s*:\\s*['\"]'
   severity: low
   description: "Route path"
   remediation: "Configure path"
@@ -854,7 +854,7 @@
 - id: angular-router-config-children-route-component
   languages: [typescript, typescript]
   patterns:
-    regex: "component\\s*:\\s*\\w+"
+    - regex: 'component\\s*:\\s*\\w+'
   severity: low
   description: "Route component"
   remediation: "Configure component"
@@ -864,7 +864,7 @@
 - id: angular-router-config-children-route-children
   languages: [typescript, typescript]
   patterns:
-    regex: "children\\s*:\\s*\\["
+    - regex: 'children\\s*:\\s*\\['
   severity: low
   description: "Route children"
   remediation: "Configure children"
@@ -874,7 +874,7 @@
 - id: angular-router-config-children-route-children-path
   languages: [typescript, typescript]
   patterns:
-    regex: "path\\s*:\\s*['\"]"
+    - regex: 'path\\s*:\\s*['\"]'
   severity: low
   description: "Route path"
   remediation: "Configure path"
@@ -884,7 +884,7 @@
 - id: angular-router-config-children-route-children-component
   languages: [typescript, typescript]
   patterns:
-    regex: "component\\s*:\\s*\\w+"
+    - regex: 'component\\s*:\\s*\\w+'
   severity: low
   description: "Route component"
   remediation: "Configure component"
@@ -894,7 +894,7 @@
 - id: angular-router-config-children-route-children-children
   languages: [typescript, typescript]
   patterns:
-    regex: "children\\s*:\\s*\\["
+    - regex: 'children\\s*:\\s*\\['
   severity: low
   description: "Route children"
   remediation: "Configure children"
@@ -904,7 +904,7 @@
 - id: angular-router-config-children-route-children-children-path
   languages: [typescript, typescript]
   patterns:
-    regex: "path\\s*:\\s*['\"]"
+    - regex: 'path\\s*:\\s*['\"]'
   severity: low
   description: "Route path"
   remediation: "Configure path"
@@ -914,7 +914,7 @@
 - id: angular-router-config-children-route-children-children-component
   languages: [typescript, typescript]
   patterns:
-    regex: "component\\s*:\\s*\\w+"
+    - regex: 'component\\s*:\\s*\\w+'
   severity: low
   description: "Route component"
   remediation: "Configure component"
@@ -924,7 +924,7 @@
 - id: angular-router-config-children-route-children-children-children
   languages: [typescript, typescript]
   patterns:
-    regex: "children\\s*:\\s*\\["
+    - regex: 'children\\s*:\\s*\\['
   severity: low
   description: "Route children"
   remediation: "Configure children"
@@ -934,7 +934,7 @@
 - id: angular-router-config-children-route-children-children-children-path
   languages: [typescript, typescript]
   patterns:
-    regex: "path\\s*:\\s*['\"]"
+    - regex: 'path\\s*:\\s*['\"]'
   severity: low
   description: "Route path"
   remediation: "Configure path"
@@ -944,7 +944,7 @@
 - id: angular-router-config-children-route-children-children-children-component
   languages: [typescript, typescript]
   patterns:
-    regex: "component\\s*:\\s*\\w+"
+    - regex: 'component\\s*:\\s*\\w+'
   severity: low
   description: "Route component"
   remediation: "Configure component"
@@ -954,7 +954,7 @@
 - id: angular-router-config-children-route-children-children-children-children
   languages: [typescript, typescript]
   patterns:
-    regex: "children\\s*:\\s*\\["
+    - regex: 'children\\s*:\\s*\\['
   severity: low
   description: "Route children"
   remediation: "Configure children"
@@ -964,7 +964,7 @@
 - id: angular-router-config-children-route-children-children-children-children-path
   languages: [typescript, typescript]
   patterns:
-    regex: "path\\s*:\\s*['\"]"
+    - regex: 'path\\s*:\\s*['\"]'
   severity: low
   description: "Route path"
   remediation: "Configure path"
@@ -974,7 +974,7 @@
 - id: angular-router-config-children-route-children-children-children-children-component
   languages: [typescript, typescript]
   patterns:
-    regex: "component\\s*:\\s*\\w+"
+    - regex: 'component\\s*:\\s*\\w+'
   severity: low
   description: "Route component"
   remediation: "Configure component"
@@ -984,7 +984,7 @@
 - id: angular-router-config-children-route-children-children-children-children-children
   languages: [typescript, typescript]
   patterns:
-    regex: "children\\s*:\\s*\\["
+    - regex: 'children\\s*:\\s*\\['
   severity: low
   description: "Route children"
   remediation: "Configure children"
@@ -994,7 +994,7 @@
 - id: angular-router-config-children-route-children-children-children-children-children-path
   languages: [typescript, typescript]
   patterns:
-    regex: "path\\s*:\\s*['\"]"
+    - regex: 'path\\s*:\\s*['\"]'
   severity: low
   description: "Route path"
   remediation: "Configure path"
@@ -1005,7 +1005,7 @@
 - id: angular-forms-module
   languages: [typescript, typescript]
   patterns:
-    regex: "FormsModule"
+    - regex: 'FormsModule'
   severity: low
   description: "Forms module"
   remediation: "Configure forms"
@@ -1015,7 +1015,7 @@
 - id: angular-forms-reactive-forms
   languages: [typescript, typescript]
   patterns:
-    regex: "ReactiveFormsModule"
+    - regex: 'ReactiveFormsModule'
   severity: low
   description: "Reactive forms module"
   remediation: "Configure reactive forms"
@@ -1025,7 +1025,7 @@
 - id: angular-forms-form-builder
   languages: [typescript, typescript]
   patterns:
-    regex: "FormBuilder"
+    - regex: 'FormBuilder'
   severity: low
   description: "Form builder"
   remediation: "Configure form builder"
@@ -1035,7 +1035,7 @@
 - id: angular-forms-form-group
   languages: [typescript, typescript]
   patterns:
-    regex: "FormGroup"
+    - regex: 'FormGroup'
   severity: low
   description: "Form group"
   remediation: "Configure form group"
@@ -1045,7 +1045,7 @@
 - id: angular-forms-form-control
   languages: [typescript, typescript]
   patterns:
-    regex: "FormControl"
+    - regex: 'FormControl'
   severity: low
   description: "Form control"
   remediation: "Configure form control"
@@ -1055,7 +1055,7 @@
 - id: angular-forms-form-array
   languages: [typescript, typescript]
   patterns:
-    regex: "FormArray"
+    - regex: 'FormArray'
   severity: low
   description: "Form array"
   remediation: "Configure form array"
@@ -1065,7 +1065,7 @@
 - id: angular-forms-form-group-controls
   languages: [typescript, typescript]
   patterns:
-    regex: "controls\\s*:"
+    - regex: 'controls\\s*:'
   severity: low
   description: "Form controls"
   remediation: "Configure controls"
@@ -1075,7 +1075,7 @@
 - id: angular-forms-form-group-controls-control
   languages: [typescript, typescript]
   patterns:
-    regex: "FormControl\\s*\\("
+    - regex: 'FormControl\\s*\\('
   severity: low
   description: "Form control"
   remediation: "Configure control"
@@ -1085,7 +1085,7 @@
 - id: angular-forms-form-group-controls-control-value
   languages: [typescript, typescript]
   patterns:
-    regex: "FormControl\\s*\\(\\s*['\"]"
+    - regex: 'FormControl\\s*\\(\\s*['\"]'
   severity: low
   description: "Form control value"
   remediation: "Configure value"
@@ -1095,7 +1095,7 @@
 - id: angular-forms-form-group-controls-control-validator
   languages: [typescript, typescript]
   patterns:
-    regex: "Validators\\."
+    - regex: 'Validators\\.'
   severity: low
   description: "Validators"
   remediation: "Configure validators"
@@ -1105,7 +1105,7 @@
 - id: angular-forms-form-group-controls-control-validator-required
   languages: [typescript, typescript]
   patterns:
-    regex: "Validators\\.required"
+    - regex: 'Validators\\.required'
   severity: low
   description: "Required validator"
   remediation: "Configure required"
@@ -1115,7 +1115,7 @@
 - id: angular-forms-form-group-controls-control-validator-min-length
   languages: [typescript, typescript]
   patterns:
-    regex: "Validators\\.minLength"
+    - regex: 'Validators\\.minLength'
   severity: low
   description: "Min length validator"
   remediation: "Configure min length"
@@ -1125,7 +1125,7 @@
 - id: angular-forms-form-group-controls-control-validator-max-length
   languages: [typescript, typescript]
   patterns:
-    regex: "Validators\\.maxLength"
+    - regex: 'Validators\\.maxLength'
   severity: low
   description: "Max length validator"
   remediation: "Configure max length"
@@ -1135,7 +1135,7 @@
 - id: angular-forms-form-group-controls-control-validator-pattern
   languages: [typescript, typescript]
   patterns:
-    regex: "Validators\\.pattern"
+    - regex: 'Validators\\.pattern'
   severity: low
   description: "Pattern validator"
   remediation: "Configure pattern"
@@ -1145,7 +1145,7 @@
 - id: angular-forms-form-group-controls-control-validator-email
   languages: [typescript, typescript]
   patterns:
-    regex: "Validators\\.email"
+    - regex: 'Validators\\.email'
   severity: low
   description: "Email validator"
   remediation: "Configure email"
@@ -1155,7 +1155,7 @@
 - id: angular-forms-form-group-controls-control-validator-min
   languages: [typescript, typescript]
   patterns:
-    regex: "Validators\\.min"
+    - regex: 'Validators\\.min'
   severity: low
   description: "Min validator"
   remediation: "Configure min"
@@ -1165,7 +1165,7 @@
 - id: angular-forms-form-group-controls-control-validator-max
   languages: [typescript, typescript]
   patterns:
-    regex: "Validators\\.max"
+    - regex: 'Validators\\.max'
   severity: low
   description: "Max validator"
   remediation: "Configure max"
@@ -1175,7 +1175,7 @@
 - id: angular-forms-form-group-controls-control-validator-required-true
   languages: [typescript, typescript]
   patterns:
-    regex: "Validators\\.required"
+    - regex: 'Validators\\.required'
   severity: low
   description: "Required validator"
   remediation: "Configure required"
@@ -1185,7 +1185,7 @@
 - id: angular-forms-form-group-controls-control-validator-required-true-false
   languages: [typescript, typescript]
   patterns:
-    regex: "Validators\\.required"
+    - regex: 'Validators\\.required'
   severity: low
   description: "Required validator"
   remediation: "Configure required"
@@ -1195,7 +1195,7 @@
 - id: angular-forms-form-group-controls-control-validator-required-true-false-true
   languages: [typescript, typescript]
   patterns:
-    regex: "Validators\\.required"
+    - regex: 'Validators\\.required'
   severity: low
   description: "Required validator"
   remediation: "Configure required"
@@ -1205,7 +1205,7 @@
 - id: angular-forms-form-group-controls-control-validator-required-true-false-true-false
   languages: [typescript, typescript]
   patterns:
-    regex: "Validators\\.required"
+    - regex: 'Validators\\.required'
   severity: low
   description: "Required validator"
   remediation: "Configure required"
@@ -1215,7 +1215,7 @@
 - id: angular-forms-form-group-controls-control-validator-required-true-false-true-false-true
   languages: [typescript, typescript]
   patterns:
-    regex: "Validators\\.required"
+    - regex: 'Validators\\.required'
   severity: low
   description: "Required validator"
   remediation: "Configure required"
@@ -1225,7 +1225,7 @@
 - id: angular-forms-form-group-controls-control-validator-required-true-false-true-false-true-false
   languages: [typescript, typescript]
   patterns:
-    regex: "Validators\\.required"
+    - regex: 'Validators\\.required'
   severity: low
   description: "Required validator"
   remediation: "Configure required"
@@ -1235,7 +1235,7 @@
 - id: angular-forms-form-group-controls-control-validator-required-true-false-true-false-true-false-true
   languages: [typescript, typescript]
   patterns:
-    regex: "Validators\\.required"
+    - regex: 'Validators\\.required'
   severity: low
   description: "Required validator"
   remediation: "Configure required"
@@ -1245,7 +1245,7 @@
 - id: angular-forms-form-group-controls-control-validator-required-true-false-true-false-true-false-true-false
   languages: [typescript, typescript]
   patterns:
-    regex: "Validators\\.required"
+    - regex: 'Validators\\.required'
   severity: low
   description: "Required validator"
   remediation: "Configure required"
@@ -1256,7 +1256,7 @@
 - id: angular-dependency-core
   languages: [typescript, typescript]
   patterns:
-    regex: "@angular/core"
+    - regex: '@angular/core'
   severity: low
   description: "Angular core"
   remediation: "Use latest version"
@@ -1266,7 +1266,7 @@
 - id: angular-dependency-common
   languages: [typescript, typescript]
   patterns:
-    regex: "@angular/common"
+    - regex: '@angular/common'
   severity: low
   description: "Angular common"
   remediation: "Use latest version"
@@ -1276,7 +1276,7 @@
 - id: angular-dependency-platform-browser
   languages: [typescript, typescript]
   patterns:
-    regex: "@angular/platform-browser"
+    - regex: '@angular/platform-browser'
   severity: low
   description: "Platform browser"
   remediation: "Use latest version"
@@ -1286,7 +1286,7 @@
 - id: angular-dependency-platform-browser-dynamic
   languages: [typescript, typescript]
   patterns:
-    regex: "@angular/platform-browser-dynamic"
+    - regex: '@angular/platform-browser-dynamic'
   severity: low
   description: "Platform browser dynamic"
   remediation: "Use latest version"
@@ -1296,7 +1296,7 @@
 - id: angular-dependency-router
   languages: [typescript, typescript]
   patterns:
-    regex: "@angular/router"
+    - regex: '@angular/router'
   severity: low
   description: "Angular router"
   remediation: "Use latest version"
@@ -1306,7 +1306,7 @@
 - id: angular-dependency-forms
   languages: [typescript, typescript]
   patterns:
-    regex: "@angular/forms"
+    - regex: '@angular/forms'
   severity: low
   description: "Angular forms"
   remediation: "Use latest version"
@@ -1316,7 +1316,7 @@
 - id: angular-dependency-http
   languages: [typescript, typescript]
   patterns:
-    regex: "@angular/common/http"
+    - regex: '@angular/common/http'
   severity: low
   description: "Angular HTTP"
   remediation: "Use latest version"
@@ -1326,7 +1326,7 @@
 - id: angular-dependency-animations
   languages: [typescript, typescript]
   patterns:
-    regex: "@angular/animations"
+    - regex: '@angular/animations'
   severity: low
   description: "Angular animations"
   remediation: "Use latest version"
@@ -1336,7 +1336,7 @@
 - id: angular-dependency-elements
   languages: [typescript, typescript]
   patterns:
-    regex: "@angular/elements"
+    - regex: '@angular/elements'
   severity: low
   description: "Angular elements"
   remediation: "Use latest version"
@@ -1346,7 +1346,7 @@
 - id: angular-dependency-service-worker
   languages: [typescript, typescript]
   patterns:
-    regex: "@angular/service-worker"
+    - regex: '@angular/service-worker'
   severity: low
   description: "Service worker"
   remediation: "Use latest version"
@@ -1356,7 +1356,7 @@
 - id: angular-dependency-language-service
   languages: [typescript, typescript]
   patterns:
-    regex: "@angular/language-service"
+    - regex: '@angular/language-service'
   severity: low
   description: "Language service"
   remediation: "Use latest version"
@@ -1366,7 +1366,7 @@
 - id: angular-dependency-cli
   languages: [typescript, typescript]
   patterns:
-    regex: "@angular/cli"
+    - regex: '@angular/cli'
   severity: low
   description: "Angular CLI"
   remediation: "Use latest version"
@@ -1376,7 +1376,7 @@
 - id: angular-dependency-compiler
   languages: [typescript, typescript]
   patterns:
-    regex: "@angular/compiler"
+    - regex: '@angular/compiler'
   severity: low
   description: "Angular compiler"
   remediation: "Use latest version"
@@ -1386,7 +1386,7 @@
 - id: angular-dependency-compiler-cli
   languages: [typescript, typescript]
   patterns:
-    regex: "@angular/compiler-cli"
+    - regex: '@angular/compiler-cli'
   severity: low
   description: "Compiler CLI"
   remediation: "Use latest version"
@@ -1396,7 +1396,7 @@
 - id: angular-dependency-platform-server
   languages: [typescript, typescript]
   patterns:
-    regex: "@angular/platform-server"
+    - regex: '@angular/platform-server'
   severity: low
   description: "Platform server"
   remediation: "Use latest version"
@@ -1406,7 +1406,7 @@
 - id: angular-dependency-upgrade
   languages: [typescript, typescript]
   patterns:
-    regex: "@angular/upgrade"
+    - regex: '@angular/upgrade'
   severity: low
   description: "Angular upgrade"
   remediation: "Use latest version"
@@ -1416,7 +1416,7 @@
 - id: angular-dependency-localize
   languages: [typescript, typescript]
   patterns:
-    regex: "@angular/localize"
+    - regex: '@angular/localize'
   severity: low
   description: "Angular localize"
   remediation: "Use latest version"
@@ -1426,7 +1426,7 @@
 - id: angular-dependency-ccompiler
   languages: [typescript, typescript]
   patterns:
-    regex: "@angular/compiler"
+    - regex: '@angular/compiler'
   severity: low
   description: "Angular compiler"
   remediation: "Use latest version"
@@ -1436,7 +1436,7 @@
 - id: angular-dependency-ccompiler-cli
   languages: [typescript, typescript]
   patterns:
-    regex: "@angular/compiler-cli"
+    - regex: '@angular/compiler-cli'
   severity: low
   description: "Compiler CLI"
   remediation: "Use latest version"
@@ -1446,7 +1446,7 @@
 - id: angular-dependency-ccompiler-cli-platform
   languages: [typescript, typescript]
   patterns:
-    regex: "@angular/platform"
+    - regex: '@angular/platform'
   severity: low
   description: "Platform"
   remediation: "Use latest version"
@@ -1456,7 +1456,7 @@
 - id: angular-dependency-ccompiler-cli-platform-browser
   languages: [typescript, typescript]
   patterns:
-    regex: "@angular/platform-browser"
+    - regex: '@angular/platform-browser'
   severity: low
   description: "Platform browser"
   remediation: "Use latest version"
@@ -1466,7 +1466,7 @@
 - id: angular-dependency-ccompiler-cli-platform-browser-dynamic
   languages: [typescript, typescript]
   patterns:
-    regex: "@angular/platform-browser-dynamic"
+    - regex: '@angular/platform-browser-dynamic'
   severity: low
   description: "Platform browser dynamic"
   remediation: "Use latest version"
@@ -1476,7 +1476,7 @@
 - id: angular-dependency-ccompiler-cli-platform-browser-dynamic-platform
   languages: [typescript, typescript]
   patterns:
-    regex: "@angular/platform"
+    - regex: '@angular/platform'
   severity: low
   description: "Platform"
   remediation: "Use latest version"
@@ -1486,7 +1486,7 @@
 - id: angular-dependency-ccompiler-cli-platform-browser-dynamic-platform-browser
   languages: [typescript, typescript]
   patterns:
-    regex: "@angular/platform-browser"
+    - regex: '@angular/platform-browser'
   severity: low
   description: "Platform browser"
   remediation: "Use latest version"
@@ -1496,7 +1496,7 @@
 - id: angular-dependency-ccompiler-cli-platform-browser-dynamic-platform-browser-dynamic
   languages: [typescript, typescript]
   patterns:
-    regex: "@angular/platform-browser-dynamic"
+    - regex: '@angular/platform-browser-dynamic'
   severity: low
   description: "Platform browser dynamic"
   remediation: "Use latest version"

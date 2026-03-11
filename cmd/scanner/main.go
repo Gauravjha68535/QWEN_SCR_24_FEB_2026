@@ -634,24 +634,101 @@ func populateCodeSnippets(findings []reporter.Finding) {
 	}
 }
 
-func mergeAndDeduplicate(findingsList ...[]reporter.Finding) []reporter.Finding {
+// severityRank maps severity strings to an integer rank for comparison
+func severityRank(sev string) int {
+	switch strings.ToLower(sev) {
+	case "critical":
+		return 5
+	case "high":
+		return 4
+	case "medium":
+		return 3
+	case "low":
+		return 2
+	case "info":
+		return 1
+	default:
+		return 0
+	}
+}
+
+// deduplicateStrings splits pipe-delimited inputs and returns unique items joined by " | "
+func deduplicateStrings(parts []string) string {
 	seen := make(map[string]bool)
-	var merged []reporter.Finding
-	srNo := 1
+	var uniq []string
+	for _, p := range parts {
+		// Split already-merged pipe-delimited values
+		for _, sub := range strings.Split(p, " | ") {
+			sub = strings.TrimSpace(sub)
+			if sub != "" && !seen[sub] {
+				seen[sub] = true
+				uniq = append(uniq, sub)
+			}
+		}
+	}
+	// We do not formally sort to preserve chronological relevance, but we could.
+	return strings.Join(uniq, " | ")
+}
+
+func mergeAndDeduplicate(findingsList ...[]reporter.Finding) []reporter.Finding {
+	// Key: FilePath:LineNumber (or a highly specific fallback for OSV which has no line)
+	mergedMap := make(map[string]reporter.Finding)
 
 	for _, findings := range findingsList {
 		for _, f := range findings {
-			key := fmt.Sprintf("%s:%s:%s:%s", f.FilePath, f.RuleID, f.LineNumber, f.Source)
-			if !seen[key] {
-				seen[key] = true
-				f.SrNo = srNo
-				srNo++
-				merged = append(merged, f)
+			// Key heavily on physical file location. For supply chain (no line), use IssueName.
+			var key string
+			if f.LineNumber == "" || f.LineNumber == "0" || f.LineNumber == "-1" {
+				// Supply chain or structural finding (no exact line)
+				key = fmt.Sprintf("structural:%s:%s", f.FilePath, f.IssueName)
+			} else {
+				// Exact Code Snippet Match
+				key = fmt.Sprintf("line:%s:%s", f.FilePath, f.LineNumber)
+			}
+
+			if existing, ok := mergedMap[key]; ok {
+				// Merge logic: Combine this finding with the existing one
+
+				// 1. Upgrade Severity if current is higher
+				if severityRank(f.Severity) > severityRank(existing.Severity) {
+					existing.Severity = strings.ToLower(f.Severity)
+				}
+
+				// 2. Keep the highest confidence
+				if f.Confidence > existing.Confidence {
+					existing.Confidence = f.Confidence
+				}
+
+				// 3. Aggregate metadata strings natively avoiding visual duplicates
+				existing.IssueName = deduplicateStrings([]string{existing.IssueName, f.IssueName})
+				existing.RuleID = deduplicateStrings([]string{existing.RuleID, f.RuleID})
+
+				// Descriptions can be long, so join with newlines if they differ
+				if !strings.Contains(existing.Description, f.Description) {
+					existing.Description = existing.Description + "\n\nAlso flagged as: " + f.Description
+				}
+				if !strings.Contains(existing.Remediation, f.Remediation) {
+					existing.Remediation = existing.Remediation + "\n\nAlternative Fix: " + f.Remediation
+				}
+
+				mergedMap[key] = existing
+			} else {
+				// First time seeing this location, add it directly
+				mergedMap[key] = f
 			}
 		}
 	}
 
-	return merged
+	// 4. Transform map back to ordered list and assign Serial Numbers
+	var finalMerged []reporter.Finding
+	srNo := 1
+	for _, v := range mergedMap {
+		v.SrNo = srNo
+		srNo++
+		finalMerged = append(finalMerged, v)
+	}
+
+	return finalMerged
 }
 
 // updateFindings safely updates the shared findings slice for graceful shutdown access

@@ -46,6 +46,9 @@ func GenerateHTMLReportToWriter(w io.Writer, findings []Finding, summary ReportS
 			}
 			return ""
 		},
+		"replaceNewline": func(s string) string {
+			return strings.ReplaceAll(s, "\\n", "\n")
+		},
 	}).Parse(htmlTemplate))
 
 	confirmed, falsePositives := SplitFindings(findings)
@@ -498,7 +501,7 @@ const htmlTemplate = `<!DOCTYPE html>
                                     {{if .CodeSnippet}}
                                     <div class="detail-section">
                                         <h4>📄 Vulnerable Code Snippet</h4>
-                                        <div class="code-block"><pre>{{.CodeSnippet}}</pre></div>
+                                        <div class="code-block"><pre>{{replaceNewline .CodeSnippet}}</pre></div>
                                     </div>
                                     {{end}}
                                 </div>
@@ -559,7 +562,7 @@ const htmlTemplate = `<!DOCTYPE html>
                                         {{if .CodeSnippet}}
                                         <div class="detail-section">
                                             <h4>📄 Code Snippet</h4>
-                                            <div class="code-block"><pre>{{.CodeSnippet}}</pre></div>
+                                            <div class="code-block"><pre>{{replaceNewline .CodeSnippet}}</pre></div>
                                         </div>
                                         {{end}}
                                     </div>

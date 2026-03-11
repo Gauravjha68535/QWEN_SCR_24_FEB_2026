@@ -4,14 +4,25 @@ import (
 	"QWEN_SCR_24_FEB_2026/reporter"
 	"QWEN_SCR_24_FEB_2026/utils"
 	"bufio"
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"sync/atomic"
 )
+
+// getTrivyBin returns the correct executable name based on OS
+func getTrivyBin() string {
+	if runtime.GOOS == "windows" {
+		return "trivy.exe"
+	}
+	return "trivy"
+}
 
 // ContainerScanner handles Dockerfile and container image scanning
 type ContainerScanner struct {
@@ -29,8 +40,9 @@ func NewContainerScanner(counter int64) *ContainerScanner {
 func (cs *ContainerScanner) ScanContainers(targetDir string) ([]reporter.Finding, error) {
 	var findings []reporter.Finding
 	var dockerfiles []string
+	var k8sManifests []string
 
-	// Find all Dockerfiles
+	// Find all Dockerfiles and K8s YAML files
 	err := filepath.Walk(targetDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -39,6 +51,9 @@ func (cs *ContainerScanner) ScanContainers(targetDir string) ([]reporter.Finding
 			base := strings.ToLower(filepath.Base(path))
 			if base == "dockerfile" || strings.HasPrefix(base, "dockerfile.") || strings.HasSuffix(base, ".dockerfile") {
 				dockerfiles = append(dockerfiles, path)
+			} else if strings.HasSuffix(base, ".yaml") || strings.HasSuffix(base, ".yml") {
+				// We'll optimistically inspect yaml files for K8s kinds
+				k8sManifests = append(k8sManifests, path)
 			}
 		}
 		return nil
@@ -48,31 +63,39 @@ func (cs *ContainerScanner) ScanContainers(targetDir string) ([]reporter.Finding
 		return nil, err
 	}
 
-	if len(dockerfiles) == 0 {
-		return findings, nil
-	}
+	var parsedImages []string
 
+	// Scan Dockerfiles
 	for _, df := range dockerfiles {
-		fileFindings := cs.scanDockerfile(df)
+		fileFindings, baseImage := cs.scanDockerfile(df)
 		findings = append(findings, fileFindings...)
+		if baseImage != "" {
+			parsedImages = append(parsedImages, baseImage)
+		}
 	}
 
-	// Try running external container scanners if available (Trivy)
-	if hasTrivy() {
-		utils.LogInfo("Trivy detected, running container image vulnerability scan...")
-		trivyFindings := cs.runTrivyScan(dockerfiles)
+	// Scan Kubernetes Manifests
+	for _, k8s := range k8sManifests {
+		findings = append(findings, cs.scanKubernetesManifest(k8s)...)
+	}
+
+	// Try running external container scanners natively (Trivy)
+	if hasTrivy() && len(parsedImages) > 0 {
+		utils.LogInfo(fmt.Sprintf("Trivy detected, running container image vulnerability scan on %d unique images...", len(parsedImages)))
+		trivyFindings := cs.runTrivyScan(parsedImages)
 		findings = append(findings, trivyFindings...)
 	}
 
 	return findings, nil
 }
 
-func (cs *ContainerScanner) scanDockerfile(filePath string) []reporter.Finding {
+func (cs *ContainerScanner) scanDockerfile(filePath string) ([]reporter.Finding, string) {
 	var findings []reporter.Finding
+	var baseImage string
 
 	file, err := os.Open(filePath)
 	if err != nil {
-		return nil
+		return nil, ""
 	}
 	defer file.Close()
 
@@ -92,8 +115,13 @@ func (cs *ContainerScanner) scanDockerfile(filePath string) []reporter.Finding {
 			continue
 		}
 
-		// Check for 'latest' tag in FROM
+		// Check for FROM
 		if strings.HasPrefix(strings.ToUpper(trimmedLine), "FROM ") {
+			parts := strings.Fields(trimmedLine)
+			if len(parts) >= 2 {
+				baseImage = parts[1] // Extract image (e.g. ubuntu:20.04)
+			}
+
 			if strings.Contains(strings.ToLower(trimmedLine), ":latest") || !strings.Contains(trimmedLine, ":") {
 				findings = append(findings, cs.createFinding(filePath, lineNum,
 					"CONTAINER-LATEST-TAG",
@@ -175,7 +203,7 @@ func (cs *ContainerScanner) scanDockerfile(filePath string) []reporter.Finding {
 			"A05:2021-Security Misconfiguration"))
 	}
 
-	return findings
+	return findings, baseImage
 }
 
 func hasTrivy() bool {
@@ -183,10 +211,122 @@ func hasTrivy() bool {
 	return err == nil
 }
 
-func (cs *ContainerScanner) runTrivyScan(dockerfiles []string) []reporter.Finding {
-	// For this prototype, we're not actually spinning up Trivy as it would take a long time to pull the DB,
-	// but the placeholder is here.
-	return nil
+func (cs *ContainerScanner) runTrivyScan(images []string) []reporter.Finding {
+	var findings []reporter.Finding
+
+	// Deduplicate images
+	uniqueImages := make(map[string]bool)
+	for _, img := range images {
+		// Ignore scratch/build stages
+		if strings.ToLower(img) != "scratch" && !strings.HasPrefix(img, "builder") {
+			uniqueImages[img] = true
+		}
+	}
+
+	type trivyResult struct {
+		Vulnerabilities []struct {
+			VulnerabilityID  string `json:"VulnerabilityID"`
+			Title            string `json:"Title"`
+			Description      string `json:"Description"`
+			Severity         string `json:"Severity"`
+			PkgName          string `json:"PkgName"`
+			InstalledVersion string `json:"InstalledVersion"`
+			FixedVersion     string `json:"FixedVersion"`
+		} `json:"Vulnerabilities"`
+	}
+
+	type trivyReport struct {
+		Results []trivyResult `json:"Results"`
+	}
+
+	for image := range uniqueImages {
+		utils.LogInfo(fmt.Sprintf("    Scanning base image: %s...", image))
+
+		cmd := exec.Command(getTrivyBin(), "image", "-q", "--format", "json", image)
+		var out bytes.Buffer
+		cmd.Stdout = &out
+		if err := cmd.Run(); err != nil {
+			utils.LogWarn(fmt.Sprintf("Failed to run Trivy on %s (it might need to be downloaded first or not exist). Skipping.", image))
+			continue
+		}
+
+		var report trivyReport
+		if err := json.Unmarshal(out.Bytes(), &report); err != nil {
+			continue
+		}
+
+		for _, result := range report.Results {
+			for _, vuln := range result.Vulnerabilities {
+				severity := strings.ToLower(vuln.Severity)
+				if severity == "critical" || severity == "high" {
+					desc := fmt.Sprintf("%s\n\nPackage: %s\nInstalled Version: %s\nFixed Version: %s\nImage: %s",
+						vuln.Description, vuln.PkgName, vuln.InstalledVersion, vuln.FixedVersion, image)
+
+					findings = append(findings, cs.createFinding(
+						"FROM "+image,
+						0,
+						vuln.VulnerabilityID,
+						fmt.Sprintf("[TRIVY] %s in %s", vuln.VulnerabilityID, vuln.PkgName),
+						desc,
+						severity,
+						"CWE-1104",
+						"A06:2021-Vulnerable and Outdated Components",
+					))
+				}
+			}
+		}
+	}
+
+	return findings
+}
+
+// scanKubernetesManifest does rudimentary security linting of Kubernetes YAMLs
+func (cs *ContainerScanner) scanKubernetesManifest(filePath string) []reporter.Finding {
+	var findings []reporter.Finding
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return findings
+	}
+
+	yamlStr := string(content)
+
+	// If it doesn't look like K8s, skip
+	if !strings.Contains(yamlStr, "apiVersion:") || !strings.Contains(yamlStr, "kind:") {
+		return findings
+	}
+
+	lines := strings.Split(yamlStr, "\n")
+	for i, line := range lines {
+		trimmed := strings.ToLower(strings.TrimSpace(line))
+
+		if strings.Contains(trimmed, "privileged: ") && strings.Contains(trimmed, "true") {
+			findings = append(findings, cs.createFinding(
+				filePath,
+				i+1,
+				"K8S-PRIVILEGED-CONTAINER",
+				"Kubernetes Pod running as privileged",
+				"Running privileged containers provides all capabilities to the container, and it nearly lifts all the limitations enforced by the cgroup controller.",
+				"critical",
+				"CWE-250",
+				"A01:2021-Broken Access Control",
+			))
+		}
+
+		if strings.Contains(trimmed, "allowprivilegeescalation: ") && strings.Contains(trimmed, "true") {
+			findings = append(findings, cs.createFinding(
+				filePath,
+				i+1,
+				"K8S-PRIVILEGE-ESCALATION",
+				"Container allows privilege escalation",
+				"A container should not generally be allowed to gain more privileges than its parent process.",
+				"high",
+				"CWE-250",
+				"A01:2021-Broken Access Control",
+			))
+		}
+	}
+
+	return findings
 }
 
 func (cs *ContainerScanner) createFinding(filePath string, lineNum int, ruleID, issueName, description, severity, cwe, owasp string) reporter.Finding {

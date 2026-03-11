@@ -138,6 +138,9 @@ func (ta *TaintAnalyzer) AnalyzeTaintFlow(filePath string) ([]reporter.Finding, 
 	// De-duplication: track reported source-sink pairs to avoid duplicates
 	reportedPairs := make(map[string]bool)
 
+	// Inter-Procedural: Track local functions that receive tainted arguments
+	taintedFunctions := make(map[string]bool)
+
 	// Pre-compile sink regexes for performance
 	compiledSinks := make([]*regexp.Regexp, 0)
 	sinkPatterns := ta.taintSinks[lang]
@@ -152,6 +155,7 @@ func (ta *TaintAnalyzer) AnalyzeTaintFlow(filePath string) ([]reporter.Finding, 
 	methodChainRe := regexp.MustCompile(`(?:var|let|const)?\s*\$?([a-zA-Z_][a-zA-Z0-9_]*)\s*(?:=|:=)\s*\$?([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z_]+)\s*\(`)
 	concatRe := regexp.MustCompile(`(?:var|let|const)?\s*\$?([a-zA-Z_][a-zA-Z0-9_]*)\s*(?:=|:=|\+=)\s*.*\$?([a-zA-Z_][a-zA-Z0-9_]*)`)
 	interpolationRe := regexp.MustCompile(`(?:var|let|const)?\s*\$?([a-zA-Z_][a-zA-Z0-9_]*)\s*(?:=|:=)\s*(?:f"|f'|` + "`" + `|\$\{).*\$?([a-zA-Z_][a-zA-Z0-9_]*)`)
+	funcCallRe := regexp.MustCompile(`([a-zA-Z_][a-zA-Z0-9_]*)\s*\((.*?)\)`)
 
 	for lineNum, line := range lines {
 		currentLine := lineNum + 1
@@ -247,6 +251,48 @@ func (ta *TaintAnalyzer) AnalyzeTaintFlow(filePath string) ([]reporter.Finding, 
 					genericVar := extractVariableName(line)
 					if genericVar != "" {
 						sanitizedVars[genericVar] = true
+					}
+				}
+			}
+		}
+
+		// 3b. Inter-Procedural Taint Tracking (passing taint to a custom function)
+		if callMatch := funcCallRe.FindAllStringSubmatch(trimmedLine, -1); len(callMatch) > 0 {
+			for _, match := range callMatch {
+				funcName := match[1]
+				args := match[2]
+
+				// Skip known native safe functions
+				if strings.Contains(strings.ToLower(funcName), "print") || strings.Contains(strings.ToLower(funcName), "log") {
+					continue
+				}
+
+				for varName, info := range taintedVars {
+					// Check if a tainted variable is passed as an argument
+					if !sanitizedVars[varName] && containsVariable(args, varName) {
+						taintedFunctions[funcName] = true // Mark this function as receiving taint
+
+						// Report inter-procedural risk
+						pairKey := fmt.Sprintf("%s→%d→%s", info.SourceVar, info.SourceLine, funcName)
+						if !reportedPairs[pairKey] {
+							reportedPairs[pairKey] = true
+							findings = append(findings, reporter.Finding{
+								SrNo:        srNo,
+								IssueName:   "Inter-Procedural Taint Propagation",
+								FilePath:    filePath,
+								Description: fmt.Sprintf("Tainted variable '%s' is passed as argument to custom function '%s()' on line %d. Ensure %s() safely handles dangerous inputs.", varName, funcName, currentLine, funcName),
+								Severity:    "high", // Slightly lower than critical since we don't know the sink
+								LineNumber:  fmt.Sprintf("%d", currentLine),
+								AiValidated: "No",
+								Remediation: "Sanitize arguments before passing them to internal helper functions, or implement context-aware encoding inside the function.",
+								RuleID:      "dataflow-inter-procedural",
+								Source:      "taint-analyzer",
+								CWE:         "CWE-20",
+								OWASP:       "A03:2021-Injection",
+								Confidence:  0.80, // Lower confidence due to unknown function body
+							})
+							srNo++
+						}
 					}
 				}
 			}
