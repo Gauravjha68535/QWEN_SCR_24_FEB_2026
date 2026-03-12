@@ -402,16 +402,38 @@ func RunAIDiscovery(modelName string, targetDir string) []reporter.Finding {
 			var mappedFindings []reporter.Finding
 			if scanErr == nil && len(vulns) > 0 {
 				for _, v := range vulns {
+					// Reclassification heuristic for AI mislabeling eval/postMessage as OS Command Injection
+					cwe := v.CWE
+					issueName := v.IssueName
+
+					isJSOrHTML := strings.HasSuffix(strings.ToLower(job.filePath), ".js") ||
+						strings.HasSuffix(strings.ToLower(job.filePath), ".ts") ||
+						strings.HasSuffix(strings.ToLower(job.filePath), ".html")
+
+					if isJSOrHTML && (strings.Contains(cwe, "CWE-78") || strings.Contains(cwe, "CWE-106")) {
+						lowerDesc := strings.ToLower(v.Description)
+						lowerName := strings.ToLower(v.IssueName)
+						if strings.Contains(lowerDesc, "eval") || strings.Contains(lowerName, "eval") {
+							cwe = "CWE-95"
+							issueName = "Eval Code Injection"
+						} else if strings.Contains(lowerDesc, "postmessage") || strings.Contains(lowerDesc, "xss") || strings.Contains(lowerName, "xss") {
+							cwe = "CWE-79"
+							if !strings.Contains(strings.ToLower(issueName), "xss") {
+								issueName = "Cross-Site Scripting (XSS)"
+							}
+						}
+					}
+
 					mappedFindings = append(mappedFindings, reporter.Finding{
 						Source:      "ai-discovery",
-						IssueName:   v.IssueName,
+						IssueName:   issueName,
 						Severity:    strings.ToLower(v.Severity),
 						FilePath:    job.filePath,
 						LineNumber:  fmt.Sprintf("%d", v.LineNumber),
 						Description: v.Description,
 						Remediation: v.Remediation,
 						ExploitPoC:  v.ExploitPoC,
-						CWE:         v.CWE,
+						CWE:         cwe,
 						OWASP:       v.OWASP,
 						AiValidated: "Discovered by AI",
 						FixedCode:   v.FixedCodeSnippet,
