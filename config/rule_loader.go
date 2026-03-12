@@ -188,36 +188,65 @@ func parseRulesLineByLine(data []byte, filePath string) []Rule {
 	return rules
 }
 
-// sanitizeYAMLChunk cleans up common syntax errors in rule chunks (like unescaped quotes)
+// sanitizeYAMLChunk aggressively cleans up common syntax errors in rule chunks.
+// The most common issue is unescaped single quotes inside single-quoted YAML strings.
+// For example: remediation: "Use os.getenv('SECRET_KEY')" or regex: 'foo['\"]bar'
+// We detect lines with a key: 'value' pattern and escape inner single quotes.
 func sanitizeYAMLChunk(chunk string) string {
-	// Many rules have: - regex: 'something['\"]something'
-	// The unescaped single quote breaks the YAML parser.
-	// We will attempt a very basic sanitization here: replacing the outer single quotes with double quotes
-	// and escaping inner double quotes, OR if it's too complex, just let the parser fail.
-
-	// A simpler, safer approach is to specifically look for `- regex: '...['\"]...'`
-	// and escape the inner single quotes.
 	lines := strings.Split(chunk, "\n")
 	for i, line := range lines {
 		trimmed := strings.TrimSpace(line)
-		if strings.HasPrefix(trimmed, "- regex: '") || strings.HasPrefix(trimmed, "regex: '") {
-			// Find the first and last quote
-			firstQuote := strings.Index(line, "'")
-			lastQuote := strings.LastIndex(line, "'")
 
-			if firstQuote != -1 && lastQuote != -1 && firstQuote < lastQuote {
-				prefix := line[:firstQuote+1]
-				suffix := line[lastQuote:]
-				innerString := line[firstQuote+1 : lastQuote]
+		// Skip comments and empty lines
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			continue
+		}
 
-				// Escape single quotes inside the regex string by doubling them (YAML standard for escaping single quotes)
-				cleanInner := strings.ReplaceAll(innerString, "['\"]", "[\"\\'\"]")
-				cleanInner = strings.ReplaceAll(cleanInner, "''", "'") // Prevents double-doubling
-				cleanInner = strings.ReplaceAll(cleanInner, "'", "''")
-
-				lines[i] = prefix + cleanInner + suffix
+		// Find any YAML value wrapped in single quotes: "  key: 'value'"
+		// We look for the pattern ": '" which indicates a single-quoted YAML value
+		colonQuoteIdx := strings.Index(line, ": '")
+		if colonQuoteIdx == -1 {
+			// Also check for "- regex: '" list item pattern
+			colonQuoteIdx = strings.Index(line, "regex: '")
+			if colonQuoteIdx != -1 {
+				colonQuoteIdx = strings.Index(line[colonQuoteIdx:], ": '")
+				if colonQuoteIdx != -1 {
+					colonQuoteIdx += strings.Index(line, "regex: '")
+				}
 			}
 		}
+
+		if colonQuoteIdx == -1 {
+			continue
+		}
+
+		firstQuote := colonQuoteIdx + 2 // position of the opening '
+		lastQuote := strings.LastIndex(line, "'")
+
+		if firstQuote >= len(line) || lastQuote <= firstQuote {
+			continue
+		}
+
+		innerString := line[firstQuote+1 : lastQuote]
+
+		// Check if there are any unescaped single quotes inside
+		// (A properly escaped single quote in YAML is '')
+		testInner := strings.ReplaceAll(innerString, "''", "")
+		if !strings.Contains(testInner, "'") {
+			continue // No unescaped inner quotes, this line is fine
+		}
+
+		prefix := line[:firstQuote+1]
+		suffix := line[lastQuote:]
+
+		// Step 1: Temporarily protect already-escaped '' sequences
+		cleanInner := strings.ReplaceAll(innerString, "''", "\x00\x00")
+		// Step 2: Escape all remaining single quotes by doubling them
+		cleanInner = strings.ReplaceAll(cleanInner, "'", "''")
+		// Step 3: Restore the originally escaped sequences
+		cleanInner = strings.ReplaceAll(cleanInner, "\x00\x00", "''")
+
+		lines[i] = prefix + cleanInner + suffix
 	}
 	return strings.Join(lines, "\n")
 }
