@@ -188,17 +188,53 @@ func parseRulesLineByLine(data []byte, filePath string) []Rule {
 	return rules
 }
 
+// sanitizeYAMLChunk cleans up common syntax errors in rule chunks (like unescaped quotes)
+func sanitizeYAMLChunk(chunk string) string {
+	// Many rules have: - regex: 'something['\"]something'
+	// The unescaped single quote breaks the YAML parser.
+	// We will attempt a very basic sanitization here: replacing the outer single quotes with double quotes
+	// and escaping inner double quotes, OR if it's too complex, just let the parser fail.
+
+	// A simpler, safer approach is to specifically look for `- regex: '...['\"]...'`
+	// and escape the inner single quotes.
+	lines := strings.Split(chunk, "\n")
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "- regex: '") || strings.HasPrefix(trimmed, "regex: '") {
+			// Find the first and last quote
+			firstQuote := strings.Index(line, "'")
+			lastQuote := strings.LastIndex(line, "'")
+
+			if firstQuote != -1 && lastQuote != -1 && firstQuote < lastQuote {
+				prefix := line[:firstQuote+1]
+				suffix := line[lastQuote:]
+				innerString := line[firstQuote+1 : lastQuote]
+
+				// Escape single quotes inside the regex string by doubling them (YAML standard for escaping single quotes)
+				cleanInner := strings.ReplaceAll(innerString, "['\"]", "[\"\\'\"]")
+				cleanInner = strings.ReplaceAll(cleanInner, "''", "'") // Prevents double-doubling
+				cleanInner = strings.ReplaceAll(cleanInner, "'", "''")
+
+				lines[i] = prefix + cleanInner + suffix
+			}
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
 // tryParseChunk attempts to parse a single YAML rule chunk
 func tryParseChunk(chunk string) *Rule {
+	sanitizedChunk := sanitizeYAMLChunk(chunk)
+
 	// Try strict first
 	var rules []Rule
-	if err := yaml.Unmarshal([]byte(chunk), &rules); err == nil && len(rules) > 0 {
+	if err := yaml.Unmarshal([]byte(sanitizedChunk), &rules); err == nil && len(rules) > 0 {
 		return &rules[0]
 	}
 
 	// Try flexible
 	var flexRules []flexRule
-	if err := yaml.Unmarshal([]byte(chunk), &flexRules); err == nil && len(flexRules) > 0 {
+	if err := yaml.Unmarshal([]byte(sanitizedChunk), &flexRules); err == nil && len(flexRules) > 0 {
 		r := normalizeRule(flexRules[0])
 		return &r
 	}
