@@ -170,6 +170,11 @@ func DiscoverVulnerabilities(modelName string, filePath string, content string) 
 			"- TAINT-FLOW SIMULATION: For every variable that comes from a request (Source), trace its path through the code until it hits a sensitive function (Sink). If there is no sanitization in between, it is a CRITICAL finding.\n"+
 			"- ATTACKER'S PERSPECTIVE: How would I bypass the existing regex or filters? Look for encoding tricks, null bytes, or multi-step logical flaws.\n"+
 			"- LANGUAGE-SPECIFIC ARCHETYPES: %s\n\n"+
+			"CRITICAL TAXONOMY RULES:\n"+
+			"- DO NOT misclassify vulnerabilities. You must use accurate CWE IDs based on the root cause and execution context.\n"+
+			"- Client-side issues (like DOM XSS, postMessage vulnerabilities) are CWE-79, NOT OS Command Injection (CWE-78).\n"+
+			"- Code injection via eval() or similar constructs is CWE-95 (Eval Injection), NOT OS Command Injection (CWE-78).\n"+
+			"- Apply strict contextual awareness (backend vs frontend).\n\n"+
 			"OUTPUT PROTOCOL:\n"+
 			"1. Start with a <thinking> tag. Perform a step-by-step Taint-Flow analysis. If you find a 'Missing' control, explain why the omission is dangerous.\n"+
 			"2. End with the final results in the requested JSON format.\n\n"+
@@ -402,38 +407,16 @@ func RunAIDiscovery(modelName string, targetDir string) []reporter.Finding {
 			var mappedFindings []reporter.Finding
 			if scanErr == nil && len(vulns) > 0 {
 				for _, v := range vulns {
-					// Reclassification heuristic for AI mislabeling eval/postMessage as OS Command Injection
-					cwe := v.CWE
-					issueName := v.IssueName
-
-					isJSOrHTML := strings.HasSuffix(strings.ToLower(job.filePath), ".js") ||
-						strings.HasSuffix(strings.ToLower(job.filePath), ".ts") ||
-						strings.HasSuffix(strings.ToLower(job.filePath), ".html")
-
-					if isJSOrHTML && (strings.Contains(cwe, "CWE-78") || strings.Contains(cwe, "CWE-106")) {
-						lowerDesc := strings.ToLower(v.Description)
-						lowerName := strings.ToLower(v.IssueName)
-						if strings.Contains(lowerDesc, "eval") || strings.Contains(lowerName, "eval") {
-							cwe = "CWE-95"
-							issueName = "Eval Code Injection"
-						} else if strings.Contains(lowerDesc, "postmessage") || strings.Contains(lowerDesc, "xss") || strings.Contains(lowerName, "xss") {
-							cwe = "CWE-79"
-							if !strings.Contains(strings.ToLower(issueName), "xss") {
-								issueName = "Cross-Site Scripting (XSS)"
-							}
-						}
-					}
-
 					mappedFindings = append(mappedFindings, reporter.Finding{
 						Source:      "ai-discovery",
-						IssueName:   issueName,
+						IssueName:   v.IssueName,
 						Severity:    strings.ToLower(v.Severity),
 						FilePath:    job.filePath,
 						LineNumber:  fmt.Sprintf("%d", v.LineNumber),
 						Description: v.Description,
 						Remediation: v.Remediation,
 						ExploitPoC:  v.ExploitPoC,
-						CWE:         cwe,
+						CWE:         v.CWE,
 						OWASP:       v.OWASP,
 						AiValidated: "Discovered by AI",
 						FixedCode:   v.FixedCodeSnippet,
