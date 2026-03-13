@@ -26,11 +26,11 @@ func WriteCSV(filename string, findings []Finding) error {
 		"Code Snippet", "Exploit PoC",
 	}
 
-	// Simple deduplication: Key = FilePath + LineNumber + IssueName
+	// Simple deduplication: Key = FilePath + IssueName
 	uniqueFindings := make([]Finding, 0)
 	seen := make(map[string]bool)
 	for _, f := range findings {
-		key := fmt.Sprintf("%s:%s:%s", f.FilePath, f.LineNumber, f.IssueName)
+		key := fmt.Sprintf("%s:%s", f.FilePath, f.IssueName)
 		if !seen[key] {
 			seen[key] = true
 			uniqueFindings = append(uniqueFindings, f)

@@ -172,9 +172,12 @@ func DiscoverVulnerabilities(modelName string, filePath string, content string) 
 			"- LANGUAGE-SPECIFIC ARCHETYPES: %s\n\n"+
 			"CRITICAL TAXONOMY RULES:\n"+
 			"- DO NOT misclassify vulnerabilities. You must use accurate CWE IDs based on the root cause and execution context.\n"+
-			"- Client-side issues (like DOM XSS, postMessage vulnerabilities) are CWE-79, NOT OS Command Injection (CWE-78).\n"+
-			"- Code injection via eval() or similar constructs is CWE-95 (Eval Injection), NOT OS Command Injection (CWE-78).\n"+
+			"- Client-side issues (like DOM XSS, postMessage vulnerabilities, javascript: URIs) MUST be classified as CWE-79 (Cross-Site Scripting), NOT OS Command Injection (CWE-78) or Eval Injection.\n"+
+			"- Code injection via eval() or Function() on the server backend is CWE-94/CWE-95, NOT OS Command Injection.\n"+
 			"- Apply strict contextual awareness (backend vs frontend).\n\n"+
+			"FORMATTING RULES:\n"+
+			"- In the 'remediation' field, explain the fix in pure english text. DO NOT generate git diffs (e.g., + and - lines) or unformatted code blocks.\n"+
+			"- The 'code_snippet' field should ONLY contain the lines of vulnerable code, no extra commentary.\n\n"+
 			"OUTPUT PROTOCOL:\n"+
 			"1. Start with a <thinking> tag. Perform a step-by-step Taint-Flow analysis. If you find a 'Missing' control, explain why the omission is dangerous.\n"+
 			"2. End with the final results in the requested JSON format.\n\n"+
@@ -185,8 +188,8 @@ func DiscoverVulnerabilities(modelName string, filePath string, content string) 
 			"      \"issue_name\": \"[CWE-XXX] Clear descriptive name\",\n"+
 			"      \"severity\": \"critical|high|medium|low|info\",\n"+
 			"      \"line_number\": 42,\n"+
-			"      \"description\": \"Detailed chain-of-thought analysis of the vulnerability, including trace from source to sink or the impact of the missing control.\",\n"+
-			"      \"remediation\": \"Specific, code-based fix or architecture-level mitigation.\",\n"+
+			"      \"description\": \"Detailed chain-of-thought analysis of the vulnerability. DO NOT include code diffs.\",\n"+
+			"      \"remediation\": \"Specific, text-based explanation of the fix. DO NOT output code diffs/patches.\",\n"+
 			"      \"exploit_poc\": \"Step-by-step exploitation guide or payload (curl/python/js).\",\n"+
 			"      \"fixed_code_snippet\": \"Complete secure implementation of the affected logic.\",\n"+
 			"      \"cwe\": \"CWE-XXX\",\n"+

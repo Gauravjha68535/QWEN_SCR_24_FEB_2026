@@ -17,7 +17,8 @@ func GeneratePDF(filename string, findings []Finding, summary ReportSummary, ris
 	uniqueFindings := make([]Finding, 0)
 	seen := make(map[string]bool)
 	for _, f := range findings {
-		key := fmt.Sprintf("%s:%s:%s", f.FilePath, f.LineNumber, f.IssueName)
+		// Loosen dedupe: just IssueName + FilePath
+		key := fmt.Sprintf("%s:%s", f.FilePath, f.IssueName)
 		if !seen[key] {
 			seen[key] = true
 			uniqueFindings = append(uniqueFindings, f)
@@ -159,7 +160,8 @@ func GeneratePDF(filename string, findings []Finding, summary ReportSummary, ris
 		pdf.Ln(-1)
 
 		// Auto page break with repeated header
-		if pdf.GetY() > 190 {
+		// Only break if we are not on the very last item
+		if pdf.GetY() > 190 && idx < len(confirmed)-1 {
 			pdf.AddPage()
 			addPageHeader(pdf, fmt.Sprintf("Confirmed Findings (continued - page %d)", pdf.PageNo()-2))
 			drawPDFTableHeader()

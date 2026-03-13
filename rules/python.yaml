@@ -3991,3 +3991,47 @@
 
 
 
+
+- id: py-crlf-injection
+  languages: [python]
+  patterns:
+  - regex: |-
+      (?i)response\.headers\[.*\]\s*=\s*f?["'].*[\r\n]+.*["']
+  severity: high
+  description: "CRLF Injection via HTTP Response Headers (HTTP Response Splitting)"
+  remediation: "Ensure response headers do not contain unvalidated newline characters (\\r or \\n). Sanitize user input before setting headers."
+  cwe: "CWE-113"
+  owasp: "A03:2021"
+
+- id: py-open-redirect-custom-header
+  languages: [python]
+  patterns:
+  - regex: |-
+      (?i)response\.headers\[['"](X-Custom-Redirect-Path|Location|X-Redirect)['"]\]\s*=\s*['"]?[^'"]*request\.args\.get
+  severity: high
+  description: "Open redirection based on custom header reflection"
+  remediation: "Validate the redirect URL against an allowlist before returning it in custom headers or the Location header."
+  cwe: "CWE-614"
+  owasp: "A03:2021"
+
+- id: py-weak-jwt-secret
+  languages: [python]
+  patterns:
+  - regex: |-
+      (?i)jwt\.(encode|decode)\(.*(secret|key|12345|password)['"]\)
+  severity: high
+  description: "Using default or weak JWT secret"
+  remediation: "Never use weak or hardcoded secrets for JWT signing. Load secrets from secure environment variables or vault services."
+  cwe: "CWE-310"
+  owasp: "A02:2025"
+
+- id: py-hardcoded-db-user
+  languages: [python]
+  patterns:
+  - regex: |-
+      (?i)(sqlite3\.connect|psycopg2\.connect|mysql\.connector\.connect)\(.*user\s*=\s*['"](admin|root|sa|postgres)['"]
+  severity: high
+  description: "Hardcoded privileged username in database connection flow"
+  remediation: "Never hardcode database usernames or credentials. Retrieve db configurations from secure environment variables."
+  cwe: "CWE-798"
+  owasp: "A07:2021"

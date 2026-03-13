@@ -55,9 +55,10 @@ CODE CONTEXT (50 lines around the issue):
 
 ULTRA-DEEP VALIDATION PROTOCOL:
 1.  TAINT ANALYSIS: Map the flow from Source (user-input) to Sink (dangerous function). Is there a clear, unvalidated path?
-2.  BYPASS SIMULATION: Does the code have sanitization (e.g., regex, escaping)? If YES, can an attacker BYPASS it using encoding (URL, base64, unicode), null bytes, or logical flaws? 
-3.  ENVIRONMENT CHECK: Is this a dev-only tool (e.g. apt, npm) or a real production vulnerability?
-4.  IMPACT ESTIMATION: What is the worst-case scenario (RCE, Data Theft, Account Takeover)?
+2.  CONFIGURATION & SECRETS: Note that Hardcoded Secrets, Missing Security Headers, CORS misconfigurations, and Weak/Default passwords DO NOT require user input to be exploitable. Flag them as True Positives if present.
+3.  BYPASS SIMULATION: Does the code have sanitization (e.g., regex, escaping)? If YES, can an attacker BYPASS it using encoding (URL, base64, unicode), null bytes, or logical flaws? 
+4.  ENVIRONMENT CHECK: Is this a dev-only tool (e.g. apt, npm) or a real production vulnerability?
+5.  IMPACT ESTIMATION: What is the worst-case scenario (RCE, Data Theft, Account Takeover)?
 
 OUTPUT PROTOCOL:
 - Start with a <thinking> tag. Perform an adversarial simulation. Try to 'break' the code even if it looks secure at first glance.
@@ -65,6 +66,8 @@ OUTPUT PROTOCOL:
 
 CRITICAL INSTRUCTIONS:
 - Be AGGRESSIVE in finding bypasses, but be FAIR if the code is truly secure.
+- Do NOT dismiss Configuration/Header/Secret vulnerabilities just because there is "no user input".
+- Do NOT log unified diffs (+/-) or git diff formats in the suggested_fix or explanation. Describe the fix conceptually or just provide the final snippet.
 - Do NOT flag standard DevOps/Infra commands as vulnerabilities.
 - Provide a clear, step-by-step 'exploit_poc'.
 
@@ -73,7 +76,7 @@ Return ONLY a valid JSON object in the final part of your response:
   "is_true_positive": true/false,
   "confidence": 0.0-1.0,
   "explanation": "Summarize your adversarial analysis and why a bypass is or is not possible.",
-  "suggested_fix": "Provide a fix that is bypass-proof (e.g. parameterized queries, allowlisting). Use DIFF format.",
+  "suggested_fix": "Provide a fix conceptually. DO NOT USE DIFF FORMAT (+/-).",
   "severity_adjustment": "critical/high/medium/low/info or same",
   "exploit_poc": "Provide a high-quality exploit payload or command."
 }`,

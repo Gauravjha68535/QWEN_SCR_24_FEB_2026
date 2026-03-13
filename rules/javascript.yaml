@@ -4317,3 +4317,36 @@
   remediation: "Handle stream errors and cleanup"
   cwe: "CWE-770"
   owasp: "A04:2023"
+
+- id: js-insecure-postmessage-eval
+  languages: [javascript]
+  patterns:
+  - regex: |-
+      (?i)window\.addEventListener\(['"]message['"].*eval\s*\(
+  severity: high
+  description: "Insecure postMessage API exploit: eval() executed on raw message data"
+  remediation: "Validate the origin of the message using event.origin and parse data using JSON.parse() rather than eval()."
+  cwe: "CWE-94"
+  owasp: "A03:2021"
+
+- id: js-dom-xss-var-source
+  languages: [javascript]
+  patterns:
+  - regex: |-
+      (?i)(var|let|const)\s+[a-zA-Z0-9_]+\s*=\s*(location\.(hash|search|pathname)|document\.(URL|referrer|documentURI)).*(innerHTML|outerHTML|document\.write)
+  severity: high
+  description: "DOM XSS: Unsafe assignment of client-side source to HTML sink"
+  remediation: "Use innerText or textContent instead of innerHTML. Sanitize all URL-based variables before reflecting them in the DOM."
+  cwe: "CWE-79"
+  owasp: "A03:2021"
+
+- id: js-xss-predefined-var
+  languages: [javascript]
+  patterns:
+  - regex: |-
+      (?i)\$\(.*\)\[0\]\.innerHTML\s*=\s*[a-zA-Z0-9_]+
+  severity: medium
+  description: "XSS via pre-defined client-side variable"
+  remediation: "Instead of innerHTML, use text() in jQuery or textContent in vanilla JS when injecting pre-defined variables."
+  cwe: "CWE-79"
+  owasp: "A03:2021"
