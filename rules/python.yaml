@@ -3303,7 +3303,7 @@
   languages: [python]
   patterns:
   - regex: |-
-      \.[^.]*\.(?:php|asp|exe)
+      \.[^."']*\.(?:php|asp|exe)\b
   severity: high
   description: "Double extension file upload (bypass attempt)"
   remediation: "Validate file content, not just extension"
