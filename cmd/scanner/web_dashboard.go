@@ -105,7 +105,7 @@ func StartWebServer(port int) {
 	addr := fmt.Sprintf("localhost:%d", port)
 	server := &http.Server{
 		Addr:    addr,
-		Handler: mux,
+		Handler: corsMiddleware(mux),
 	}
 
 	utils.LogInfo(fmt.Sprintf("🌐 QWEN Scanner Web UI starting on http://%s", addr))
@@ -275,10 +275,8 @@ func handleScanRoutes(w http.ResponseWriter, r *http.Request) {
 					httpJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to create zip file"})
 					return
 				}
-				defer zipFile.Close()
 
 				archive := zip.NewWriter(zipFile)
-				defer archive.Close()
 
 				filesToZip := []string{"report.html", "report.csv", "report.pdf"}
 				for _, fileName := range filesToZip {
@@ -301,6 +299,8 @@ func handleScanRoutes(w http.ResponseWriter, r *http.Request) {
 					io.Copy(w1, f1)
 					f1.Close()
 				}
+				archive.Close()
+				zipFile.Close()
 			}
 
 			w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"qwen_scan_%s.zip\"", scanID))
@@ -448,6 +448,19 @@ func handleModels(w http.ResponseWriter, r *http.Request) {
 //  Helpers
 // ──────────────────────────────────────────────────────────
 
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func setCORS(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
@@ -474,7 +487,7 @@ func openBrowser(url string) {
 		err = fmt.Errorf("unsupported platform")
 	}
 	if err != nil {
-		utils.LogInfo(fmt.Sprintf("Open http://%s in your browser", url))
+		utils.LogInfo(fmt.Sprintf("Open %s in your browser", url))
 	}
 }
 

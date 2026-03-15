@@ -38,6 +38,9 @@ func ValidateFindingsBatch(modelName string, findings []reporter.Finding, fileCo
 	fmt.Println()
 
 	SetInterrupted(false)
+	if globalCancel != nil {
+		globalCancel()
+	}
 	globalCtx, globalCancel = context.WithCancel(context.Background())
 
 	startTime := time.Now()
@@ -214,10 +217,17 @@ func ValidateFindingsBatch(modelName string, findings []reporter.Finding, fileCo
 	wg.Wait()
 	close(results)
 
-	// Re-assemble results in original order
-	finalFindings := make([]reporter.Finding, len(findings))
+	// Re-assemble results in original order (safeguarding against missing results)
+	orderedFindings := make([]reporter.Finding, len(findings))
 	for res := range results {
-		finalFindings[res.index] = res.finding
+		orderedFindings[res.index] = res.finding
+	}
+
+	var finalFindings []reporter.Finding
+	for _, f := range orderedFindings {
+		if f.IssueName != "" {
+			finalFindings = append(finalFindings, f)
+		}
 	}
 
 	// Summary
@@ -258,18 +268,4 @@ func formatDuration(d time.Duration) string {
 	hours := int(d.Hours())
 	mins := int(d.Minutes()) % 60
 	return fmt.Sprintf("%dh%02dm", hours, mins)
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

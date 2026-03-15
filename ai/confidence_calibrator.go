@@ -27,7 +27,14 @@ type ConfidenceCalibrator struct {
 
 // NewConfidenceCalibrator initializes a calibrator
 func NewConfidenceCalibrator(targetDir string) *ConfidenceCalibrator {
-	statsFile := filepath.Join(targetDir, ".scanner-ai-stats.json")
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		homeDir = "."
+	}
+	dbDir := filepath.Join(homeDir, ".qwen-scanner")
+	os.MkdirAll(dbDir, 0755)
+	statsFile := filepath.Join(dbDir, ".scanner-ai-stats.json")
+
 	c := &ConfidenceCalibrator{
 		StatsFile: statsFile,
 		Stats:     make(map[string]*VulnerabilityStats),

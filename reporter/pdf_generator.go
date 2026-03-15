@@ -101,9 +101,6 @@ func GeneratePDF(filename string, findings []Finding, summary ReportSummary, ris
 	// ——— Findings Table ———
 	reachable, _, falsePositives := SplitFindingsThreeWay(findings)
 
-	pdf.AddPage()
-	addPageHeader(pdf, "Confirmed Findings")
-
 	// Table header — optimized column widths for A4 landscape (277mm usable)
 	// #(5) Issue(40) File(45) Sev(15) Line(10) CWE(20) Src(12) Desc(130) = 277
 	fColWidths := []float64{5, 40, 45, 15, 10, 20, 12, 130}

@@ -115,18 +115,9 @@ func (sd *SecretDetector) ScanSecrets(targetDir string) ([]reporter.Finding, err
 						matchedText = decoded
 					}
 
-					// Live Validation
+					// Live Validation (Disabled to prevent network leaking of sensitive tokens)
 					issueName := "Hardcoded Secret Detected"
 					severity := "critical"
-					if isVerifiableSecret(matchedText) {
-						utils.LogInfo(fmt.Sprintf("Testing live validity of secret in %s...", filepath.Base(path)))
-						if validateLiveSecret(matchedText) {
-							issueName = "[VERIFIED LIVE] Hardcoded Secret Detected"
-						} else {
-							issueName = "[INACTIVE] Hardcoded Secret Detected"
-							severity = "medium" // Downgrade if we confirmed it's dead
-						}
-					}
 
 					findings = append(findings, reporter.Finding{
 						SrNo:        srNo,

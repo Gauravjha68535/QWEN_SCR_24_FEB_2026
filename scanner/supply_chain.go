@@ -203,39 +203,9 @@ func (scs *SupplyChainScanner) checkTyposquatting() []reporter.Finding {
 }
 
 func (scs *SupplyChainScanner) checkOutdatedDependencies() []reporter.Finding {
-	var findings []reporter.Finding
-	srNo := 1
-
-	// Check if dependencies are significantly outdated
-	// This would typically query npm/pypi APIs for latest versions
-	// For now, we'll flag dependencies with very old versions
-
-	for _, dep := range scs.dependencies {
-		if isVersionOutdated(dep.Version) {
-			findings = append(findings, reporter.Finding{
-				SrNo:        srNo,
-				IssueName:   "Outdated Dependency",
-				FilePath:    dep.SourceFile,
-				Description: fmt.Sprintf("Dependency %s@%s may be significantly outdated", dep.Name, dep.Version),
-				Severity:    "low",
-				LineNumber:  "1",
-				AiValidated: "No",
-				Remediation: fmt.Sprintf("Consider updating %s to the latest version", dep.Name),
-				RuleID:      "outdated-" + dep.Name,
-				Source:      "supply-chain",
-			})
-			srNo++
-		}
-	}
-
-	return findings
-}
-
-// Helper functions
-
-func isVersionOutdated(version string) bool {
-	// Simple heuristic: versions starting with 0. or 1. may be outdated
-	return strings.HasPrefix(version, "0.") || strings.HasPrefix(version, "1.0")
+	// Disabled to prevent naive version checks from producing unverified false positives.
+	// Will be revisited with proper package manager API integration.
+	return []reporter.Finding{}
 }
 
 // computeLevenshteinDistance calculates the minimum number of single-character edits to change word1 into word2
@@ -272,11 +242,4 @@ func computeLevenshteinDistance(s1, s2 string) int {
 	}
 
 	return d[len(s1)][len(s2)]
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

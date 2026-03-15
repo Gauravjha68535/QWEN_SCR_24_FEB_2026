@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -381,13 +382,9 @@ func runScan(scanID string, targetDir string, cfg WebScanConfig) {
 	severityOrder := map[string]int{
 		"critical": 5, "high": 4, "medium": 3, "low": 2, "info": 1,
 	}
-	for i := 0; i < len(allFindings); i++ {
-		for j := i + 1; j < len(allFindings); j++ {
-			if severityOrder[allFindings[j].Severity] > severityOrder[allFindings[i].Severity] {
-				allFindings[i], allFindings[j] = allFindings[j], allFindings[i]
-			}
-		}
-	}
+	sort.Slice(allFindings, func(i, j int) bool {
+		return severityOrder[allFindings[i].Severity] > severityOrder[allFindings[j].Severity]
+	})
 
 	// Renumber and Calculate Multi-Engine Trust Score
 	for i := range allFindings {
@@ -436,9 +433,15 @@ func runScan(scanID string, targetDir string, cfg WebScanConfig) {
 
 	wsHub.BroadcastProgress(scanID, "Saving Results", 95)
 	wsHub.BroadcastLog(scanID, "Saving findings to database...", "info")
-	SaveFindings(scanID, allFindings)
-	UpdateScanCounts(scanID, len(allFindings), criticalCount, highCount)
-	UpdateScanStatus(scanID, "completed")
+	if err := SaveFindings(scanID, allFindings); err != nil {
+		wsHub.BroadcastLog(scanID, fmt.Sprintf("Failed to save findings: %v", err), "error")
+	}
+	if err := UpdateScanCounts(scanID, len(allFindings), criticalCount, highCount); err != nil {
+		wsHub.BroadcastLog(scanID, fmt.Sprintf("Failed to update scan counts: %v", err), "error")
+	}
+	if err := UpdateScanStatus(scanID, "completed"); err != nil {
+		wsHub.BroadcastLog(scanID, fmt.Sprintf("Failed to update scan status: %v", err), "error")
+	}
 
 	// Generate report files
 	wsHub.BroadcastLog(scanID, "Generating reports...", "info")

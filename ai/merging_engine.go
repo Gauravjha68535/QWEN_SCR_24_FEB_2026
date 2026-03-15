@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"QWEN_SCR_24_FEB_2026/reporter"
 
@@ -84,7 +85,11 @@ Provide a brief "Reason" for the merge.
 	}
 
 	reqJSON, _ := json.Marshal(reqBody)
-	resp, err := http.Post(ollamaAPIURL, "application/json", bytes.NewBuffer(reqJSON))
+
+	client := &http.Client{
+		Timeout: 10 * time.Minute,
+	}
+	resp, err := client.Post(ollamaAPIURL, "application/json", bytes.NewBuffer(reqJSON))
 	if err != nil {
 		return nil, err
 	}

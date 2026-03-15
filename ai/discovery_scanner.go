@@ -322,6 +322,9 @@ func RunAIDiscovery(modelName string, targetDir string) []reporter.Finding {
 	fmt.Println()
 
 	SetInterrupted(false)
+	if globalCancel != nil {
+		globalCancel()
+	}
 	globalCtx, globalCancel = context.WithCancel(context.Background())
 
 	startTime := time.Now()

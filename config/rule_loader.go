@@ -279,8 +279,12 @@ func compilePatterns(rules []Rule) []Rule {
 	for i := range rules {
 		for j := range rules[i].Patterns {
 			if rules[i].Patterns[j].Regex != "" {
-				r, _ := regexp.Compile(rules[i].Patterns[j].Regex)
-				rules[i].Patterns[j].CompiledRegex = r
+				r, err := regexp.Compile(rules[i].Patterns[j].Regex)
+				if err != nil {
+					utils.LogWarn(fmt.Sprintf("Invalid regex in rule %s: %v", rules[i].ID, err))
+				} else {
+					rules[i].Patterns[j].CompiledRegex = r
+				}
 			}
 		}
 	}

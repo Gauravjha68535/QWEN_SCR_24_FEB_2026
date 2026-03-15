@@ -211,7 +211,13 @@ func DeleteScan(id string) error {
 	if err != nil {
 		return err
 	}
-	tx.Exec("DELETE FROM findings WHERE scan_id = ?", id)
-	tx.Exec("DELETE FROM scans WHERE id = ?", id)
+	if _, err := tx.Exec("DELETE FROM findings WHERE scan_id = ?", id); err != nil {
+		tx.Rollback()
+		return err
+	}
+	if _, err := tx.Exec("DELETE FROM scans WHERE id = ?", id); err != nil {
+		tx.Rollback()
+		return err
+	}
 	return tx.Commit()
 }

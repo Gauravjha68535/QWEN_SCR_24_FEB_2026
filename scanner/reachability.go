@@ -19,14 +19,17 @@ type ReachabilityAnalyzer struct {
 	funcDefinitions map[string]string
 	// entryPoints are the app's entry functions (main, init, handlers)
 	entryPoints []string
+	// fileContentCache avoids redundant os.ReadFile calls per line
+	fileContentCache map[string][]string
 }
 
 // NewReachabilityAnalyzer creates a new reachability analyzer
 func NewReachabilityAnalyzer() *ReachabilityAnalyzer {
 	return &ReachabilityAnalyzer{
-		callGraph:       make(map[string][]string),
-		funcDefinitions: make(map[string]string),
-		entryPoints:     make([]string, 0),
+		callGraph:        make(map[string][]string),
+		funcDefinitions:  make(map[string]string),
+		entryPoints:      make([]string, 0),
+		fileContentCache: make(map[string][]string),
 	}
 }
 
@@ -161,12 +164,15 @@ func (ra *ReachabilityAnalyzer) canReach(from, target string, visited map[string
 
 // GetFunctionAtLine returns the function name containing the given line in a file
 func (ra *ReachabilityAnalyzer) GetFunctionAtLine(filePath string, lineNum int) string {
-	content, err := os.ReadFile(filePath)
-	if err != nil {
-		return ""
+	lines, ok := ra.fileContentCache[filePath]
+	if !ok {
+		content, err := os.ReadFile(filePath)
+		if err != nil {
+			return ""
+		}
+		lines = strings.Split(utils.NormalizeNewlines(string(content)), "\n")
+		ra.fileContentCache[filePath] = lines
 	}
-
-	lines := strings.Split(utils.NormalizeNewlines(string(content)), "\n")
 	funcDefPattern := regexp.MustCompile(`(?:func|def|function|fun)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(`)
 
 	lastFunc := ""
