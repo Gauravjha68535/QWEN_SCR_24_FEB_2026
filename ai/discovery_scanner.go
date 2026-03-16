@@ -24,6 +24,15 @@ var interruptFlag int32
 var globalCtx context.Context
 var globalCancel context.CancelFunc
 
+var aiHTTPClient = &http.Client{
+	Timeout: 25 * time.Minute,
+	Transport: &http.Transport{
+		MaxIdleConns:        100,
+		MaxIdleConnsPerHost: 100,
+		IdleConnTimeout:     90 * time.Second,
+	},
+}
+
 func init() {
 	globalCtx, globalCancel = context.WithCancel(context.Background())
 }
@@ -223,14 +232,7 @@ func DiscoverVulnerabilities(modelName string, filePath string, content string) 
 		}
 		req.Header.Set("Content-Type", "application/json")
 
-		client := &http.Client{
-			Timeout: 25 * time.Minute,
-			Transport: &http.Transport{
-				DisableKeepAlives: true,
-			},
-		}
-
-		resp, err := client.Do(req)
+		resp, err := aiHTTPClient.Do(req)
 		if err != nil {
 			if strings.Contains(err.Error(), "context canceled") {
 				return nil, fmt.Errorf("scan interrupted")

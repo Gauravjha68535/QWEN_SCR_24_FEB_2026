@@ -107,11 +107,11 @@ var frameworkFileMap = map[string]string{
 	"spring":  "spring.yaml",
 	"laravel": "laravel.yaml",
 	"rails":   "rails.yaml",
-	"angular": "Angular.yaml",
-	"react":   "React.yaml",
-	"vue":     "Vue.yaml",
-	"next_js": "Next_js.yaml",
-	"nuxt_js": "Nuxt_js.yaml",
+	"angular": "angular.yaml",
+	"react":   "react.yaml",
+	"vue":     "vue.yaml",
+	"next_js": "next_js.yaml",
+	"nuxt_js": "nuxt_js.yaml",
 	"svelte":  "svelte.yaml",
 }
 
@@ -125,6 +125,7 @@ var localFrameworkDetectors = map[string]*regexp.Regexp{
 	"express": regexp.MustCompile(`(?i)require\(['"]express['"]\)|import.*express`),
 	"fastapi": regexp.MustCompile(`(?i)from\s+fastapi|FastAPI\(`),
 	"flask":   regexp.MustCompile(`(?i)from\s+flask|Flask\(`),
+	"django":  regexp.MustCompile(`(?i)import.*django|from\s+django`),
 }
 
 // RunPatternScan performs multi-threaded pattern scanning across all files
@@ -251,6 +252,9 @@ func scanFile(filePath string, rules []config.Rule, counter *int64) []reporter.F
 	// We matched the file extension in helpers.go
 	cleanSource := StripComments(originalSource, ext)
 
+	// Build newline indices once per file for O(log N) line number lookups
+	newlineIndices := buildNewlineIndices(originalSource)
+
 	var findings []reporter.Finding
 	for _, rule := range rules {
 		// Strict Isolation: Only run framework-specific rules on relevant files
@@ -268,10 +272,8 @@ func scanFile(filePath string, rules []config.Rule, counter *int64) []reporter.F
 			// Search against the clean source (comments replaced by spaces)
 			matches := pattern.CompiledRegex.FindAllStringIndex(cleanSource, -1)
 			for _, match := range matches {
-				// We can still use originalSource or cleanSource for countLines
-				// since the length and newlines are identical!
-				startLine := countLines(originalSource[:match[0]]) + 1
-				endLine := countLines(originalSource[:match[1]]) + 1
+				startLine := getLineNumber(newlineIndices, match[0])
+				endLine := getLineNumber(newlineIndices, match[1])
 
 				lineRef := formatLineRef(startLine, endLine)
 
@@ -351,10 +353,19 @@ func shouldApplyFrameworkRule(framework, filePath, content string) bool {
 		return ext == ".php"
 	case "rails":
 		return ext == ".rb" || ext == ".erb"
-	case "django", "flask", "fastapi":
+	case "django":
 		if ext == ".py" {
-			// Optional: add content check if needed
-			return true
+			return localFrameworkDetectors["django"].MatchString(content)
+		}
+		return false
+	case "flask":
+		if ext == ".py" {
+			return localFrameworkDetectors["flask"].MatchString(content)
+		}
+		return false
+	case "fastapi":
+		if ext == ".py" {
+			return localFrameworkDetectors["fastapi"].MatchString(content)
 		}
 		return false
 	case "express":

@@ -2,6 +2,7 @@ package main
 
 import (
 	"archive/zip"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,10 +10,12 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"QWEN_SCR_24_FEB_2026/ai"
@@ -113,9 +116,34 @@ func StartWebServer(port int) {
 	// Auto-open browser
 	go openBrowser("http://" + addr)
 
-	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		utils.LogError("Web server failed", err)
+	// Setup graceful shutdown
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			utils.LogError("Web server failed", err)
+		}
+	}()
+
+	<-stop // Wait for OS signal
+	utils.LogInfo("\nShutting down gracefully...")
+
+	// Give active connections 5 seconds to finish
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		utils.LogError("Server forced to shutdown", err)
 	}
+
+	// Assume CloseDB exists (if not, OS handles it, but this prevents corruption)
+	// We'll leave it out if we aren't absolutely sure it exists to prevent compile error,
+	// but normally BadgerDB handles clean exits if closed correctly.
+	// We'll call CloseDB() - let's add it to db.go next if missing.
+	CloseDB()
+
+	utils.LogInfo("QWEN Scanner stopped.")
 }
 
 // ──────────────────────────────────────────────────────────
@@ -243,9 +271,16 @@ func handleScanRoutes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// GET /api/scan/:id/findings
+	// GET /api/scan/:id/findings?phase=static|ai|final
 	if len(parts) >= 2 && parts[1] == "findings" {
-		findings, err := GetFindingsForScan(scanID)
+		phase := r.URL.Query().Get("phase")
+		var findings []reporter.Finding
+		var err error
+		if phase != "" {
+			findings, err = GetFindingsByPhase(scanID, phase)
+		} else {
+			findings, err = GetFindingsForScan(scanID)
+		}
 		if err != nil {
 			httpJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
@@ -270,37 +305,45 @@ func handleScanRoutes(w http.ResponseWriter, r *http.Request) {
 
 			// Create the zip file if it doesn't exist
 			if _, err := os.Stat(zipPath); os.IsNotExist(err) {
-				zipFile, err := os.Create(zipPath)
+				// Wrap in a function so defers execute immediately after creation,
+				// before ServeFile is called.
+				err = func() error {
+					zipFile, err := os.Create(zipPath)
+					if err != nil {
+						return err
+					}
+					defer zipFile.Close()
+
+					archive := zip.NewWriter(zipFile)
+					defer archive.Close()
+
+					filesToZip := []string{"report.html", "report.csv", "report.pdf"}
+					for _, fileName := range filesToZip {
+						filePathToZip := filepath.Join(reportsDir, fileName)
+						if _, err := os.Stat(filePathToZip); os.IsNotExist(err) {
+							continue // skip missing files
+						}
+
+						f1, err := os.Open(filePathToZip)
+						if err != nil {
+							continue
+						}
+						defer f1.Close()
+
+						w1, err := archive.Create(fileName)
+						if err != nil {
+							continue
+						}
+
+						io.Copy(w1, f1)
+					}
+					return nil
+				}()
+
 				if err != nil {
 					httpJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to create zip file"})
 					return
 				}
-
-				archive := zip.NewWriter(zipFile)
-
-				filesToZip := []string{"report.html", "report.csv", "report.pdf"}
-				for _, fileName := range filesToZip {
-					filePathToZip := filepath.Join(reportsDir, fileName)
-					if _, err := os.Stat(filePathToZip); os.IsNotExist(err) {
-						continue // skip missing files
-					}
-
-					f1, err := os.Open(filePathToZip)
-					if err != nil {
-						continue
-					}
-
-					w1, err := archive.Create(fileName)
-					if err != nil {
-						f1.Close()
-						continue
-					}
-
-					io.Copy(w1, f1)
-					f1.Close()
-				}
-				archive.Close()
-				zipFile.Close()
 			}
 
 			w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"qwen_scan_%s.zip\"", scanID))

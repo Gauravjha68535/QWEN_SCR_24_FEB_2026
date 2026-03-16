@@ -54,7 +54,9 @@ func ScanDependenciesWithOSV(targetDir string) ([]reporter.Finding, error) {
 
 	// Build batch queries
 	queries := make([]OSVSingleQuery, 0, len(deps))
-	for _, dep := range deps {
+	var queryIndices []int
+
+	for idx, dep := range deps {
 		ecosystem := dep.Ecosystem
 		if ecosystem == "" {
 			continue
@@ -66,6 +68,7 @@ func ScanDependenciesWithOSV(targetDir string) ([]reporter.Finding, error) {
 			},
 			Version: dep.Version,
 		})
+		queryIndices = append(queryIndices, idx)
 	}
 
 	if len(queries) == 0 {
@@ -113,11 +116,12 @@ func ScanDependenciesWithOSV(targetDir string) ([]reporter.Finding, error) {
 		resp.Body.Close()
 
 		for j, result := range batchResp.Results {
-			depIdx := i + j
-			if depIdx >= len(deps) {
+			queryIdx := i + j
+			if queryIdx >= len(queryIndices) {
 				break
 			}
-			dep := deps[depIdx]
+			originalIdx := queryIndices[queryIdx]
+			dep := deps[originalIdx]
 
 			for _, vuln := range result.Vulns {
 				severity := mapOSVSeverity(vuln.Severity)

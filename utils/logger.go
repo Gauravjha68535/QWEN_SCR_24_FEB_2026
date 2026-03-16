@@ -76,9 +76,9 @@ func PrintBanner() {
 	fmt.Print(`
 ╔═══════════════════════════════════════════════════════════╗
 ║                                                           ║
-║   🔒  AI-POWERED SOURCE CODE SECURITY SCANNER  		║
+║   🔒  AI-POWERED SOURCE CODE SECURITY SCANNER  			║
 ║                                                           ║
-║   Version 2.0 | Built with Go + Ollama AI            	║
+║   Version 2.0 | Built with Go + Ollama AI  				║
 ║                                                           ║
 ╚═══════════════════════════════════════════════════════════╝
 `)

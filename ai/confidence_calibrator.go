@@ -26,7 +26,7 @@ type ConfidenceCalibrator struct {
 }
 
 // NewConfidenceCalibrator initializes a calibrator
-func NewConfidenceCalibrator(targetDir string) *ConfidenceCalibrator {
+func NewConfidenceCalibrator() *ConfidenceCalibrator {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		homeDir = "."

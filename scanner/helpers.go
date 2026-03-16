@@ -68,6 +68,37 @@ func countLines(s string) int {
 	return strings.Count(s, "\n")
 }
 
+// buildNewlineIndices builds a slice of byte offsets for each newline in the source string.
+// This allows O(log N) line number lookups for regex matches instead of O(N) string counts.
+func buildNewlineIndices(source string) []int {
+	var indices []int
+	indices = append(indices, -1) // Virtual newline at start for 1-based indexing
+	for i, i_byte := range []byte(source) {
+		if i_byte == '\n' {
+			indices = append(indices, i)
+		}
+	}
+	indices = append(indices, len(source)) // Virtual newline at end
+	return indices
+}
+
+// getLineNumber returns the 1-based line number for a given byte offset using binary search.
+func getLineNumber(indices []int, offset int) int {
+	low, high := 0, len(indices)-1
+	for low <= high {
+		mid := low + (high-low)/2
+		if indices[mid] == offset {
+			return mid // Line ends exactly at this offset
+		}
+		if indices[mid] < offset {
+			low = mid + 1
+		} else {
+			high = mid - 1
+		}
+	}
+	return low // 'low' is the index of the interval containing the offset
+}
+
 func formatLineRef(start, end int) string {
 	if start == end {
 		return fmt.Sprintf("%d", start)

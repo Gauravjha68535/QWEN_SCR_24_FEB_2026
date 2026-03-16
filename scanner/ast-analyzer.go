@@ -18,15 +18,17 @@ import (
 
 // ASTAnalyzer performs AST-based vulnerability detection
 type ASTAnalyzer struct {
-	languages map[string]*treeSitter.Language
-	parsers   map[string]*treeSitter.Parser
+	languages         map[string]*treeSitter.Language
+	parsers           map[string]*treeSitter.Parser
+	reachabilityCache map[string]bool
 }
 
 // NewASTAnalyzer creates a new AST analyzer with supported languages
 func NewASTAnalyzer() *ASTAnalyzer {
 	analyzer := &ASTAnalyzer{
-		languages: make(map[string]*treeSitter.Language),
-		parsers:   make(map[string]*treeSitter.Parser),
+		languages:         make(map[string]*treeSitter.Language),
+		parsers:           make(map[string]*treeSitter.Parser),
+		reachabilityCache: nil,
 	}
 
 	// Register supported languages
@@ -747,15 +749,36 @@ func ScanWithAST(targetDir string) ([]reporter.Finding, error) {
 	return findings, err
 }
 
-// IsFunctionReachable quickly scans the AST of an entire directory to see if a specific library or function is ever called.
-// This is used for SCA Reachability Analysis to reduce false positives for unused dependencies.
-func (aa *ASTAnalyzer) IsFunctionReachable(targetDir string, functionOrLibName string) bool {
-	reachable := false
-	functionOrLibName = strings.ToLower(functionOrLibName)
+// populateCacheFromNode recursively extracts identifiers and strings into the reachability cache
+func (aa *ASTAnalyzer) populateCacheFromNode(node *treeSitter.Node, content []byte) {
+	nodeType := node.Type()
+	if nodeType == "identifier" || nodeType == "string" || nodeType == "property_identifier" {
+		nodeText := strings.ToLower(node.Content(content))
+		if nodeText != "" {
+			aa.reachabilityCache[nodeText] = true
+		}
+	}
+	for i := 0; i < int(node.ChildCount()); i++ {
+		aa.populateCacheFromNode(node.Child(i), content)
+	}
+}
+
+// BuildReachabilityCache scans the AST of an entire directory to build a cache of identifiers.
+func (aa *ASTAnalyzer) BuildReachabilityCache(targetDir string) {
+	if aa.reachabilityCache != nil {
+		return // Cache already built
+	}
+	aa.reachabilityCache = make(map[string]bool)
 
 	filepath.Walk(targetDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil || reachable || info.IsDir() {
+		if err != nil || info.IsDir() {
 			return nil
+		}
+
+		// Skip common directories
+		base := filepath.Base(path)
+		if base == "node_modules" || base == "vendor" || base == ".git" {
+			return filepath.SkipDir
 		}
 
 		lang := getLanguageFromPath(path)
@@ -775,36 +798,22 @@ func (aa *ASTAnalyzer) IsFunctionReachable(targetDir string, functionOrLibName s
 		}
 		defer tree.Close()
 
-		// Search the tree for the target string
-		if aa.searchNodeForText(tree.RootNode(), content, functionOrLibName) {
-			reachable = true
-			return filepath.SkipDir // Stop walking once found
-		}
-
+		aa.populateCacheFromNode(tree.RootNode(), content)
 		return nil
 	})
-
-	return reachable
 }
 
-// searchNodeForText recursively searches AST nodes for specific text content
-func (aa *ASTAnalyzer) searchNodeForText(node *treeSitter.Node, content []byte, target string) bool {
-	nodeText := strings.ToLower(node.Content(content))
+// IsFunctionReachable quickly checks the AST cache to see if a specific library or function is ever called.
+// This is used for SCA Reachability Analysis to reduce false positives for unused dependencies.
+func (aa *ASTAnalyzer) IsFunctionReachable(targetDir string, functionOrLibName string) bool {
+	aa.BuildReachabilityCache(targetDir)
 
-	// Fast path: if the target is entirely missing from this node's raw text, skip children
-	if !strings.Contains(nodeText, target) {
-		return false
-	}
+	functionOrLibName = strings.ToLower(functionOrLibName)
 
-	// If it's a specific identifier or string that matches exactly or closely
-	if node.Type() == "identifier" || node.Type() == "string" || node.Type() == "property_identifier" {
-		if strings.Contains(nodeText, target) {
-			return true
-		}
-	}
-
-	for i := 0; i < int(node.ChildCount()); i++ {
-		if aa.searchNodeForText(node.Child(i), content, target) {
+	// Since we cached exact exact instances of identifiers, we iterate over the map keys
+	// O(K) where K is unique identifiers typically finishes in microseconds.
+	for cachedID := range aa.reachabilityCache {
+		if strings.Contains(cachedID, functionOrLibName) {
 			return true
 		}
 	}

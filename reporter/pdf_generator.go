@@ -123,41 +123,99 @@ func GeneratePDF(filename string, findings []Finding, summary ReportSummary, ris
 	drawHeader()
 	pdf.SetFont("Helvetica", "", 6.5)
 
-	for idx, f := range reachable {
-		if idx%2 == 0 {
-			pdf.SetFillColor(248, 250, 252)
-		} else {
-			pdf.SetFillColor(255, 255, 255)
+	drawRow := func(idx int, f Finding, isContinuation bool, title string) {
+		x, y := pdf.GetXY()
+
+		descTxt := truncateString(f.Description, 200)
+		issueTxt := truncateString(f.IssueName, 60)
+		fileTxt := truncateString(f.FilePath, 60)
+
+		descLines := pdf.SplitText(descTxt, fColWidths[7]-2)
+		issueLines := pdf.SplitText(issueTxt, fColWidths[1]-2)
+		fileLines := pdf.SplitText(fileTxt, fColWidths[2]-2)
+
+		maxLines := len(descLines)
+		if len(issueLines) > maxLines {
+			maxLines = len(issueLines)
 		}
-		pdf.SetTextColor(30, 30, 60)
-
-		pdf.CellFormat(fColWidths[0], 7, fmt.Sprintf("%d", f.SrNo), "1", 0, "C", true, 0, "")
-		pdf.CellFormat(fColWidths[1], 7, truncateString(f.IssueName, 30), "1", 0, "L", true, 0, "")
-		pdf.CellFormat(fColWidths[2], 7, truncateString(f.FilePath, 32), "1", 0, "L", true, 0, "")
-
-		sevColor := getSeverityColor(f.Severity)
-		pdf.SetFillColor(sevColor[0], sevColor[1], sevColor[2])
-		pdf.SetTextColor(255, 255, 255)
-		pdf.CellFormat(fColWidths[3], 7, strings.ToUpper(f.Severity), "1", 0, "C", true, 0, "")
-
-		if idx%2 == 0 {
-			pdf.SetFillColor(248, 250, 252)
-		} else {
-			pdf.SetFillColor(255, 255, 255)
+		if len(fileLines) > maxLines {
+			maxLines = len(fileLines)
 		}
-		pdf.SetTextColor(30, 30, 60)
-		pdf.CellFormat(fColWidths[4], 7, f.LineNumber, "1", 0, "C", true, 0, "")
-		pdf.CellFormat(fColWidths[5], 7, extractCWEID(f.CWE), "1", 0, "C", true, 0, "")
-		pdf.CellFormat(fColWidths[6], 7, truncateSource(f.Source), "1", 0, "C", true, 0, "")
-		pdf.CellFormat(fColWidths[7], 7, truncateString(f.Description, 120), "1", 0, "L", true, 0, "")
-		pdf.Ln(-1)
+		if maxLines < 1 {
+			maxLines = 1
+		}
+		if maxLines > 6 {
+			maxLines = 6
+		}
 
-		if pdf.GetY() > 185 && idx < len(reachable)-1 {
+		h := float64(maxLines)*3.5 + 2.0
+		if h < 7.0 {
+			h = 7.0
+		}
+
+		if y+h > 185 {
 			pdf.AddPage()
-			addPageHeader(pdf, "Confirmed Findings (continued)")
+			addPageHeader(pdf, title)
 			drawHeader()
 			pdf.SetFont("Helvetica", "", 6.5)
+			x, y = pdf.GetXY()
 		}
+
+		if idx%2 == 0 {
+			pdf.SetFillColor(248, 250, 252)
+		} else {
+			pdf.SetFillColor(255, 255, 255)
+		}
+		pdf.SetDrawColor(200, 200, 200)
+		pdf.SetTextColor(30, 30, 60)
+
+		cx := x
+
+		// Helper to draw cell
+		renderCell := func(w float64, textLines []string, align string, isSev bool, sev string) {
+			pdf.Rect(cx, y, w, h, "DF")
+			if isSev {
+				sColor := getSeverityColor(sev)
+				pdf.SetFillColor(sColor[0], sColor[1], sColor[2])
+				pdf.SetTextColor(255, 255, 255)
+				pdf.Rect(cx+1, y+1, w-2, h-2, "F")
+			}
+			pdf.SetXY(cx+1, y+1)
+			if align == "C" {
+				pdf.SetXY(cx, y+(h-3.5)/2)
+				pdf.CellFormat(w, 3.5, textLines[0], "", 0, "C", false, 0, "")
+			} else {
+				lim := len(textLines)
+				if lim > maxLines {
+					lim = maxLines
+				}
+				pdf.MultiCell(w-2, 3.5, strings.Join(textLines[:lim], "\n"), "", align, false)
+			}
+			if isSev {
+				if idx%2 == 0 {
+					pdf.SetFillColor(248, 250, 252)
+				} else {
+					pdf.SetFillColor(255, 255, 255)
+				}
+				pdf.SetTextColor(30, 30, 60)
+			}
+			cx += w
+		}
+
+		renderCell(fColWidths[0], []string{fmt.Sprintf("%d", f.SrNo)}, "C", false, "")
+		renderCell(fColWidths[1], issueLines, "L", false, "")
+		renderCell(fColWidths[2], fileLines, "L", false, "")
+		renderCell(fColWidths[3], []string{strings.ToUpper(f.Severity)}, "C", true, f.Severity)
+		renderCell(fColWidths[4], []string{f.LineNumber}, "C", false, "")
+		renderCell(fColWidths[5], []string{extractCWEID(f.CWE)}, "C", false, "")
+		renderCell(fColWidths[6], []string{truncateSource(f.Source)}, "C", false, "")
+		renderCell(fColWidths[7], descLines, "L", false, "")
+
+		pdf.SetXY(x, y+h)
+	}
+
+	for idx, f := range reachable {
+		drawRow(idx, f, true, "Confirmed Findings (continued)")
 	}
 
 	// 2. False Positives
@@ -172,39 +230,7 @@ func GeneratePDF(filename string, findings []Finding, summary ReportSummary, ris
 		pdf.SetFont("Helvetica", "", 6.5)
 
 		for idx, f := range falsePositives {
-			if idx%2 == 0 {
-				pdf.SetFillColor(248, 250, 252)
-			} else {
-				pdf.SetFillColor(255, 255, 255)
-			}
-			pdf.SetTextColor(30, 30, 60)
-			pdf.CellFormat(fColWidths[0], 7, fmt.Sprintf("%d", f.SrNo), "1", 0, "C", true, 0, "")
-			pdf.CellFormat(fColWidths[1], 7, truncateString(f.IssueName, 30), "1", 0, "L", true, 0, "")
-			pdf.CellFormat(fColWidths[2], 7, truncateString(f.FilePath, 32), "1", 0, "L", true, 0, "")
-
-			sevColor := getSeverityColor(f.Severity)
-			pdf.SetFillColor(sevColor[0], sevColor[1], sevColor[2])
-			pdf.SetTextColor(255, 255, 255)
-			pdf.CellFormat(fColWidths[3], 7, strings.ToUpper(f.Severity), "1", 0, "C", true, 0, "")
-
-			if idx%2 == 0 {
-				pdf.SetFillColor(248, 250, 252)
-			} else {
-				pdf.SetFillColor(255, 255, 255)
-			}
-			pdf.SetTextColor(30, 30, 60)
-			pdf.CellFormat(fColWidths[4], 7, f.LineNumber, "1", 0, "C", true, 0, "")
-			pdf.CellFormat(fColWidths[5], 7, extractCWEID(f.CWE), "1", 0, "C", true, 0, "")
-			pdf.CellFormat(fColWidths[6], 7, truncateSource(f.Source), "1", 0, "C", true, 0, "")
-			pdf.CellFormat(fColWidths[7], 7, truncateString(f.Description, 120), "1", 0, "L", true, 0, "")
-			pdf.Ln(-1)
-
-			if pdf.GetY() > 185 && idx < len(falsePositives)-1 {
-				pdf.AddPage()
-				addPageHeader(pdf, "Manual Review (continued)")
-				drawHeader()
-				pdf.SetFont("Helvetica", "", 6.5)
-			}
+			drawRow(idx, f, true, "Manual Review (continued)")
 		}
 	}
 

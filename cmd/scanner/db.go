@@ -70,6 +70,7 @@ func InitDB() error {
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			scan_id TEXT NOT NULL,
 			data TEXT NOT NULL,
+			phase TEXT NOT NULL DEFAULT 'final',
 			FOREIGN KEY (scan_id) REFERENCES scans(id) ON DELETE CASCADE
 		);
 		CREATE INDEX IF NOT EXISTS idx_findings_scan_id ON findings(scan_id);
@@ -82,6 +83,12 @@ func InitDB() error {
 
 		// Enable foreign keys
 		db.Exec("PRAGMA foreign_keys = ON")
+
+		// Add phase column if it doesn't exist (migration for existing DBs)
+		db.Exec("ALTER TABLE findings ADD COLUMN phase TEXT NOT NULL DEFAULT 'final'")
+
+		// Create phase index (safe to run after column is guaranteed to exist)
+		db.Exec("CREATE INDEX IF NOT EXISTS idx_findings_phase ON findings(scan_id, phase)")
 
 		utils.LogInfo("📦 Database initialized at " + dbPath)
 	})
@@ -117,20 +124,25 @@ func UpdateScanCounts(id string, total, critical, high int) error {
 	return err
 }
 
-// SaveFindings stores findings JSON blobs for a scan (replaces any existing findings)
+// SaveFindings stores findings JSON blobs for a scan (replaces any existing 'final' phase findings)
 func SaveFindings(scanID string, findings []reporter.Finding) error {
+	return SaveFindingsWithPhase(scanID, findings, "final")
+}
+
+// SaveFindingsWithPhase stores findings with a specific phase tag ("static", "ai", or "final")
+func SaveFindingsWithPhase(scanID string, findings []reporter.Finding, phase string) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
 	}
 
-	// Clear any existing findings for this scan to prevent duplicates
-	if _, err := tx.Exec("DELETE FROM findings WHERE scan_id = ?", scanID); err != nil {
+	// Clear any existing findings for this scan+phase
+	if _, err := tx.Exec("DELETE FROM findings WHERE scan_id = ? AND phase = ?", scanID, phase); err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	stmt, err := tx.Prepare("INSERT INTO findings (scan_id, data) VALUES (?, ?)")
+	stmt, err := tx.Prepare("INSERT INTO findings (scan_id, data, phase) VALUES (?, ?, ?)")
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -142,7 +154,7 @@ func SaveFindings(scanID string, findings []reporter.Finding) error {
 		if err != nil {
 			continue
 		}
-		if _, err := stmt.Exec(scanID, string(data)); err != nil {
+		if _, err := stmt.Exec(scanID, string(data), phase); err != nil {
 			utils.LogError(fmt.Sprintf("Failed to insert finding for scan %s", scanID), err)
 			tx.Rollback()
 			return err
@@ -182,8 +194,53 @@ func GetAllScans() ([]ScanRecord, error) {
 	return scans, nil
 }
 
-// GetFindings retrieves all findings for a scan
+// GetFindingsForScan retrieves all 'final' phase findings for a scan (backward compatible)
 func GetFindingsForScan(scanID string) ([]reporter.Finding, error) {
+	return GetFindingsByPhase(scanID, "final")
+}
+
+// GetFindingsByPhase retrieves findings for a specific phase
+func GetFindingsByPhase(scanID string, phase string) ([]reporter.Finding, error) {
+	var rows *sql.Rows
+	var err error
+
+	if phase == "" || phase == "final" {
+		// Default: return final findings, or all findings if no final phase exists
+		rows, err = db.Query("SELECT data FROM findings WHERE scan_id = ? AND phase = 'final'", scanID)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		rows, err = db.Query("SELECT data FROM findings WHERE scan_id = ? AND phase = ?", scanID, phase)
+		if err != nil {
+			return nil, err
+		}
+	}
+	defer rows.Close()
+
+	var findings []reporter.Finding
+	for rows.Next() {
+		var data string
+		if err := rows.Scan(&data); err != nil {
+			continue
+		}
+		var f reporter.Finding
+		if err := json.Unmarshal([]byte(data), &f); err != nil {
+			continue
+		}
+		findings = append(findings, f)
+	}
+
+	// Fallback: if phase=final returned nothing, return all findings
+	if (phase == "" || phase == "final") && len(findings) == 0 {
+		return getAllFindingsForScan(scanID)
+	}
+
+	return findings, nil
+}
+
+// getAllFindingsForScan retrieves ALL findings regardless of phase
+func getAllFindingsForScan(scanID string) ([]reporter.Finding, error) {
 	rows, err := db.Query("SELECT data FROM findings WHERE scan_id = ?", scanID)
 	if err != nil {
 		return nil, err
@@ -220,4 +277,18 @@ func DeleteScan(id string) error {
 		return err
 	}
 	return tx.Commit()
+}
+
+// CloseDB closes the database connection cleanly
+func CloseDB() error {
+	if db != nil {
+		err := db.Close()
+		if err == nil {
+			utils.LogInfo("Database connection closed cleanly.")
+		} else {
+			utils.LogError("Error closing database connection", err)
+		}
+		return err
+	}
+	return nil
 }

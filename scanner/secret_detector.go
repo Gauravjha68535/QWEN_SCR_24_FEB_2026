@@ -100,11 +100,12 @@ func (sd *SecretDetector) ScanSecrets(targetDir string) ([]reporter.Finding, err
 		}
 
 		source := string(content)
+		newlineIndices := buildNewlineIndices(source)
 
 		for _, pattern := range sd.patterns {
 			matches := pattern.FindAllStringIndex(source, -1)
 			for _, match := range matches {
-				startLine := countLines(source[:match[0]]) + 1
+				startLine := getLineNumber(newlineIndices, match[0])
 				matchedText := source[match[0]:match[1]]
 
 				// Check if this is a high-entropy string (likely a secret)

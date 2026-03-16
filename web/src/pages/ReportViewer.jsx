@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { Download, Filter, ChevronDown, ChevronUp, FileText, Code, ArrowLeft, AlertTriangle, Shield, Sparkles } from 'lucide-react'
+import { Download, Filter, ChevronDown, ChevronUp, FileText, Code, ArrowLeft, AlertTriangle, Shield, Sparkles, Layers } from 'lucide-react'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js'
 import { Doughnut, Bar } from 'react-chartjs-2'
 import SeverityBadge from '../components/SeverityBadge'
@@ -14,18 +14,29 @@ export default function ReportViewer() {
     const [filter, setFilter] = useState('all')
     const [expandedRow, setExpandedRow] = useState(null)
     const [loading, setLoading] = useState(true)
+    const [reportPhase, setReportPhase] = useState('final') // 'final', 'static', 'ai'
+    const [isEnsemble, setIsEnsemble] = useState(false)
 
     useEffect(() => {
         fetchReport()
     }, [id])
 
-    const fetchReport = async () => {
+    const fetchReport = async (phase = 'final') => {
         try {
+            const phaseParam = phase && phase !== 'final' ? `?phase=${phase}` : ''
             const [scanRes, findingsRes] = await Promise.all([
                 fetch(`/api/scan/${id}`),
-                fetch(`/api/scan/${id}/findings`),
+                fetch(`/api/scan/${id}/findings${phaseParam}`),
             ])
-            if (scanRes.ok) setScanInfo(await scanRes.json())
+            if (scanRes.ok) {
+                const scanData = await scanRes.json()
+                setScanInfo(scanData)
+                // Check if this is an ensemble scan
+                try {
+                    const cfg = JSON.parse(scanData.config || '{}')
+                    setIsEnsemble(!!cfg.enableEnsemble)
+                } catch (e) { /* ignore */ }
+            }
             if (findingsRes.ok) setFindings(await findingsRes.json() || [])
         } catch (e) {
             console.error('Failed to fetch report:', e)
@@ -106,6 +117,37 @@ export default function ReportViewer() {
                     </a>
                 </div>
             </div>
+
+            {/* Ensemble Phase Tabs */}
+            {isEnsemble && (
+                <div style={{ marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', gap: '8px', padding: '4px', background: 'var(--bg-tertiary)', borderRadius: '10px', width: 'fit-content' }}>
+                        {[
+                            { key: 'final', label: '⚖️ Final Report (Judge)', color: '#f59e0b' },
+                            { key: 'static', label: '📊 Static Report', color: '#6366f1' },
+                            { key: 'ai', label: '🤖 AI Report', color: '#22c55e' },
+                        ].map(tab => (
+                            <button
+                                key={tab.key}
+                                onClick={() => { setReportPhase(tab.key); setLoading(true); fetchReport(tab.key) }}
+                                style={{
+                                    padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                                    fontSize: '0.78rem', fontWeight: 600, transition: 'all 0.2s',
+                                    background: reportPhase === tab.key ? tab.color : 'transparent',
+                                    color: reportPhase === tab.key ? '#fff' : 'var(--text-muted)',
+                                }}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
+                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '6px' }}>
+                        {reportPhase === 'final' && 'Showing the merged master report after AI Judge deduplication.'}
+                        {reportPhase === 'static' && 'Showing raw findings from Phase 1: Static Expert (regex, AST, taint, deps, etc).'}
+                        {reportPhase === 'ai' && 'Showing raw findings from Phase 2: AI Expert (LLM-based discovery).'}
+                    </p>
+                </div>
+            )}
 
             {/* Stats */}
             <div className="stats-grid">

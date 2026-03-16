@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"QWEN_SCR_24_FEB_2026/reporter"
@@ -14,6 +15,7 @@ import (
 
 // ThreatIntelScanner performs threat intelligence integration
 type ThreatIntelScanner struct {
+	mu          sync.RWMutex
 	cveCache    map[string]CVEInfo
 	lastUpdate  time.Time
 	cacheFile   string
@@ -64,7 +66,11 @@ func (tis *ThreatIntelScanner) ScanWithThreatIntel(findings []reporter.Finding) 
 	tis.loadCisaKEV()
 
 	// Check for CVE updates
-	if time.Since(tis.lastUpdate) > 24*time.Hour {
+	tis.mu.RLock()
+	lastUp := tis.lastUpdate
+	tis.mu.RUnlock()
+
+	if time.Since(lastUp) > 24*time.Hour {
 		utils.LogInfo("Updating CVE database...")
 		tis.updateCVECache()
 	}
@@ -91,7 +97,10 @@ func (tis *ThreatIntelScanner) ScanWithThreatIntel(findings []reporter.Finding) 
 
 				// Check CISA KEV and EPSS
 				epss, _ := tis.getEPSSScore(cveID)
+
+				tis.mu.RLock()
 				inKEV := tis.kevCache[strings.ToUpper(cveID)]
+				tis.mu.RUnlock()
 
 				if inKEV || epss > 0.05 {
 					enhancedFinding.IssueName = "[ACTIVELY EXPLOITED] " + enhancedFinding.IssueName
@@ -171,6 +180,8 @@ func (tis *ThreatIntelScanner) loadCVECache() {
 		return
 	}
 
+	tis.mu.Lock()
+	defer tis.mu.Unlock()
 	if err := json.Unmarshal(data, &tis.cveCache); err != nil {
 		utils.LogWarn(fmt.Sprintf("Failed to parse CVE cache: %v", err))
 	}
@@ -178,10 +189,8 @@ func (tis *ThreatIntelScanner) loadCVECache() {
 
 func (tis *ThreatIntelScanner) updateCVECache() {
 	// Fetch recent CVEs from NVD API
-	// https://nvd.nist.gov/vuln/data-feeds
-
 	client := &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: 20 * time.Second,
 	}
 
 	req, err := http.NewRequest("GET", "https://services.nvd.nist.gov/rest/json/cves/2.0", nil)
@@ -197,21 +206,74 @@ func (tis *ThreatIntelScanner) updateCVECache() {
 	}
 	defer resp.Body.Close()
 
-	// Parse and update cache
-	// Implementation depends on NVD API response format
-	// TODO: Add proper JSON unmarshaling for NVD 2.0 API
+	var nvdResp struct {
+		Vulnerabilities []struct {
+			CVE struct {
+				ID           string `json:"id"`
+				Descriptions []struct {
+					Value string `json:"value"`
+				} `json:"descriptions"`
+				Metrics struct {
+					CvssMetricV31 []struct {
+						CvssData struct {
+							BaseScore    float64 `json:"baseScore"`
+							BaseSeverity string  `json:"baseSeverity"`
+						} `json:"cvssData"`
+					} `json:"cvssMetricV31"`
+				} `json:"metrics"`
+				References []struct {
+					URL string `json:"url"`
+				} `json:"references"`
+			} `json:"cve"`
+		} `json:"vulnerabilities"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&nvdResp); err != nil {
+		utils.LogWarn(fmt.Sprintf("Failed to decode NVD API response: %v", err))
+		return
+	}
+
+	tis.mu.Lock()
+	defer tis.mu.Unlock()
+
+	for _, v := range nvdResp.Vulnerabilities {
+		cve := v.CVE
+		info := CVEInfo{ID: cve.ID}
+
+		if len(cve.Descriptions) > 0 {
+			info.Summary = cve.Descriptions[0].Value
+		}
+
+		if len(cve.Metrics.CvssMetricV31) > 0 {
+			info.CVSSScore = cve.Metrics.CvssMetricV31[0].CvssData.BaseScore
+			info.Severity = cve.Metrics.CvssMetricV31[0].CvssData.BaseSeverity
+		}
+
+		for _, ref := range cve.References {
+			info.References = append(info.References, ref.URL)
+		}
+
+		tis.cveCache[cve.ID] = info
+	}
 
 	tis.lastUpdate = time.Now()
+
+	// Save back to file
+	if data, err := json.MarshalIndent(tis.cveCache, "", "  "); err == nil {
+		_ = os.WriteFile(tis.cacheFile, data, 0644)
+	}
 }
 
 func (tis *ThreatIntelScanner) getCVEInfo(cveID string) CVEInfo {
-	if info, exists := tis.cveCache[cveID]; exists {
+	tis.mu.RLock()
+	info, exists := tis.cveCache[cveID]
+	tis.mu.RUnlock()
+
+	if exists {
 		return info
 	}
 
-	// Fetch from NVD API if not in cache
-	// Implementation omitted for brevity
-
+	// Fetch from NVD API if not in cache (simplified for missing ones)
 	return CVEInfo{}
 }
 
@@ -245,9 +307,11 @@ func (tis *ThreatIntelScanner) loadCisaKEV() {
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&kevData); err == nil {
+		tis.mu.Lock()
 		for _, vuln := range kevData.Vulnerabilities {
 			tis.kevCache[strings.ToUpper(vuln.CveID)] = true
 		}
+		tis.mu.Unlock()
 	}
 }
 

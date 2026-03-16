@@ -96,7 +96,9 @@ Provide a brief "Reason" for the merge.
 	defer resp.Body.Close()
 
 	var apiResp OllamaAPIResponse
-	json.NewDecoder(resp.Body).Decode(&apiResp)
+	if err := json.NewDecoder(resp.Body).Decode(&apiResp); err != nil {
+		return nil, fmt.Errorf("failed to decode LLM response: %w", err)
+	}
 	outputStr := strings.TrimSpace(apiResp.Response)
 
 	// Extract JSON block

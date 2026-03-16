@@ -101,12 +101,22 @@ func RunOSVCli(targetDir string) ([]reporter.Finding, error) {
 	var stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
+	cmd.Dir = targetDir
+
+	analyzer := NewASTAnalyzer()
 
 	// osv-scanner returns exit code 1 if vulnerabilities are found, so err is expected
 	err := cmd.Run()
 
+	// Extract just the JSON part, as osv-scanner might print warnings before it
+	output := stdout.String()
+	startIndex := strings.Index(output, "{")
+	if startIndex != -1 {
+		output = output[startIndex:]
+	}
+
 	var result OSVScannerResult
-	if parseErr := json.Unmarshal(stdout.Bytes(), &result); parseErr != nil {
+	if parseErr := json.Unmarshal([]byte(output), &result); parseErr != nil {
 		utils.LogWarn(fmt.Sprintf("Failed to parse OSV-Scanner JSON output: %v", parseErr))
 		if err != nil {
 			utils.LogWarn(fmt.Sprintf("osv-scanner stderr: %s", stderr.String()))
@@ -156,7 +166,6 @@ func RunOSVCli(targetDir string) ([]reporter.Finding, error) {
 					vuln.ID, pkg.Package.Name, pkg.Package.Version, summary)
 
 				// Analyze Reachability via AST
-				analyzer := NewASTAnalyzer()
 				isReachable := analyzer.IsFunctionReachable(targetDir, pkg.Package.Name)
 
 				issueName := fmt.Sprintf("SCA: %s in %s", vuln.ID, pkg.Package.Name)

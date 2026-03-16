@@ -22,17 +22,21 @@ import (
 )
 
 // WebScanConfig mirrors the frontend config toggles
-// Simplified to 2 modes:
+// 3 modes:
 // - EnableDeepScan: deps + semgrep + supply chain + compliance + threat intel
 // - EnableAI: AI validation + AI discovery + consolidated merge
+// - EnableEnsemble: Full static scan (Report A) + Full AI scan (Report B) + Judge LLM merge
 // Secret detection, pattern scan, AST, and taint analysis run ALWAYS.
 type WebScanConfig struct {
 	EnableDeepScan          bool   `json:"enableDeepScan"`
 	EnableAI                bool   `json:"enableAI"`
+	EnableEnsemble          bool   `json:"enableEnsemble"`
 	AIModel                 string `json:"aiModel"`
 	OllamaHost              string `json:"ollamaHost"`
 	ConsolidationModel      string `json:"consolidationModel"`
 	ConsolidationOllamaHost string `json:"consolidationOllamaHost"`
+	JudgeModel              string `json:"judgeModel"`
+	JudgeOllamaHost         string `json:"judgeOllamaHost"`
 	EnableMLFPReduction     bool   `json:"enableMLFPReduction"`
 	CustomRulesDir          string `json:"customRulesDir"`
 }
@@ -100,6 +104,12 @@ func StartScanFromGit(repoURL string, configJSON string) (string, error) {
 
 // runScan is the core scan orchestration (runs in a goroutine)
 func runScan(scanID string, targetDir string, cfg WebScanConfig) {
+	// Route to Ensemble pipeline if enabled
+	if cfg.EnableEnsemble {
+		runEnsembleScan(scanID, targetDir, cfg)
+		return
+	}
+
 	startTime := time.Now()
 
 	wsHub.BroadcastLog(scanID, "🚀 Starting security scan...", "phase")
@@ -313,7 +323,7 @@ func runScan(scanID string, targetDir string, cfg WebScanConfig) {
 		uniqueForValidation := webDeduplicateFindings(combinedForValidation)
 
 		wsHub.BroadcastLog(scanID, fmt.Sprintf("Validating %d unique findings with AI...", len(uniqueForValidation)), "phase")
-		validatedFindings := ai.ValidateFindingsBatch(modelName, uniqueForValidation, fileContents, 4, targetDir)
+		validatedFindings := ai.ValidateFindingsBatch(modelName, uniqueForValidation, fileContents, 4)
 
 		// Split back into static and ai findings (merger expects them separate for now)
 		var validatedStatic []reporter.Finding
@@ -366,19 +376,19 @@ func runScan(scanID string, targetDir string, cfg WebScanConfig) {
 
 	if cfg.EnableAI {
 		wsHub.BroadcastLog(scanID, "Applying confidence calibration...", "info")
-		calibrator := ai.NewConfidenceCalibrator(targetDir)
+		calibrator := ai.NewConfidenceCalibrator()
 		allFindings = calibrator.ApplyCalibrationToFindings(allFindings)
 		calibrator.SaveStats()
 	}
 
 	// ── Finalize ──────────────────────────────────────────────
 
-	// Deduplication
+	// Deduplicate
 	wsHub.BroadcastProgress(scanID, "Deduplication", 88)
 	wsHub.BroadcastLog(scanID, "Deduplicating findings...", "phase")
 	allFindings = webDeduplicateFindings(allFindings)
 
-	// Sort by severity
+	// Sort by severity (Critical -> Info)
 	severityOrder := map[string]int{
 		"critical": 5, "high": 4, "medium": 3, "low": 2, "info": 1,
 	}
@@ -547,48 +557,55 @@ func webDeduplicateFindings(findings []reporter.Finding) []reporter.Finding {
 
 // webPopulateCodeSnippets reads source files and extracts ~5 lines around each vulnerable line
 func webPopulateCodeSnippets(findings []reporter.Finding, targetDir string) {
-	fileCache := make(map[string][]string)
+	// Group findings by file to limit memory to one file at a time
+	indicesByFile := make(map[string][]int)
 
 	for i := range findings {
-		filePath := findings[i].FilePath
-		// Try absolute path first, then relative to targetDir
-		if !filepath.IsAbs(filePath) {
-			filePath = filepath.Join(targetDir, filePath)
-		}
-
 		var lineNum int
 		fmt.Sscanf(findings[i].LineNumber, "%d", &lineNum)
 		if lineNum <= 0 {
 			continue
 		}
 
-		if _, ok := fileCache[filePath]; !ok {
-			content, err := os.ReadFile(filePath)
-			if err != nil {
-				continue
-			}
-			fileCache[filePath] = strings.Split(utils.NormalizeNewlines(string(content)), "\n")
+		filePath := findings[i].FilePath
+		// Try absolute path first, then relative to targetDir
+		if !filepath.IsAbs(filePath) {
+			filePath = filepath.Join(targetDir, filePath)
 		}
+		indicesByFile[filePath] = append(indicesByFile[filePath], i)
+	}
 
-		lines := fileCache[filePath]
-		start := lineNum - 3
-		if start < 0 {
-			start = 0
+	for filePath, indices := range indicesByFile {
+		content, err := os.ReadFile(filePath)
+		if err != nil {
+			continue
 		}
-		end := lineNum + 2
-		if end > len(lines) {
-			end = len(lines)
-		}
+		lines := strings.Split(utils.NormalizeNewlines(string(content)), "\n")
 
-		var snippet strings.Builder
-		for j := start; j < end; j++ {
-			marker := "  "
-			if j+1 == lineNum {
-				marker = "→ "
+		for _, idx := range indices {
+			var lineNum int
+			fmt.Sscanf(findings[idx].LineNumber, "%d", &lineNum)
+
+			start := lineNum - 3
+			if start < 0 {
+				start = 0
 			}
-			snippet.WriteString(fmt.Sprintf("%s%4d | %s\n", marker, j+1, lines[j]))
+			end := lineNum + 2
+			if end > len(lines) {
+				end = len(lines)
+			}
+
+			var snippet strings.Builder
+			for j := start; j < end; j++ {
+				marker := "  "
+				if j+1 == lineNum {
+					marker = "→ "
+				}
+				snippet.WriteString(fmt.Sprintf("%s%4d | %s\n", marker, j+1, lines[j]))
+			}
+			findings[idx].CodeSnippet = snippet.String()
 		}
-		findings[i].CodeSnippet = snippet.String()
+		// Memory for `content` and `lines` will be garbage collected after this loop iteration
 	}
 }
 
@@ -635,4 +652,327 @@ func ExtractUploadedZip(zipPath string) (string, error) {
 	}
 
 	return destDir, nil
+}
+
+// ════════════════════════════════════════════════════════════
+//  ENSEMBLE AUDIT MODE — 3-Phase Pipeline
+// ════════════════════════════════════════════════════════════
+
+// runEnsembleScan runs the full 3-phase Ensemble Audit:
+//
+//	Phase 1 (0-40%):  All static scanners → Report A
+//	Phase 2 (40-75%): Independent AI discovery → Report B
+//	Phase 3 (75-95%): Judge LLM merges A+B → Final Master Report
+func runEnsembleScan(scanID string, targetDir string, cfg WebScanConfig) {
+	startTime := time.Now()
+
+	wsHub.BroadcastLog(scanID, "🔬 Starting Ensemble Audit (3-Phase Pipeline)...", "phase")
+	wsHub.BroadcastProgress(scanID, "Initializing Ensemble", 1)
+
+	if cfg.OllamaHost != "" {
+		ai.SetOllamaHost(cfg.OllamaHost)
+		wsHub.BroadcastLog(scanID, fmt.Sprintf("Set Ollama Host to %s", cfg.OllamaHost), "info")
+	}
+
+	// Load rules
+	rulesDir := "rules"
+	if cfg.CustomRulesDir != "" {
+		rulesDir = cfg.CustomRulesDir
+	}
+	rules, err := config.LoadRules(rulesDir)
+	if err != nil {
+		wsHub.BroadcastLog(scanID, fmt.Sprintf("Warning: Failed to load rules: %v", err), "warning")
+	}
+	wsHub.BroadcastLog(scanID, fmt.Sprintf("Loaded %d rules from %s", len(rules), rulesDir), "info")
+
+	// Walk directory
+	wsHub.BroadcastProgress(scanID, "Scanning Files", 3)
+	wsHub.BroadcastLog(scanID, "Walking target directory...", "info")
+	result, err := scanner.WalkDirectory(targetDir)
+	if err != nil {
+		wsHub.BroadcastError(scanID, fmt.Sprintf("Failed to walk directory: %v", err))
+		UpdateScanStatus(scanID, "failed")
+		return
+	}
+	totalFiles := 0
+	for _, files := range result.FilePaths {
+		totalFiles += len(files)
+	}
+	wsHub.BroadcastLog(scanID, fmt.Sprintf("Found %d files across %d languages", totalFiles, len(result.FilePaths)), "success")
+
+	// ════════════════════════════════════════════════════════
+	//  PHASE 1: STATIC EXPERT (0-40%)
+	// ════════════════════════════════════════════════════════
+	wsHub.BroadcastLog(scanID, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "phase")
+	wsHub.BroadcastLog(scanID, "📊 PHASE 1: Static Expert Scan", "phase")
+	wsHub.BroadcastLog(scanID, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "phase")
+
+	var staticFindings []reporter.Finding
+
+	// Pattern Scan
+	wsHub.BroadcastProgress(scanID, "Phase 1: Pattern Matching", 5)
+	wsHub.BroadcastLog(scanID, "Running pattern engine...", "info")
+	patternFindings := scanner.RunPatternScan(result, rules, rulesDir)
+	for i := range patternFindings {
+		patternFindings[i].Confidence = 0.70
+	}
+	staticFindings = append(staticFindings, patternFindings...)
+	wsHub.BroadcastLog(scanID, fmt.Sprintf("Pattern engine found %d issues", len(patternFindings)), "info")
+
+	// AST Analysis
+	wsHub.BroadcastProgress(scanID, "Phase 1: AST Analysis", 8)
+	wsHub.BroadcastLog(scanID, "Running AST analyzer...", "info")
+	astAnalyzer := scanner.NewASTAnalyzer()
+	for _, files := range result.FilePaths {
+		for _, file := range files {
+			findings, err := astAnalyzer.AnalyzeFile(file)
+			if err == nil {
+				staticFindings = append(staticFindings, findings...)
+			}
+		}
+	}
+
+	// Taint Analysis
+	wsHub.BroadcastProgress(scanID, "Phase 1: Taint Analysis", 12)
+	wsHub.BroadcastLog(scanID, "Running taint analyzer...", "info")
+	taintAnalyzer := scanner.NewTaintAnalyzer()
+	for _, files := range result.FilePaths {
+		for _, file := range files {
+			findings, err := taintAnalyzer.AnalyzeTaintFlow(file)
+			if err == nil {
+				staticFindings = append(staticFindings, findings...)
+			}
+		}
+	}
+
+	// Secret Detection
+	wsHub.BroadcastProgress(scanID, "Phase 1: Secret Detection", 16)
+	wsHub.BroadcastLog(scanID, "Scanning for hardcoded secrets...", "info")
+	secretDetector := scanner.NewSecretDetector()
+	secretFindings, err := secretDetector.ScanSecrets(targetDir)
+	if err == nil {
+		staticFindings = append(staticFindings, secretFindings...)
+	}
+
+	// Dependency Scan
+	wsHub.BroadcastProgress(scanID, "Phase 1: Dependency Scan", 20)
+	wsHub.BroadcastLog(scanID, "Checking vulnerable dependencies...", "info")
+	depFindings, err := scanner.ScanDependencies(targetDir)
+	if err == nil {
+		staticFindings = append(staticFindings, depFindings...)
+	}
+
+	// Semgrep
+	wsHub.BroadcastProgress(scanID, "Phase 1: Semgrep Analysis", 24)
+	wsHub.BroadcastLog(scanID, "Running Semgrep analysis...", "info")
+	semgrepFindings, err := scanner.RunSemgrep(targetDir)
+	if err == nil {
+		staticFindings = append(staticFindings, semgrepFindings...)
+	}
+
+	// Supply Chain
+	wsHub.BroadcastProgress(scanID, "Phase 1: Supply Chain", 28)
+	wsHub.BroadcastLog(scanID, "Running supply chain security checks...", "info")
+	supplyChainScanner := scanner.NewSupplyChainScanner()
+	scFindings, err := supplyChainScanner.ScanSupplyChain(targetDir)
+	if err == nil {
+		staticFindings = append(staticFindings, scFindings...)
+	}
+
+	// OSV SCA
+	if scanner.CheckOSVCliInstalled() {
+		wsHub.BroadcastProgress(scanID, "Phase 1: OSV SCA Scan", 30)
+		osvFindings, osvErr := scanner.RunOSVCli(targetDir)
+		if osvErr == nil && len(osvFindings) > 0 {
+			staticFindings = append(staticFindings, osvFindings...)
+		}
+	}
+
+	// Container Scanning
+	wsHub.BroadcastProgress(scanID, "Phase 1: Container Scanning", 32)
+	wsHub.BroadcastLog(scanID, "Scanning Dockerfiles & Kubernetes manifests...", "info")
+	containerScanner := scanner.NewContainerScanner(int64(len(staticFindings) + 1000))
+	containerFindings, cErr := containerScanner.ScanContainers(targetDir)
+	if cErr == nil {
+		staticFindings = append(staticFindings, containerFindings...)
+	}
+
+	// Threat Intel Enrichment
+	wsHub.BroadcastProgress(scanID, "Phase 1: Threat Intelligence", 35)
+	wsHub.BroadcastLog(scanID, "Enriching with threat intelligence...", "info")
+	threatIntelScanner := scanner.NewThreatIntelScanner()
+	enrichedFindings, tiErr := threatIntelScanner.ScanWithThreatIntel(staticFindings)
+	if tiErr == nil {
+		staticFindings = enrichedFindings
+	}
+
+	// Reachability Analysis
+	wsHub.BroadcastProgress(scanID, "Phase 1: Reachability Analysis", 37)
+	reachAnalyzer := scanner.NewReachabilityAnalyzer()
+	if raErr := reachAnalyzer.BuildCallGraph(targetDir); raErr == nil {
+		staticFindings = reachAnalyzer.AnnotateFindings(staticFindings)
+	}
+
+	// Deduplicate Phase 1
+	staticFindings = webDeduplicateFindings(staticFindings)
+
+	wsHub.BroadcastProgress(scanID, "Phase 1: Complete", 40)
+	wsHub.BroadcastLog(scanID, fmt.Sprintf("✅ Phase 1 Complete: Static Expert found %d findings", len(staticFindings)), "success")
+
+	// Save Report A to DB
+	wsHub.BroadcastLog(scanID, "Saving Static Report (Report A) to database...", "info")
+	if err := SaveFindingsWithPhase(scanID, staticFindings, "static"); err != nil {
+		wsHub.BroadcastLog(scanID, fmt.Sprintf("Failed to save static findings: %v", err), "error")
+	}
+
+	// ════════════════════════════════════════════════════════
+	//  PHASE 2: AI EXPERT (40-75%)
+	// ════════════════════════════════════════════════════════
+	wsHub.BroadcastLog(scanID, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "phase")
+	wsHub.BroadcastLog(scanID, "🤖 PHASE 2: AI Expert Scan", "phase")
+	wsHub.BroadcastLog(scanID, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "phase")
+
+	modelName := cfg.AIModel
+	if modelName == "" {
+		modelName = ai.GetDefaultModel()
+	}
+
+	wsHub.BroadcastProgress(scanID, "Phase 2: AI Discovery", 45)
+	wsHub.BroadcastLog(scanID, fmt.Sprintf("Running AI Discovery with model: %s", modelName), "info")
+	wsHub.BroadcastLog(scanID, "AI is independently scanning all supported files...", "info")
+	aiFindings := ai.RunAIDiscovery(modelName, targetDir)
+
+	// AI self-validation of its own findings
+	if len(aiFindings) > 0 {
+		wsHub.BroadcastProgress(scanID, "Phase 2: AI Self-Validation", 65)
+		wsHub.BroadcastLog(scanID, fmt.Sprintf("AI validating its own %d discoveries...", len(aiFindings)), "info")
+
+		fileContents := make(map[string]string)
+		for _, files := range result.FilePaths {
+			for _, file := range files {
+				if data, err := os.ReadFile(file); err == nil {
+					fileContents[file] = string(data)
+				}
+			}
+		}
+		aiFindings = ai.ValidateFindingsBatch(modelName, aiFindings, fileContents, 4)
+	}
+
+	// Deduplicate Phase 2
+	aiFindings = webDeduplicateFindings(aiFindings)
+
+	wsHub.BroadcastProgress(scanID, "Phase 2: Complete", 75)
+	wsHub.BroadcastLog(scanID, fmt.Sprintf("✅ Phase 2 Complete: AI Expert found %d findings", len(aiFindings)), "success")
+
+	// Save Report B to DB
+	wsHub.BroadcastLog(scanID, "Saving AI Report (Report B) to database...", "info")
+	if err := SaveFindingsWithPhase(scanID, aiFindings, "ai"); err != nil {
+		wsHub.BroadcastLog(scanID, fmt.Sprintf("Failed to save AI findings: %v", err), "error")
+	}
+
+	// ════════════════════════════════════════════════════════
+	//  PHASE 3: JUDGE LLM (75-95%)
+	// ════════════════════════════════════════════════════════
+	wsHub.BroadcastLog(scanID, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "phase")
+	wsHub.BroadcastLog(scanID, "⚖️  PHASE 3: AI Judge — Merging Reports", "phase")
+	wsHub.BroadcastLog(scanID, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "phase")
+
+	judgeModel := cfg.JudgeModel
+	if judgeModel == "" {
+		judgeModel = cfg.ConsolidationModel
+	}
+	if judgeModel == "" {
+		judgeModel = ai.GetDefaultModel()
+	}
+
+	wsHub.BroadcastProgress(scanID, "Phase 3: Judge Review", 80)
+	wsHub.BroadcastLog(scanID, fmt.Sprintf("Judge LLM (%s) reviewing %d static + %d AI findings...",
+		judgeModel, len(staticFindings), len(aiFindings)), "info")
+
+	var allFindings []reporter.Finding
+
+	masterFindings, judgeErr := ai.JudgeFindings(staticFindings, aiFindings, judgeModel, cfg.JudgeOllamaHost)
+	if judgeErr != nil {
+		wsHub.BroadcastLog(scanID, fmt.Sprintf("Judge failed: %v — falling back to simple merge", judgeErr), "warning")
+		// Fallback: combine both reports and deduplicate
+		allFindings = append(staticFindings, aiFindings...)
+		allFindings = webDeduplicateFindings(allFindings)
+	} else {
+		allFindings = masterFindings
+		wsHub.BroadcastLog(scanID, fmt.Sprintf("⚖️  Judge verdict: %d final findings", len(allFindings)), "success")
+	}
+
+	wsHub.BroadcastProgress(scanID, "Phase 3: Finalizing", 90)
+
+	// ── Finalize ──────────────────────────────────────────────
+
+	// Sort by severity
+	severityOrder := map[string]int{
+		"critical": 5, "high": 4, "medium": 3, "low": 2, "info": 1,
+	}
+	sort.Slice(allFindings, func(i, j int) bool {
+		return severityOrder[allFindings[i].Severity] > severityOrder[allFindings[j].Severity]
+	})
+
+	// Renumber and Calculate Trust Score
+	for i := range allFindings {
+		allFindings[i].SrNo = i + 1
+
+		engines := strings.Split(allFindings[i].Source, ", ")
+		baseScore := allFindings[i].Confidence * 100.0
+		if len(engines) > 1 {
+			baseScore += float64(len(engines)-1) * 15.0
+		}
+		if allFindings[i].AiValidated == "Yes" {
+			baseScore += 10.0
+		}
+		if baseScore > 100 {
+			baseScore = 100
+		}
+		allFindings[i].TrustScore = baseScore
+	}
+
+	// Populate code snippets
+	webPopulateCodeSnippets(allFindings, targetDir)
+
+	// Relativize paths
+	for i := range allFindings {
+		if rel, err := filepath.Rel(targetDir, allFindings[i].FilePath); err == nil {
+			allFindings[i].FilePath = rel
+		}
+	}
+
+	// Calculate Risk Score
+	riskScore := reporter.CalculateRiskScore(allFindings)
+	wsHub.BroadcastLog(scanID, fmt.Sprintf("Security Risk Score: %d/100 (%s)", riskScore.Score, riskScore.Level), "info")
+
+	criticalCount := riskScore.CriticalCount
+	highCount := riskScore.HighCount
+
+	// Save Final Master Report
+	wsHub.BroadcastProgress(scanID, "Saving Master Report", 93)
+	wsHub.BroadcastLog(scanID, "Saving Final Master Report to database...", "info")
+	if err := SaveFindingsWithPhase(scanID, allFindings, "final"); err != nil {
+		wsHub.BroadcastLog(scanID, fmt.Sprintf("Failed to save final findings: %v", err), "error")
+	}
+	if err := UpdateScanCounts(scanID, len(allFindings), criticalCount, highCount); err != nil {
+		wsHub.BroadcastLog(scanID, fmt.Sprintf("Failed to update scan counts: %v", err), "error")
+	}
+	if err := UpdateScanStatus(scanID, "completed"); err != nil {
+		wsHub.BroadcastLog(scanID, fmt.Sprintf("Failed to update scan status: %v", err), "error")
+	}
+
+	// Generate report files
+	wsHub.BroadcastLog(scanID, "Generating reports (CSV, HTML, PDF)...", "info")
+	webGenerateReportFiles(scanID, allFindings, targetDir)
+
+	elapsed := time.Since(startTime)
+	wsHub.BroadcastLog(scanID, fmt.Sprintf("✅ Ensemble Audit completed in %s — %d master findings (%d critical, %d high) — Risk: %d/100 (%s)",
+		elapsed.Round(time.Second), len(allFindings), criticalCount, highCount, riskScore.Score, riskScore.Level), "success")
+	wsHub.BroadcastLog(scanID, fmt.Sprintf("📊 Report Breakdown: %d static (Phase 1) + %d AI (Phase 2) → %d final (Judge)",
+		len(staticFindings), len(aiFindings), len(allFindings)), "info")
+
+	wsHub.BroadcastProgress(scanID, "Complete", 100)
+	wsHub.Broadcast(scanID, WSMessage{Type: "findings_update", Count: len(allFindings)})
+	wsHub.BroadcastComplete(scanID)
 }

@@ -209,7 +209,7 @@ func (scs *SupplyChainScanner) checkOutdatedDependencies() []reporter.Finding {
 }
 
 // computeLevenshteinDistance calculates the minimum number of single-character edits to change word1 into word2
-func computeLevenshteinDistance(s1, s2 string) int {
+func computeLevenshteinDistance(s1, s2 string) int { // Using built-in Go 1.21+ min/max functions instead of custom ones.
 	if len(s1) == 0 {
 		return len(s2)
 	}

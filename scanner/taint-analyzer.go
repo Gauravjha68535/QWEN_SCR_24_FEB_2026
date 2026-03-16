@@ -158,12 +158,21 @@ func (ta *TaintAnalyzer) AnalyzeTaintFlow(filePath string) ([]reporter.Finding, 
 	interpolationRe := regexp.MustCompile(`(?:var|let|const)?\s*\$?([a-zA-Z_][a-zA-Z0-9_]*)\s*(?:=|:=)\s*(?:f"|f'|` + "`" + `|\$\{).*\$?([a-zA-Z_][a-zA-Z0-9_]*)`)
 	funcCallRe := regexp.MustCompile(`([a-zA-Z_][a-zA-Z0-9_]*)\s*\((.*?)\)`)
 
+	scopeLevel := 0
+
 	for lineNum, line := range lines {
 		currentLine := lineNum + 1
 		trimmedLine := strings.TrimSpace(line)
 
-		// 0. Clear scope if we hit a new function/class definition
-		if ta.scopeStartPattern.MatchString(line) {
+		// 0. Track block level scope `{` and `}`
+		braceDiff := strings.Count(line, "{") - strings.Count(line, "}")
+		scopeLevel += braceDiff
+		if scopeLevel < 0 {
+			scopeLevel = 0
+		}
+
+		// Clear scope if we hit a new function/class definition or we exit the root scope
+		if ta.scopeStartPattern.MatchString(line) || (braceDiff < 0 && scopeLevel == 0) {
 			taintedVars = make(map[string]taintInfo)
 			sanitizedVars = make(map[string]bool)
 		}

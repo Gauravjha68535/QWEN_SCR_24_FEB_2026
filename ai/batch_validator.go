@@ -14,9 +14,9 @@ import (
 )
 
 // ValidateFindingsBatch validates multiple findings concurrently using a worker pool.
-func ValidateFindingsBatch(modelName string, findings []reporter.Finding, fileContents map[string]string, batchSize int, targetDir string) []reporter.Finding {
+func ValidateFindingsBatch(modelName string, findings []reporter.Finding, fileContents map[string]string, batchSize int) []reporter.Finding {
 	totalToValidate := countCriticalHighMedium(findings)
-	calibrator := NewConfidenceCalibrator(targetDir)
+	calibrator := NewConfidenceCalibrator()
 
 	// Styled header
 	headerColor := color.New(color.FgCyan, color.Bold)
@@ -225,7 +225,9 @@ func ValidateFindingsBatch(modelName string, findings []reporter.Finding, fileCo
 
 	var finalFindings []reporter.Finding
 	for _, f := range orderedFindings {
-		if f.IssueName != "" {
+		// Only append findings that were actually populated (not empty default structs)
+		// We use FilePath as a decent indicator that this finding wasn't completely dropped
+		if f.FilePath != "" {
 			finalFindings = append(finalFindings, f)
 		}
 	}

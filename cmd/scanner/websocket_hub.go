@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"sync"
 
@@ -21,10 +20,35 @@ type WSMessage struct {
 	Count   int    `json:"count,omitempty"`
 }
 
+// WSClient wraps a websocket connection with a mutex for thread-safe writes
+type WSClient struct {
+	conn *websocket.Conn
+	mu   sync.Mutex
+}
+
+// WriteMessage is a thread-safe wrapper for writing text messages
+func (c *WSClient) WriteMessage(messageType int, data []byte) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.conn.WriteMessage(messageType, data)
+}
+
+// Close gracefully closes the connection
+func (c *WSClient) Close() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.conn.Close()
+}
+
+// ReadMessage reads from the connection
+func (c *WSClient) ReadMessage() (messageType int, p []byte, err error) {
+	return c.conn.ReadMessage()
+}
+
 // WebSocketHub manages all WebSocket connections grouped by scan ID
 type WebSocketHub struct {
 	mu      sync.RWMutex
-	clients map[string]map[*websocket.Conn]bool // scanID -> set of connections
+	clients map[string]map[*WSClient]bool // scanID -> set of connections
 }
 
 var (
@@ -37,7 +61,7 @@ var (
 // NewWebSocketHub creates a new hub
 func NewWebSocketHub() *WebSocketHub {
 	return &WebSocketHub{
-		clients: make(map[string]map[*websocket.Conn]bool),
+		clients: make(map[string]map[*WSClient]bool),
 	}
 }
 
@@ -49,31 +73,33 @@ func (h *WebSocketHub) HandleWS(w http.ResponseWriter, r *http.Request, scanID s
 		return
 	}
 
+	wsClient := &WSClient{conn: conn}
+
 	h.mu.Lock()
 	if h.clients[scanID] == nil {
-		h.clients[scanID] = make(map[*websocket.Conn]bool)
+		h.clients[scanID] = make(map[*WSClient]bool)
 	}
-	h.clients[scanID][conn] = true
+	h.clients[scanID][wsClient] = true
 	h.mu.Unlock()
 
 	// Send a welcome message
-	welcome := WSMessage{Type: "log", Message: fmt.Sprintf("Connected to scan %s", scanID), Level: "info"}
+	welcome := WSMessage{Type: "log", Message: "Connected to WebSocket", Level: "info"}
 	data, _ := json.Marshal(welcome)
-	conn.WriteMessage(websocket.TextMessage, data)
+	wsClient.WriteMessage(websocket.TextMessage, data)
 
 	// Keep connection alive; read pump (just drain incoming messages)
 	go func() {
 		defer func() {
 			h.mu.Lock()
-			delete(h.clients[scanID], conn)
+			delete(h.clients[scanID], wsClient)
 			if len(h.clients[scanID]) == 0 {
 				delete(h.clients, scanID)
 			}
 			h.mu.Unlock()
-			conn.Close()
+			wsClient.Close()
 		}()
 		for {
-			_, _, err := conn.ReadMessage()
+			_, _, err := wsClient.ReadMessage()
 			if err != nil {
 				return
 			}
@@ -88,15 +114,29 @@ func (h *WebSocketHub) Broadcast(scanID string, msg WSMessage) {
 		return
 	}
 
-	// Write under the lock to avoid concurrent websocket write panic and map iteration issues
-	h.mu.Lock()
-	defer h.mu.Unlock()
+	h.mu.RLock()
+	conns, ok := h.clients[scanID]
+	if !ok || len(conns) == 0 {
+		h.mu.RUnlock()
+		return
+	}
+	// Copy connections to avoid holding RLock during network writes
+	connSlice := make([]*WSClient, 0, len(conns))
+	for c := range conns {
+		connSlice = append(connSlice, c)
+	}
+	h.mu.RUnlock()
 
-	for conn := range h.clients[scanID] {
-		err := conn.WriteMessage(websocket.TextMessage, data)
+	for _, wsClient := range connSlice {
+		err := wsClient.WriteMessage(websocket.TextMessage, data)
 		if err != nil {
-			conn.Close()
-			delete(h.clients[scanID], conn)
+			h.mu.Lock()
+			wsClient.Close()
+			delete(h.clients[scanID], wsClient)
+			if len(h.clients[scanID]) == 0 {
+				delete(h.clients, scanID)
+			}
+			h.mu.Unlock()
 		}
 	}
 }

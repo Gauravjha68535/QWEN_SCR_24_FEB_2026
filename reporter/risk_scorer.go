@@ -107,7 +107,7 @@ func GetPriorityMatrix(findings []Finding) PriorityMatrix {
 
 	for _, f := range findings {
 		// Skip AI-validated false positives
-		if f.AiValidated == "No (False Positive)" {
+		if f.AiValidated == "No (False Positive)" || f.AiValidated == "No" {
 			continue
 		}
 

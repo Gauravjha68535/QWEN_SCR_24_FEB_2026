@@ -1,13 +1,16 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Upload, GitBranch, FolderUp, Play, Cpu, Search, Shield, Lock, Brain, Box, FileCheck, Globe, Sparkles, FolderOpen } from 'lucide-react'
+import { Upload, GitBranch, FolderUp, Play, Cpu, Search, Shield, Lock, Brain, Box, FileCheck, Globe, Sparkles, FolderOpen, Layers } from 'lucide-react'
 
 const defaultConfig = {
     enableDeepScan: false,
     enableAI: false,
+    enableEnsemble: false,
     aiModel: '',
     ollamaHost: 'localhost:11434',
     consolidationModel: '',
+    judgeModel: '',
+    judgeOllamaHost: '',
     enableMLFPReduction: false,
     customRulesDir: '',
 }
@@ -190,9 +193,11 @@ export default function NewScan() {
                         <div style={{
                             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                             padding: '16px', borderRadius: '10px',
-                            border: `1px solid ${config.enableDeepScan ? 'var(--accent-primary)' : 'var(--border-primary)'}`,
-                            background: config.enableDeepScan ? 'rgba(99, 102, 241, 0.06)' : 'transparent',
-                            transition: 'all 0.2s ease'
+                            border: `1px solid ${config.enableDeepScan && !config.enableEnsemble ? 'var(--accent-primary)' : 'var(--border-primary)'}`,
+                            background: config.enableDeepScan && !config.enableEnsemble ? 'rgba(99, 102, 241, 0.06)' : 'transparent',
+                            transition: 'all 0.2s ease',
+                            opacity: config.enableEnsemble ? 0.5 : 1,
+                            pointerEvents: config.enableEnsemble ? 'none' : 'auto'
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <div style={{
@@ -223,9 +228,11 @@ export default function NewScan() {
                         <div style={{
                             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                             padding: '16px', borderRadius: '10px',
-                            border: `1px solid ${config.enableAI ? 'var(--accent-primary)' : 'var(--border-primary)'}`,
-                            background: config.enableAI ? 'rgba(99, 102, 241, 0.06)' : 'transparent',
-                            transition: 'all 0.2s ease'
+                            border: `1px solid ${config.enableAI && !config.enableEnsemble ? 'var(--accent-primary)' : 'var(--border-primary)'}`,
+                            background: config.enableAI && !config.enableEnsemble ? 'rgba(99, 102, 241, 0.06)' : 'transparent',
+                            transition: 'all 0.2s ease',
+                            opacity: config.enableEnsemble ? 0.5 : 1,
+                            pointerEvents: config.enableEnsemble ? 'none' : 'auto'
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <div style={{
@@ -238,7 +245,7 @@ export default function NewScan() {
                                 <div>
                                     <div style={{ fontSize: '0.88rem', fontWeight: 700 }}>AI-Powered</div>
                                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.4, marginTop: '2px' }}>
-                                        AI discovery, validation & auto-consolidation (requires Ollama)
+                                        {config.enableEnsemble ? 'Included in Ensemble Audit' : 'AI discovery, validation & auto-consolidation (requires Ollama)'}
                                     </div>
                                 </div>
                             </div>
@@ -251,10 +258,50 @@ export default function NewScan() {
                                 <span className="toggle-slider" />
                             </label>
                         </div>
+
+                        {/* Ensemble Audit Toggle */}
+                        <div style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            padding: '16px', borderRadius: '10px',
+                            border: `1px solid ${config.enableEnsemble ? '#f59e0b' : 'var(--border-primary)'}`,
+                            background: config.enableEnsemble ? 'rgba(245, 158, 11, 0.08)' : 'transparent',
+                            transition: 'all 0.2s ease'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{
+                                    width: 36, height: 36, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    background: config.enableEnsemble ? '#f59e0b' : 'var(--bg-tertiary)',
+                                    color: config.enableEnsemble ? '#fff' : 'var(--text-muted)', transition: 'all 0.2s'
+                                }}>
+                                    <Layers size={18} />
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '0.88rem', fontWeight: 700 }}>Ensemble Audit
+                                        <span style={{ fontSize: '0.62rem', fontWeight: 600, padding: '2px 6px', background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', borderRadius: '4px', marginLeft: '8px' }}>ADVANCED</span>
+                                    </div>
+                                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.4, marginTop: '2px' }}>
+                                        3-phase pipeline: Static scan → AI scan → Judge LLM merge. Designed for thorough, long-running audits.
+                                    </div>
+                                </div>
+                            </div>
+                            <label className="toggle">
+                                <input
+                                    type="checkbox"
+                                    checked={config.enableEnsemble}
+                                    onChange={() => setConfig(prev => ({
+                                        ...prev,
+                                        enableEnsemble: !prev.enableEnsemble,
+                                        enableDeepScan: !prev.enableEnsemble ? true : prev.enableDeepScan,
+                                        enableAI: !prev.enableEnsemble ? true : prev.enableAI
+                                    }))}
+                                />
+                                <span className="toggle-slider" />
+                            </label>
+                        </div>
                     </div>
 
-                    {/* AI Configuration (only visible when AI enabled) */}
-                    {config.enableAI && (
+                    {/* AI Configuration (visible when AI or Ensemble enabled) */}
+                    {(config.enableAI || config.enableEnsemble) && (
                         <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '16px', animation: 'fadeIn 0.3s ease' }}>
                             <div>
                                 <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', display: 'block' }}>
@@ -335,14 +382,64 @@ export default function NewScan() {
                                         : "Model must be installed in Ollama. Run `ollama list` to check."}
                                 </p>
                             </div>
+
+                            {/* Judge Model (only for Ensemble) */}
+                            {config.enableEnsemble && (
+                                <>
+                                    <div style={{ marginTop: '8px', padding: '12px', borderRadius: '8px', background: 'rgba(245, 158, 11, 0.06)', border: '1px solid rgba(245, 158, 11, 0.15)' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', fontWeight: 600, fontSize: '0.78rem', color: '#f59e0b' }}>
+                                            <Layers size={12} /> Judge LLM Configuration
+                                        </div>
+
+                                        <div style={{ marginBottom: '12px' }}>
+                                            <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
+                                                Judge Model (merges both reports)
+                                            </label>
+                                            {availableModels.length > 0 ? (
+                                                <select
+                                                    className="input"
+                                                    value={config.judgeModel || config.consolidationModel}
+                                                    onChange={(e) => setConfig(prev => ({ ...prev, judgeModel: e.target.value }))}
+                                                    style={{ appearance: 'auto' }}
+                                                >
+                                                    {availableModels.map(model => (
+                                                        <option key={`judge-${model}`} value={model}>{model}</option>
+                                                    ))}
+                                                </select>
+                                            ) : (
+                                                <input
+                                                    className="input"
+                                                    type="text"
+                                                    value={config.judgeModel}
+                                                    onChange={(e) => setConfig(prev => ({ ...prev, judgeModel: e.target.value }))}
+                                                    placeholder="Enter judge model (e.g. qwen2.5:32b)"
+                                                />
+                                            )}
+                                        </div>
+
+                                        <div>
+                                            <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
+                                                Judge Ollama Host (optional, for remote server)
+                                            </label>
+                                            <input
+                                                className="input"
+                                                type="text"
+                                                value={config.judgeOllamaHost}
+                                                onChange={(e) => setConfig(prev => ({ ...prev, judgeOllamaHost: e.target.value }))}
+                                                placeholder="Same as above (or e.g. 192.168.1.50:11434)"
+                                            />
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     )}
 
 
 
 
-                    {/* ML FP Reduction Toggle (only when AI enabled) */}
-                    {config.enableAI && (
+                    {/* ML FP Reduction Toggle (only when AI or Ensemble enabled) */}
+                    {(config.enableAI || config.enableEnsemble) && (
                         <div style={{
                             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                             padding: '16px', borderRadius: '10px',
