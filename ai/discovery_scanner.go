@@ -331,53 +331,71 @@ func DiscoverVulnerabilities(ctx context.Context, modelName string, filePath str
 		var outputStr string
 
 		for loopIdx := 0; loopIdx < maxAgenticLoops; loopIdx++ {
-			reqBody := OllamaAPIRequest{
-				Model:  modelName,
-				Prompt: prompt,
-				Stream: false,
-				Options: map[string]interface{}{
-					"num_ctx":     16384,
-					"num_predict": 4096,
-					"temperature": 0.0,
-				},
-				KeepAlive: "15m",
-			}
+			var fullText string
+			var readErr error
 
-			reqJSON, err := json.Marshal(reqBody)
-			if err != nil {
-				return nil, err
-			}
-
-			reqCtx, reqCancel = context.WithTimeout(ctx, 30*time.Minute)
-			req, err := http.NewRequestWithContext(reqCtx, "POST", ollamaAPIURL, bytes.NewBuffer(reqJSON))
-			if err != nil {
-				reqCancel()
-				return nil, err
-			}
-			req.Header.Set("Content-Type", "application/json")
-
-			resp, err := aiHTTPClient.Do(req)
-			if err != nil {
-				reqCancel()
-				if strings.Contains(err.Error(), "context canceled") {
-					return nil, fmt.Errorf("scan interrupted")
+			// Dispatch based on active provider
+			if GetActiveProvider() == ProviderOpenAI {
+				customURL, customKey, customMdl := GetCustomEndpoint()
+				useModel := customMdl
+				if useModel == "" {
+					useModel = modelName
 				}
-				return nil, fmt.Errorf("API request failed: %w", err)
-			}
+				reqCtx, reqCancel = context.WithTimeout(ctx, 30*time.Minute)
+				fullText, readErr = GenerateViaOpenAI(reqCtx, customURL, customKey, useModel, prompt, map[string]interface{}{
+					"temperature": 0.0,
+					"num_predict": 16384,
+				})
+				reqCancel()
+			} else {
+				reqBody := OllamaAPIRequest{
+					Model:  modelName,
+					Prompt: prompt,
+					Stream: false,
+					Options: map[string]interface{}{
+						"num_ctx":     16384,
+						"num_predict": 4096,
+						"temperature": 0.0,
+					},
+					KeepAlive: "15m",
+				}
 
-			if resp.StatusCode != http.StatusOK {
-				body, _ := io.ReadAll(resp.Body)
+				reqJSON, err := json.Marshal(reqBody)
+				if err != nil {
+					return nil, err
+				}
+
+				reqCtx, reqCancel = context.WithTimeout(ctx, 30*time.Minute)
+				req, err := http.NewRequestWithContext(reqCtx, "POST", ollamaAPIURL, bytes.NewBuffer(reqJSON))
+				if err != nil {
+					reqCancel()
+					return nil, err
+				}
+				req.Header.Set("Content-Type", "application/json")
+
+				resp, err := aiHTTPClient.Do(req)
+				if err != nil {
+					reqCancel()
+					if strings.Contains(err.Error(), "context canceled") {
+						return nil, fmt.Errorf("scan interrupted")
+					}
+					return nil, fmt.Errorf("API request failed: %w", err)
+				}
+
+				if resp.StatusCode != http.StatusOK {
+					body, _ := io.ReadAll(resp.Body)
+					resp.Body.Close()
+					reqCancel()
+					return nil, fmt.Errorf("Ollama API error (Status %d): %s", resp.StatusCode, string(body))
+				}
+
+				fullText, readErr = readOllamaResponse(resp.Body)
 				resp.Body.Close()
 				reqCancel()
-				return nil, fmt.Errorf("Ollama API error (Status %d): %s", resp.StatusCode, string(body))
 			}
 
-			fullText, readErr := readOllamaResponse(resp.Body)
-			resp.Body.Close()
-			reqCancel() // Cleanup immediately after parsing
-
 			if readErr != nil {
-				return nil, fmt.Errorf("Ollama response read error: %w", readErr)
+				return nil, fmt.Errorf("AI response read error: %w", readErr)
 			}
 
 			outputStr = fullText
@@ -392,7 +410,7 @@ func DiscoverVulnerabilities(ctx context.Context, modelName string, filePath str
 				NeedsContext []string `json:"needs_context"`
 			}
 			var agenticResp AgenticResponse
-			err = json.Unmarshal([]byte(jsonContent), &agenticResp)
+			err := json.Unmarshal([]byte(jsonContent), &agenticResp)
 
 			// If no context needed OR we're on the last loop, break and parse findings
 			if err != nil || len(agenticResp.NeedsContext) == 0 || loopIdx == maxAgenticLoops-1 {

@@ -40,9 +40,14 @@ var (
 		sync.RWMutex
 		OllamaHost   string `json:"ollama_host"`
 		DefaultModel string `json:"default_model"`
+		AIProvider   string `json:"ai_provider"`
+		CustomAPIURL string `json:"custom_api_url"`
+		CustomAPIKey string `json:"custom_api_key"`
+		CustomModel  string `json:"custom_model"`
 	}{
 		OllamaHost:   "localhost:11434",
 		DefaultModel: "qwen2.5-coder:7b",
+		AIProvider:   "ollama",
 	}
 )
 
@@ -52,12 +57,28 @@ func loadSettings() {
 		var s struct {
 			OllamaHost   string `json:"ollama_host"`
 			DefaultModel string `json:"default_model"`
+			AIProvider   string `json:"ai_provider"`
+			CustomAPIURL string `json:"custom_api_url"`
+			CustomAPIKey string `json:"custom_api_key"`
+			CustomModel  string `json:"custom_model"`
 		}
 		if err := json.Unmarshal(data, &s); err == nil {
 			appSettings.Lock()
 			appSettings.OllamaHost = s.OllamaHost
 			appSettings.DefaultModel = s.DefaultModel
+			if s.AIProvider != "" {
+				appSettings.AIProvider = s.AIProvider
+			}
+			appSettings.CustomAPIURL = s.CustomAPIURL
+			appSettings.CustomAPIKey = s.CustomAPIKey
+			appSettings.CustomModel = s.CustomModel
 			appSettings.Unlock()
+
+			// Apply provider config to AI package
+			ai.SetActiveProvider(s.AIProvider)
+			if s.CustomAPIURL != "" {
+				ai.SetCustomEndpoint(s.CustomAPIURL, s.CustomAPIKey, s.CustomModel)
+			}
 		}
 	}
 }
@@ -67,9 +88,17 @@ func saveSettings() {
 	s := struct {
 		OllamaHost   string `json:"ollama_host"`
 		DefaultModel string `json:"default_model"`
+		AIProvider   string `json:"ai_provider"`
+		CustomAPIURL string `json:"custom_api_url"`
+		CustomAPIKey string `json:"custom_api_key"`
+		CustomModel  string `json:"custom_model"`
 	}{
 		OllamaHost:   appSettings.OllamaHost,
 		DefaultModel: appSettings.DefaultModel,
+		AIProvider:   appSettings.AIProvider,
+		CustomAPIURL: appSettings.CustomAPIURL,
+		CustomAPIKey: appSettings.CustomAPIKey,
+		CustomModel:  appSettings.CustomModel,
 	}
 	appSettings.RUnlock()
 	data, _ := json.MarshalIndent(s, "", "  ")
@@ -107,6 +136,8 @@ func StartWebServer(port int) {
 	mux.HandleFunc("/api/rules", handleRulesList)
 	mux.HandleFunc("/api/rules/test", handleRulesTest)
 	mux.HandleFunc("/api/rules/", handleRulesFile)
+	mux.HandleFunc("/api/custom-endpoint/test", handleCustomEndpointTest)
+	mux.HandleFunc("/api/custom-endpoint/models", handleCustomEndpointModels)
 
 	// Dynamic scan routes (manual routing for path params)
 	mux.HandleFunc("/api/scan/", handleScanRoutes)
@@ -467,6 +498,10 @@ func handleSettings(w http.ResponseWriter, r *http.Request) {
 		var s struct {
 			OllamaHost   string `json:"ollama_host"`
 			DefaultModel string `json:"default_model"`
+			AIProvider   string `json:"ai_provider"`
+			CustomAPIURL string `json:"custom_api_url"`
+			CustomAPIKey string `json:"custom_api_key"`
+			CustomModel  string `json:"custom_model"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
 			http.Error(w, "Invalid body", http.StatusBadRequest)
@@ -479,7 +514,20 @@ func handleSettings(w http.ResponseWriter, r *http.Request) {
 		if s.DefaultModel != "" {
 			appSettings.DefaultModel = s.DefaultModel
 		}
+		if s.AIProvider != "" {
+			appSettings.AIProvider = s.AIProvider
+			ai.SetActiveProvider(s.AIProvider)
+		}
+		appSettings.CustomAPIURL = s.CustomAPIURL
+		appSettings.CustomAPIKey = s.CustomAPIKey
+		appSettings.CustomModel = s.CustomModel
 		appSettings.Unlock()
+
+		// Apply custom endpoint to AI package
+		if s.CustomAPIURL != "" {
+			ai.SetCustomEndpoint(s.CustomAPIURL, s.CustomAPIKey, s.CustomModel)
+		}
+
 		saveSettings()
 		httpJSON(w, http.StatusOK, map[string]string{"status": "saved"})
 		return
@@ -488,8 +536,12 @@ func handleSettings(w http.ResponseWriter, r *http.Request) {
 	appSettings.RLock()
 	defer appSettings.RUnlock()
 	httpJSON(w, http.StatusOK, map[string]interface{}{
-		"ollama_host":   appSettings.OllamaHost,
-		"default_model": appSettings.DefaultModel,
+		"ollama_host":    appSettings.OllamaHost,
+		"default_model":  appSettings.DefaultModel,
+		"ai_provider":    appSettings.AIProvider,
+		"custom_api_url": appSettings.CustomAPIURL,
+		"custom_api_key": appSettings.CustomAPIKey,
+		"custom_model":   appSettings.CustomModel,
 	})
 }
 
@@ -676,6 +728,70 @@ func handleStopScan(w http.ResponseWriter, r *http.Request) {
 func init() {
 	loadSettings()
 	startTime = time.Now()
+}
+
+// ──────────────────────────────────────────────────────────
+//  Custom Endpoint API Handlers
+// ──────────────────────────────────────────────────────────
+
+func handleCustomEndpointTest(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "POST only", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		URL    string `json:"url"`
+		APIKey string `json:"api_key"`
+		Model  string `json:"model"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if req.URL == "" || req.Model == "" {
+		httpJSON(w, http.StatusOK, map[string]interface{}{
+			"success": false,
+			"message": "URL and model name are required",
+		})
+		return
+	}
+
+	ok, msg := ai.TestOpenAIEndpoint(req.URL, req.APIKey, req.Model)
+	httpJSON(w, http.StatusOK, map[string]interface{}{
+		"success": ok,
+		"message": msg,
+	})
+}
+
+func handleCustomEndpointModels(w http.ResponseWriter, r *http.Request) {
+	url := r.URL.Query().Get("url")
+	apiKey := r.URL.Query().Get("api_key")
+
+	if url == "" {
+		httpJSON(w, http.StatusOK, map[string]interface{}{
+			"models": []string{},
+			"error":  "URL parameter is required",
+		})
+		return
+	}
+
+	models, err := ai.ListOpenAIModels(url, apiKey)
+	if err != nil {
+		httpJSON(w, http.StatusOK, map[string]interface{}{
+			"models": []string{},
+			"error":  err.Error(),
+		})
+		return
+	}
+	if models == nil {
+		models = []string{}
+	}
+
+	httpJSON(w, http.StatusOK, map[string]interface{}{
+		"models": models,
+	})
 }
 
 // ──────────────────────────────────────────────────────────

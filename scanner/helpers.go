@@ -64,9 +64,7 @@ func StripComments(source string, ext string) string {
 	return source
 }
 
-func countLines(s string) int {
-	return strings.Count(s, "\n")
-}
+
 
 // buildNewlineIndices builds a slice of byte offsets for each newline in the source string.
 // This allows O(log N) line number lookups for regex matches instead of O(N) string counts.

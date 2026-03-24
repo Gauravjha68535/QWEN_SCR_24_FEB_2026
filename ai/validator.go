@@ -103,54 +103,74 @@ Return ONLY a valid JSON object in the final part of your response:
 		fileContent,
 		crossFileNote)
 
-	// Use Ollama HTTP API instead of CLI subprocess
-	reqBody := OllamaAPIRequest{
-		Model:  modelName,
-		Prompt: prompt,
-		Stream: false,
-		Options: map[string]interface{}{
-			"num_ctx":     4096, // Reduced from 16384 to prevent VRAM swapping on consumer GPUs
-			"num_predict": 1024, // Validation responses are shorter
+	// Dispatch based on active provider
+	var outputStr string
+
+	if GetActiveProvider() == ProviderOpenAI {
+		customURL, customKey, customMdl := GetCustomEndpoint()
+		useModel := customMdl
+		if useModel == "" {
+			useModel = modelName
+		}
+		valCtx, valCancel := context.WithTimeout(ctx, 10*time.Minute)
+		defer valCancel()
+		fullText, err := GenerateViaOpenAI(valCtx, customURL, customKey, useModel, prompt, map[string]interface{}{
 			"temperature": 0.0,
-		},
-		KeepAlive: "15m",
+			"num_predict": 16384,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("OpenAI validation request failed: %v", err)
+		}
+		outputStr = strings.TrimSpace(fullText)
+	} else {
+		// Use Ollama HTTP API instead of CLI subprocess
+		reqBody := OllamaAPIRequest{
+			Model:  modelName,
+			Prompt: prompt,
+			Stream: false,
+			Options: map[string]interface{}{
+				"num_ctx":     4096,
+				"num_predict": 1024,
+				"temperature": 0.0,
+			},
+			KeepAlive: "15m",
+		}
+
+		reqJSON, err := json.Marshal(reqBody)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal request: %v", err)
+		}
+
+		valCtx, valCancel := context.WithTimeout(ctx, 10*time.Minute)
+		defer valCancel()
+
+		httpReq, err := http.NewRequestWithContext(valCtx, "POST", ollamaAPIURL, bytes.NewBuffer(reqJSON))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create request: %v", err)
+		}
+		httpReq.Header.Set("Content-Type", "application/json")
+
+		client := &http.Client{
+			Timeout: 12 * time.Minute,
+		}
+
+		resp, err := client.Do(httpReq)
+		if err != nil {
+			return nil, fmt.Errorf("ollama API request failed: %v", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != 200 {
+			return nil, fmt.Errorf("ollama API returned status %d", resp.StatusCode)
+		}
+
+		fullText, readErr := readOllamaResponse(resp.Body)
+		if readErr != nil {
+			return nil, fmt.Errorf("failed to read Ollama response: %v", readErr)
+		}
+		outputStr = strings.TrimSpace(fullText)
 	}
 
-	reqJSON, err := json.Marshal(reqBody)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %v", err)
-	}
-
-	// Create a fresh context for validation requests
-	valCtx, valCancel := context.WithTimeout(ctx, 10*time.Minute)
-	defer valCancel()
-
-	httpReq, err := http.NewRequestWithContext(valCtx, "POST", ollamaAPIURL, bytes.NewBuffer(reqJSON))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %v", err)
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{
-		Timeout: 12 * time.Minute, // Large models (32b+) need much more time
-	}
-
-	resp, err := client.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("ollama API request failed: %v", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("ollama API returned status %d", resp.StatusCode)
-	}
-
-	fullText, readErr := readOllamaResponse(resp.Body)
-	if readErr != nil {
-		return nil, fmt.Errorf("failed to read Ollama response: %v", readErr)
-	}
-
-	outputStr := strings.TrimSpace(fullText)
 	outputStr = strings.TrimPrefix(outputStr, "```json")
 	outputStr = strings.TrimPrefix(outputStr, "```")
 	outputStr = strings.TrimSuffix(outputStr, "```")
@@ -159,17 +179,26 @@ Return ONLY a valid JSON object in the final part of your response:
 	var result ValidationResult
 	// Extract JSON from response using common utility
 	jsonStr := utils.ExtractJSON(outputStr)
-	
+
 	if err := json.Unmarshal([]byte(jsonStr), &result); err != nil {
-		// Fallback: mark as uncertain instead of fabricating a strong result
-		result = ValidationResult{
-			IsTruePositive:     true,
-			Confidence:         0.5,
-			Explanation:        "AI validation response could not be parsed. Keeping finding as precaution.",
-			SuggestedFix:       finding.Remediation,
-			SeverityAdjustment: "same",
-			ExploitPoC:         "N/A",
+		// Try EscapeUnescapedQuotes repair
+		repairedJSON := utils.EscapeUnescapedQuotes(jsonStr)
+		if err2 := json.Unmarshal([]byte(repairedJSON), &result); err2 != nil {
+			// Fallback: mark as uncertain instead of fabricating a strong result
+			result = ValidationResult{
+				IsTruePositive:     true,
+				Confidence:         0.5,
+				Explanation:        "AI validation response could not be parsed. Keeping finding as precaution.",
+				SuggestedFix:       finding.Remediation,
+				SeverityAdjustment: "same",
+				ExploitPoC:         "N/A",
+			}
 		}
+	}
+
+	// Sanity-check: if confidence parsed as 0, it's likely a parse issue — set to 0.5
+	if result.Confidence == 0 && result.IsTruePositive {
+		result.Confidence = 0.5
 	}
 
 	return &result, nil

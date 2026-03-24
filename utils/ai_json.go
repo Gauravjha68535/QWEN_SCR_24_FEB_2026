@@ -9,30 +9,53 @@ import (
 // ExtractJSON attempts to find and return a valid JSON string from potentially noisy AI output.
 // It handles <think> tags, markdown code blocks, and partial/truncated JSON.
 func ExtractJSON(input string) string {
-	// 1. Strip <think>/<thinking> blocks (used by DeepSeek, Qwen reasoning models)
-	reThink := regexp.MustCompile(`(?s)<think(?:ing)?>.*?</think(?:ing)?>`)
-	input = reThink.ReplaceAllString(input, "")
-
-	// 2. Sanitize invalid JSON escape sequences (AI often outputs Python-style \')
-	input = sanitizeJSONEscapes(input)
-
-	// 2. Try to find content between ```json and ```
-	reJSON := regexp.MustCompile("(?s)```json\\s*(.*?)\\s*```")
+	// 1. Try to find content between ```json and ```
+	reJSON := regexp.MustCompile("(?s)```[jJ][sS][oO][nN]\\s*(.*?)\\s*```")
 	match := reJSON.FindStringSubmatch(input)
 	if len(match) > 1 {
 		return RepairJSON(strings.TrimSpace(match[1]))
 	}
 
-	// 3. Try to find content between generic ``` and ```
+	// 2. Try to find content between generic ``` and ```
+	// We take the LAST matching block since chain-of-thought might include markdown blocks.
 	reGeneric := regexp.MustCompile("(?s)```\\s*(.*?)\\s*```")
-	match = reGeneric.FindStringSubmatch(input)
-	if len(match) > 1 {
-		return RepairJSON(strings.TrimSpace(match[1]))
+	matches := reGeneric.FindAllStringSubmatch(input, -1)
+	if len(matches) > 0 {
+		return RepairJSON(strings.TrimSpace(matches[len(matches)-1][1]))
 	}
 
-	// 4. Fallback: Find the first { or [ and do a balanced walk
-	startIdx := strings.IndexAny(input, "{[")
+	// 3. Fallback: Strip <think>/<thinking> blocks if they are properly closed
+	reThink := regexp.MustCompile(`(?s)<think(?:ing)?>.*?</think(?:ing)?>`)
+	input = reThink.ReplaceAllString(input, "")
+
+	// 4. Sanitize invalid JSON escape sequences
+	input = sanitizeJSONEscapes(input)
+
+	// 5. Hard Fallback: Find the LAST starting { or [ that could contain the main JSON
+	// Since chain-of-thought might contain stray { or [, we look for the main block.
+	// A good heuristic is scanning from the end. But since JSON could be truncated,
+	// let's find the FIRST { or [ AFTER any unclosed <thinking> tag.
+	// Instead, just find the *last* occurrence of "vulnerabilities": [ or something?
+	// No, let's just find the last `{` or `[` that spans to the end, but wait, 
+	// what if we just find the first `{` or `[` of the remaining text?
+	// If there's an unclosed <thinking> tag, the text might literally be:
+	// <thinking>...
+	// { "vulnerabilities": ...
+	
+	idxUnclosedThink := strings.LastIndex(input, "<think")
+	searchFrom := 0
+	if idxUnclosedThink != -1 && !strings.Contains(input[idxUnclosedThink:], "</think") {
+		// Attempt to guess where thinking stops and JSON begins. 
+		// Look for the first `{` or `[` after the last \n\n or \n{
+		guessStart := strings.IndexAny(input[idxUnclosedThink:], "{[")
+		if guessStart != -1 {
+			searchFrom = idxUnclosedThink + guessStart
+		}
+	}
+
+	startIdx := strings.IndexAny(input[searchFrom:], "{[")
 	if startIdx >= 0 {
+		startIdx += searchFrom
 		var stack []rune
 		var endIdx int = -1
 		
@@ -55,7 +78,7 @@ func ExtractJSON(input string) string {
 		if endIdx != -1 {
 			return RepairJSON(input[startIdx:endIdx])
 		}
-		// If never balanced, it's likely truncated, send the rest to RepairJSON
+		// If never balanced, it's likely truncated JSON at the end
 		return RepairJSON(strings.TrimSpace(input[startIdx:]))
 	}
 
@@ -74,31 +97,63 @@ func RepairJSON(input string) string {
 		return input
 	}
 
-	// Use a stack to track open structures in order
+	// Use a stack to track open structures in order, and track if we are inside a string
 	var stack []rune
+	inString := false
+	var escapeNext bool
+
 	for _, r := range input {
-		if r == '{' {
-			stack = append(stack, '}')
-		} else if r == '[' {
-			stack = append(stack, ']')
-		} else if r == '}' || r == ']' {
-			if len(stack) > 0 && stack[len(stack)-1] == r {
-				stack = stack[:len(stack)-1]
+		if escapeNext {
+			escapeNext = false
+			continue
+		}
+
+		if r == '\\' && inString {
+			escapeNext = true
+			continue
+		}
+
+		if r == '"' {
+			inString = !inString
+			continue
+		}
+
+		if !inString {
+			if r == '{' {
+				stack = append(stack, '}')
+			} else if r == '[' {
+				stack = append(stack, ']')
+			} else if r == '}' || r == ']' {
+				if len(stack) > 0 && stack[len(stack)-1] == r {
+					stack = stack[:len(stack)-1]
+				}
 			}
 		}
 	}
 
+	// Close open string if necessary
+	if inString {
+		input += `"`
+	}
+
+	// Remove trailing commas if we are about to close a structure
+	if len(stack) > 0 {
+		input = strings.TrimSpace(input)
+		input = strings.TrimSuffix(input, ",")
+	}
+
 	// Close structures in reverse order of opening
 	for i := len(stack) - 1; i >= 0; i-- {
-		// Before appending the first closer, check for trailing comma
-		if i == len(stack)-1 {
-			input = strings.TrimSpace(input)
-			input = strings.TrimSuffix(input, ",")
-		}
 		input += string(stack[i])
 	}
 
-	// Check validity again after repair
+	// Check validity again after repair. 
+	// If it's still invalid, it might have been cut off in the middle of a key (e.g., `{"reas`).
+	// We can't easily auto-fix half-keys perfectly, but adding `"}` will usually turn `{"reas` into `{"reas"}` !
+	// Wait, we added `"` if `inString` was true. `{"reas` => inside string. It becomes `{"reas"` -> `{"reas"}`. 
+	// But what if `{"verdict": "keep", ` 
+	// `inString`=false, stack=`}`. Trailing comma removed -> `{"verdict": "keep"`. Then `}` appended -> `{"verdict": "keep"}`. Valid!
+
 	if json.Valid([]byte(input)) {
 		return input
 	}

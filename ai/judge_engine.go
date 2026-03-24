@@ -40,7 +40,7 @@ type JudgeVerdictItem struct {
 	SimplifiedName string `json:"simplified_name,omitempty"`
 }
 
-const maxJudgeBatchSize = 10 // Small batches prevent remote LLM timeouts with reasoning models
+const maxJudgeBatchSize = 5 // Small batches prevent remote LLM timeouts with reasoning models
 
 // JudgeFindings takes two independent reports (static and AI) and uses a Judge LLM
 // to deduplicate, remove false positives, and merge them into one master report.
@@ -261,32 +261,53 @@ IMPORTANT: Every finding ID from the input MUST appear exactly once — either a
 		},
 	}
 
-	reqJSON, _ := json.Marshal(reqBody)
+	var outputStr string
 
-	req, err := http.NewRequestWithContext(judgeCtx, "POST", ollamaAPIURL, bytes.NewBuffer(reqJSON))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create judge request: %v", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{
-		Timeout: 20 * time.Minute, // Remote 32b+ models processing 40 findings need 10-20 min
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		if strings.Contains(err.Error(), "context canceled") {
-			return nil, fmt.Errorf("judge evaluation interrupted")
+	// Dispatch based on active provider
+	if GetActiveProvider() == ProviderOpenAI {
+		customURL, customKey, customMdl := GetCustomEndpoint()
+		useModel := customMdl
+		if useModel == "" {
+			useModel = modelName
 		}
-		return nil, fmt.Errorf("judge LLM request failed: %v", err)
-	}
-	defer resp.Body.Close()
+		fullText, err := GenerateViaOpenAI(judgeCtx, customURL, customKey, useModel, prompt, map[string]interface{}{
+			"temperature": 0.0,
+			"num_predict": 16384,
+		})
+		if err != nil {
+			if strings.Contains(err.Error(), "context canceled") || strings.Contains(err.Error(), "scan interrupted") {
+				return nil, fmt.Errorf("judge evaluation interrupted")
+			}
+			return nil, fmt.Errorf("judge LLM request failed: %v", err)
+		}
+		outputStr = strings.TrimSpace(fullText)
+	} else {
+		reqJSON, _ := json.Marshal(reqBody)
 
-	fullText, readErr := readOllamaResponse(resp.Body)
-	if readErr != nil {
-		return nil, fmt.Errorf("failed to read judge response: %v", readErr)
-	}
+		req, err := http.NewRequestWithContext(judgeCtx, "POST", ollamaAPIURL, bytes.NewBuffer(reqJSON))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create judge request: %v", err)
+		}
+		req.Header.Set("Content-Type", "application/json")
 
-	outputStr := strings.TrimSpace(fullText)
+		client := &http.Client{
+			Timeout: 20 * time.Minute,
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			if strings.Contains(err.Error(), "context canceled") {
+				return nil, fmt.Errorf("judge evaluation interrupted")
+			}
+			return nil, fmt.Errorf("judge LLM request failed: %v", err)
+		}
+		defer resp.Body.Close()
+
+		fullText, readErr := readOllamaResponse(resp.Body)
+		if readErr != nil {
+			return nil, fmt.Errorf("failed to read judge response: %v", readErr)
+		}
+		outputStr = strings.TrimSpace(fullText)
+	}
 
 	// Extract JSON block using common utility
 	jsonStr := utils.ExtractJSON(outputStr)

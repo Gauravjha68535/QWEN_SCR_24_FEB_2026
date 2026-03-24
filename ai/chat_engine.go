@@ -33,8 +33,21 @@ type ChatResponse struct {
 	TotalDuration int64       `json:"total_duration"`
 }
 
-// GenerateChatResponse handles non-streaming chat requests to Ollama
+// GenerateChatResponse handles non-streaming chat requests, dispatching to the active provider.
 func GenerateChatResponse(modelName string, messages []ChatMessage) (*ChatResponse, error) {
+	// Dispatch based on active provider
+	if GetActiveProvider() == ProviderOpenAI {
+		customURL, customKey, customMdl := GetCustomEndpoint()
+		useModel := customMdl
+		if useModel == "" {
+			useModel = modelName
+		}
+		chatCtx, chatCancel := context.WithTimeout(context.Background(), 3*time.Minute)
+		defer chatCancel()
+		return GenerateChatViaOpenAI(chatCtx, customURL, customKey, useModel, messages)
+	}
+
+	// Ollama path
 	apiURL := GetOllamaBaseURL() + "/api/chat"
 
 	reqBody := ChatRequest{
@@ -53,7 +66,6 @@ func GenerateChatResponse(modelName string, messages []ChatMessage) (*ChatRespon
 		return nil, fmt.Errorf("failed to marshal chat request: %v", err)
 	}
 
-	// Create a fresh context for chat requests
 	chatCtx, chatCancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer chatCancel()
 

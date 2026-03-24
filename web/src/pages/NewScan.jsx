@@ -37,43 +37,74 @@ export default function NewScan() {
             const res = await fetch('/api/settings')
             if (res.ok) {
                 const data = await res.json()
-                if (data.ollama_host) {
-                    setConfig(prev => ({ ...prev, ollamaHost: data.ollama_host }))
-                }
+                setConfig(prev => ({ 
+                    ...prev, 
+                    ollamaHost: data.ollama_host || 'localhost:11434',
+                    aiProvider: data.ai_provider || 'ollama',
+                    customApiUrl: data.custom_api_url || '',
+                    customApiKey: data.custom_api_key || ''
+                }))
             }
         } catch (e) {
             console.error("Failed to fetch settings", e)
         }
     }
 
-    const fetchInstalledModels = async (host = null) => {
+    const fetchInstalledModels = async (explicitHost = null) => {
         setLoadingModels(true)
-        if (host) setAvailableModels([]) // Indicate refresh for remote host
+        if (explicitHost) setAvailableModels([]) // Indicate refresh
         try {
-            const modelUrl = host ? `/api/models?host=${encodeURIComponent(host)}` : '/api/models'
+            let modelUrl = ''
+            let hostStr = ''
+            
+            // If explicitHost is passed, it means user clicked refresh on a specific input
+            // Otherwise, we use the provider from settings on initial load
+            const isCustomAPI = config.aiProvider === 'openai'
+            
+            if (isCustomAPI) {
+                hostStr = explicitHost || config.customApiUrl
+                if (!hostStr) {
+                    setLoadingModels(false)
+                    return
+                }
+                const params = new URLSearchParams({
+                    url: hostStr,
+                    api_key: config.customApiKey || ''
+                })
+                modelUrl = `/api/custom-endpoint/models?${params}`
+            } else {
+                hostStr = explicitHost || config.ollamaHost
+                modelUrl = hostStr ? `/api/models?host=${encodeURIComponent(hostStr)}` : '/api/models'
+            }
+
             const res = await fetch(modelUrl)
             if (res.ok) {
                 const data = await res.json()
                 const models = data.models || []
+                
+                // If the custom API returned an error string in JSON
+                if (data.error) {
+                    throw new Error(data.error)
+                }
+
                 setAvailableModels(models)
 
                 if (models.length > 0) {
                     setConfig(prev => {
                         const newConfig = { ...prev }
-                        // If host is provided, update selections even if already set
-                        if (host || !newConfig.aiModel) newConfig.aiModel = models[0]
-                        if (host || !newConfig.consolidationModel) newConfig.consolidationModel = models[models.length - 1]
+                        if (explicitHost || !newConfig.aiModel) newConfig.aiModel = models[0]
+                        if (explicitHost || !newConfig.consolidationModel) newConfig.consolidationModel = models[models.length - 1]
                         return newConfig
                     })
-                } else if (host) {
-                    alert(`No models found on Ollama host: ${host}.`)
+                } else if (explicitHost) {
+                    alert(`No models found on ${isCustomAPI ? 'Custom API' : 'Ollama host'}: ${hostStr}.`)
                 }
             } else {
-                if (host) alert(`Failed to fetch models from ${host}`)
+                if (explicitHost) alert(`Failed to fetch models from ${hostStr}`)
             }
         } catch (e) {
             console.error("Failed to fetch models", e)
-            if (host) alert(`Connection error to ${host}.`)
+            if (explicitHost) alert(`Connection error to endpoint: ${e.message}`)
         } finally {
             setLoadingModels(false)
         }
@@ -294,7 +325,7 @@ export default function NewScan() {
                         </div>
                     </div>
 
-                    {/* Ollama Host Configuration - Consolidated & Prominent */}
+                    {/* AI Provider Host Configuration */}
                     <div style={{ 
                         marginTop: '8px', 
                         padding: '16px', 
@@ -305,7 +336,7 @@ export default function NewScan() {
                     }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
                             <label style={{ fontSize: '0.9rem', fontWeight: 800, color: '#6366f1', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <Globe size={16} /> Ollama Host API
+                                <Globe size={16} /> {config.aiProvider === 'openai' ? 'Custom API Configured' : 'Ollama Host API'}
                             </label>
                             {loadingModels && <span className="animate-spin" style={{ fontSize: '0.75rem', color: '#6366f1' }}>⏳</span>}
                         </div>
@@ -314,16 +345,26 @@ export default function NewScan() {
                             <input
                                 className="input"
                                 type="text"
-                                value={config.ollamaHost}
-                                onChange={(e) => setConfig(prev => ({ ...prev, ollamaHost: e.target.value }))}
+                                value={config.aiProvider === 'openai' ? config.customApiUrl : config.ollamaHost}
+                                onChange={(e) => {
+                                    if (config.aiProvider !== 'openai') {
+                                        setConfig(prev => ({ ...prev, ollamaHost: e.target.value }))
+                                    }
+                                }}
+                                disabled={config.aiProvider === 'openai'}
                                 placeholder="localhost:11434 or 192.168.1.100:11434"
-                                style={{ flex: 1, fontSize: '0.95rem', padding: '10px 12px', background: 'var(--bg-primary)', border: '1px solid rgba(99, 102, 241, 0.2)' }}
+                                style={{ 
+                                    flex: 1, fontSize: '0.95rem', padding: '10px 12px', 
+                                    background: config.aiProvider === 'openai' ? 'var(--bg-tertiary)' : 'var(--bg-primary)', 
+                                    border: '1px solid rgba(99, 102, 241, 0.2)',
+                                    opacity: config.aiProvider === 'openai' ? 0.7 : 1
+                                }}
                             />
                             <button
                                 type="button"
                                 className="btn btn-primary"
-                                onClick={() => fetchInstalledModels(config.ollamaHost)}
-                                disabled={loadingModels || !config.ollamaHost}
+                                onClick={() => fetchInstalledModels(config.aiProvider === 'openai' ? config.customApiUrl : config.ollamaHost)}
+                                disabled={loadingModels || (config.aiProvider === 'openai' ? !config.customApiUrl : !config.ollamaHost)}
                                 style={{ 
                                     background: 'var(--accent-primary)', 
                                     padding: '0 20px', 
@@ -342,7 +383,9 @@ export default function NewScan() {
                             </button>
                         </div>
                         <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '10px', lineHeight: 1.4 }}>
-                            Enter your host (e.g., your friend's <b>IP:11434</b>) and click refresh to load available models.
+                            {config.aiProvider === 'openai' 
+                                ? 'Using the Custom API configured in Settings.' 
+                                : 'Enter your host (e.g., your friend\'s <b>IP:11434</b>) and click refresh to load available models.'}
                         </p>
                     </div>
 
