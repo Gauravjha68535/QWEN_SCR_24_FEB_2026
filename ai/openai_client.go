@@ -133,7 +133,7 @@ func GenerateViaOpenAI(ctx context.Context, baseURL, apiKey, model, prompt strin
 		}
 	}
 
-	maxTokens := 16384
+	maxTokens := 8192
 	if v, ok := options["num_predict"]; ok {
 		if t, ok := v.(int); ok {
 			maxTokens = t
@@ -291,7 +291,7 @@ func TestOpenAIEndpoint(baseURL, apiKey, model string) (bool, string) {
 
 	reqJSON, _ := json.Marshal(reqBody)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(reqJSON))
@@ -303,7 +303,7 @@ func TestOpenAIEndpoint(baseURL, apiKey, model string) (bool, string) {
 		httpReq.Header.Set("Authorization", "Bearer "+apiKey)
 	}
 
-	client := &http.Client{Timeout: 20 * time.Second}
+	client := &http.Client{Timeout: 60 * time.Second}
 	resp, err := client.Do(httpReq)
 	if err != nil {
 		return false, fmt.Sprintf("Connection failed: %v", err)

@@ -124,9 +124,6 @@ func ValidateFindingsBatch(ctx context.Context, modelName string, findings []rep
 			displayPath := filepath.Join(parentDir, shortFile)
 
 			issueName := job.finding.IssueName
-			if len(issueName) > 35 {
-				issueName = issueName[:32] + "..."
-			}
 
 			// We wrap terminal output in a mutex to prevent lines from clobbering each other
 			mu.Lock()

@@ -468,6 +468,10 @@ func runScan(ctx context.Context, scanID string, targetDir string, cfg WebScanCo
 		var validatedStatic []reporter.Finding
 		var validatedAI []reporter.Finding
 		for _, f := range validatedFindings {
+			if strings.Contains(f.AiValidated, "No") || strings.Contains(f.AiValidated, "Error") {
+				// Drop findings explicitly rejected by AI or that failed validation
+				continue
+			}
 			if strings.Contains(f.Source, "ai") {
 				validatedAI = append(validatedAI, f)
 			} else {
@@ -501,6 +505,25 @@ func runScan(ctx context.Context, scanID string, targetDir string, cfg WebScanCo
 				wsHub.BroadcastLog(scanID, fmt.Sprintf("Consolidation failed, using simple merge: %v", err), "warning")
 			}
 		}
+	}
+
+	// ── Post-Judge Cleanup: Drop AI-rejected findings ────────────
+	// The Judge may re-introduce or pass-through findings that were explicitly
+	// rejected by the AI Validator. This final filter ensures they are dropped.
+	if cfg.EnableAI {
+		var cleanFindings []reporter.Finding
+		droppedCount := 0
+		for _, f := range allFindings {
+			if strings.Contains(f.AiValidated, "No") || strings.Contains(f.AiValidated, "Error") {
+				droppedCount++
+				continue
+			}
+			cleanFindings = append(cleanFindings, f)
+		}
+		if droppedCount > 0 {
+			wsHub.BroadcastLog(scanID, fmt.Sprintf("Post-Judge cleanup: dropped %d AI-rejected findings", droppedCount), "info")
+		}
+		allFindings = cleanFindings
 	}
 
 	// ── Confidence Calibration (always after AI) ────────────
@@ -1239,6 +1262,20 @@ func runEnsembleScan(ctx context.Context, scanID string, targetDir string, cfg W
 	wsHub.BroadcastLog(scanID, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "phase")
 	wsHub.BroadcastLog(scanID, "⚖️  PHASE 3: AI Judge — Merging Reports", "phase")
 	wsHub.BroadcastLog(scanID, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", "phase")
+
+	// Pre-Judge: AI Validation for Static Findings (To generate Remediations and filter FPs)
+	wsHub.BroadcastProgress(scanID, "Phase 3: Static Pre-Validation", 78)
+	wsHub.BroadcastLog(scanID, fmt.Sprintf("AI validating %d static discoveries for remediation insights...", len(staticFindings)), "info")
+
+	fileContents := make(map[string]string)
+	for _, files := range result.FilePaths {
+		for _, file := range files {
+			if data, err := os.ReadFile(file); err == nil {
+				fileContents[file] = string(data)
+			}
+		}
+	}
+	staticFindings = ai.ValidateFindingsBatch(ctx, modelName, staticFindings, fileContents, 4)
 
 	judgeModel := cfg.JudgeModel
 	if judgeModel == "" {

@@ -66,9 +66,10 @@ CODE CONTEXT (Full File or Primary Snippet):
 VALIDATION STEPS:
 1.  TAINT ANALYSIS: Map the flow from Source (user-input) to Sink (dangerous function). Is there a clear, unvalidated path?
 2.  CONFIGURATION & SECRETS: Note that Hardcoded Secrets, Missing Security Headers, CORS misconfigurations, and Weak/Default passwords DO NOT require user input to be dangerous. Flag them as True Positives if present.
-3.  FILTER ANALYSIS: Does the code have sanitization (e.g., regex, escaping)? If YES, could it be insufficient?
-4.  ENVIRONMENT CHECK: Is this a dev-only tool or a real production vulnerability?
-5.  IMPACT ESTIMATION: What is the worst-case scenario?
+3.  CRITICAL — CONFIGURATION FILE RULE: Files with extensions .env, .cfg, .ini, .properties, .yaml, .yml, or files named config*, secrets*, credentials*, or .env* are CONFIGURATION FILES. ANY hardcoded credential, API key, token, or password found in these files is ALWAYS a TRUE POSITIVE — never mark them as false positives. These files exist specifically to store secrets, so their presence IS the vulnerability.
+4.  FILTER ANALYSIS: Does the code have sanitization (e.g., regex, escaping)? If YES, could it be insufficient?
+5.  ENVIRONMENT CHECK: Is this a dev-only tool or a real production vulnerability?
+6.  IMPACT ESTIMATION: What is the worst-case scenario?
 
 OUTPUT:
 - Start with a <thinking> tag for step-by-step analysis.
@@ -116,7 +117,7 @@ Return ONLY a valid JSON object in the final part of your response:
 		defer valCancel()
 		fullText, err := GenerateViaOpenAI(valCtx, customURL, customKey, useModel, prompt, map[string]interface{}{
 			"temperature": 0.0,
-			"num_predict": 16384,
+			"num_predict": 8192,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("OpenAI validation request failed: %v", err)

@@ -113,7 +113,11 @@ func RunOSVCli(ctx context.Context, targetDir string) ([]reporter.Finding, error
 	output := stdout.String()
 	startIndex := strings.Index(output, "{")
 	if startIndex == -1 {
-		utils.LogWarn("OSV-Scanner did not return a valid JSON object. No vulnerabilities found or no package sources detected.")
+		if strings.Contains(stderr.String(), "No package sources found") || strings.Contains(output, "No package sources found") {
+			utils.LogInfo("OSV-Scanner gracefully skipped: No package sources (e.g. package.json, go.mod) discovered in this directory.")
+			return nil, nil // Return empty without throwing an error
+		}
+		utils.LogWarn("OSV-Scanner did not return a valid JSON object. No vulnerabilities found or unexpected error.")
 		if stderr.Len() > 0 {
 			utils.LogWarn(fmt.Sprintf("osv-scanner stderr: %s", stderr.String()))
 		}

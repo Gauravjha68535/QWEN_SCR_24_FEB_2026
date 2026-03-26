@@ -52,7 +52,7 @@ export default function Sidebar() {
             <div style={{ padding: '16px 12px', borderTop: '1px solid var(--border-primary)' }}>
                 <div style={{ padding: '12px', borderRadius: 'var(--radius-md)', background: 'var(--bg-card)', border: '1px solid var(--border-primary)' }}>
                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>Version</div>
-                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>v2.0.0 — Web UI</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>v2.0.0 — SentryQ</div>
                 </div>
             </div>
         </aside>

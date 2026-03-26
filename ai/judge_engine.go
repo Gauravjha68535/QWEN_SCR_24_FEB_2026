@@ -52,22 +52,8 @@ func JudgeFindings(ctx context.Context, staticFindings []reporter.Finding, aiFin
 	utils.LogInfo(fmt.Sprintf("⚖️  Judge LLM starting review: %d static + %d AI findings using model %s",
 		len(staticFindings), len(aiFindings), judgeModel))
 
-	// Only judge static findings from files that also have AI findings (massive speedup)
-	aiFiles := make(map[string]bool)
-	for _, f := range aiFindings {
-		aiFiles[f.FilePath] = true
-	}
-	var relevantStatic []reporter.Finding
-	var passThroughStatic []reporter.Finding
-	for _, f := range staticFindings {
-		if aiFiles[f.FilePath] {
-			relevantStatic = append(relevantStatic, f)
-		} else {
-			passThroughStatic = append(passThroughStatic, f)
-		}
-	}
-	utils.LogInfo(fmt.Sprintf("⚖️  Filtering: %d static findings overlap with AI files, %d pass through directly",
-		len(relevantStatic), len(passThroughStatic)))
+	// Both static and AI findings are sent to the Judge in full so it can evaluate all static findings
+	// including those in files where AI didn't natively discover anything.
 
 	// Configure Ollama host for the judge if different
 	originalHost := GetOllamaBaseURL()
@@ -81,7 +67,7 @@ func JudgeFindings(ctx context.Context, staticFindings []reporter.Finding, aiFin
 	var allJudge []JudgeFinding
 	idCounter := 1
 
-	for _, f := range relevantStatic {
+	for _, f := range staticFindings {
 		findingByID[idCounter] = f
 		allJudge = append(allJudge, JudgeFinding{
 			ID:          idCounter,
@@ -90,7 +76,7 @@ func JudgeFindings(ctx context.Context, staticFindings []reporter.Finding, aiFin
 			File:        f.FilePath,
 			Line:        f.LineNumber,
 			Severity:    f.Severity,
-			Description: truncateString(f.Description, 200),
+			Description: truncateString(f.Description, 4000),
 			CWE:         f.CWE,
 		})
 		idCounter++
@@ -105,7 +91,7 @@ func JudgeFindings(ctx context.Context, staticFindings []reporter.Finding, aiFin
 			File:        f.FilePath,
 			Line:        f.LineNumber,
 			Severity:    f.Severity,
-			Description: truncateString(f.Description, 200),
+			Description: truncateString(f.Description, 4000),
 			CWE:         f.CWE,
 		})
 		idCounter++
@@ -178,6 +164,14 @@ func JudgeFindings(ctx context.Context, staticFindings []reporter.Finding, aiFin
 				}
 			}
 
+			// Finding was explicitly kept by AI Judge, meaning it passed AI validation
+			if f.AiValidated != "Yes" && !strings.Contains(f.AiValidated, "Discovered") {
+				f.AiValidated = "Yes"
+			}
+			if f.AiReasoning == "" && v.Reason != "" {
+				f.AiReasoning = "AI Judge: " + v.Reason
+			}
+
 			finalFindings = append(finalFindings, f)
 			mergedIDs[v.MasterID] = true
 		}
@@ -190,12 +184,9 @@ func JudgeFindings(ctx context.Context, staticFindings []reporter.Finding, aiFin
 		}
 	}
 
-	// Add back all static findings from files without AI findings (they bypass the judge)
-	finalFindings = append(finalFindings, passThroughStatic...)
-
-	utils.LogInfo(fmt.Sprintf("⚖️  Judge complete: %d judged + %d pass-through → %d final findings (%d dropped, %d merged)",
-		len(relevantStatic)+len(aiFindings), len(passThroughStatic), len(finalFindings),
-		len(droppedIDs), len(mergedIDs)-len(finalFindings)+len(passThroughStatic)))
+	utils.LogInfo(fmt.Sprintf("⚖️  Judge complete: %d judged → %d final findings (%d dropped, %d merged)",
+		len(staticFindings)+len(aiFindings), len(finalFindings),
+		len(droppedIDs), len(mergedIDs)))
 
 	return finalFindings, nil
 }
@@ -272,7 +263,7 @@ IMPORTANT: Every finding ID from the input MUST appear exactly once — either a
 		}
 		fullText, err := GenerateViaOpenAI(judgeCtx, customURL, customKey, useModel, prompt, map[string]interface{}{
 			"temperature": 0.0,
-			"num_predict": 16384,
+			"num_predict": 8192,
 		})
 		if err != nil {
 			if strings.Contains(err.Error(), "context canceled") || strings.Contains(err.Error(), "scan interrupted") {

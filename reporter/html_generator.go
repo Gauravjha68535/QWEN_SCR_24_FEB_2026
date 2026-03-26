@@ -491,8 +491,8 @@ const htmlTemplate = `<!DOCTYPE html>
                         {{else if eq .AiValidated "No"}}<span class="ai-badge" title="False Positive">❌</span>
                         {{else}}<span class="ai-badge" title="Not Checked" style="color:var(--text-dim)">—</span>{{end}}
                     </td>
-                    <td class="cell-desc">{{truncate .Description 70}}</td>
-                    <td class="cell-desc">{{truncate .Remediation 50}}</td>
+                    <td class="cell-desc">{{truncate .Description 1000}}</td>
+                    <td class="cell-desc">{{truncate .Remediation 1000}}</td>
                 </tr>
                 <tr class="detail-row" data-severity="{{.Severity}}" data-source="{{.Source}}" style="display: none;">
                     <td colspan="11" style="padding: 0; border-bottom: none;">
@@ -507,7 +507,7 @@ const htmlTemplate = `<!DOCTYPE html>
                                     <div class="detail-section">
                                         <h4>Remediation / Fix</h4>
                                         {{if hasCodeFence .Remediation}}
-                                        <div class="detail-text" style="margin-bottom:8px;">{{truncate .Remediation 200}}</div>
+                                        <div class="detail-text" style="margin-bottom:8px;">{{truncate .Remediation 1000}}</div>
                                         <div class="code-wrapper">
                                             <button class="copy-btn" onclick="copyCode(this, event)">Copy</button>
                                             <div class="code-block remediation">{{stripFences .Remediation}}</div>
@@ -636,7 +636,7 @@ const htmlTemplate = `<!DOCTYPE html>
                         <td class="cell-file" title="{{.FilePath}}">{{.FilePath}}:{{.LineNumber}}</td>
                         <td><span class="severity-badge {{.Severity}}">{{.Severity}}</span></td>
                         <td><span class="source-badge">{{.Source}}</span></td>
-                        <td class="cell-desc">{{if .AiReasoning}}{{truncate .AiReasoning 70}}{{else}}Located in test/mock context{{end}}</td>
+                        <td class="cell-desc">{{if .AiReasoning}}{{truncate .AiReasoning 1000}}{{else}}Located in test/mock context{{end}}</td>
                     </tr>
                     <tr class="detail-row" style="display: none;">
                         <td colspan="6" style="padding: 0; border-bottom: none;">
@@ -690,7 +690,7 @@ const htmlTemplate = `<!DOCTYPE html>
                         <td class="cell-file" title="{{.FilePath}}">{{.FilePath}}:{{.LineNumber}}</td>
                         <td><span class="severity-badge {{.Severity}}">{{.Severity}}</span></td>
                         <td>{{if .CWE}}<span class="ref-badge">{{.CWE}}</span>{{end}}</td>
-                        <td class="cell-desc">{{truncate .Description 70}}</td>
+                        <td class="cell-desc">{{truncate .Description 1000}}</td>
                     </tr>
                     <tr class="detail-row" data-severity="{{.Severity}}" data-source="{{.Source}}" style="display: none;">
                         <td colspan="6" style="padding: 0; border-bottom: none;">

@@ -97,6 +97,10 @@ func RepairJSON(input string) string {
 		return input
 	}
 
+	// Pre-repair: strip trailing commas before } and ] (very common AI mistake)
+	reTrailingComma := regexp.MustCompile(`,\s*([}\]])`)
+	input = reTrailingComma.ReplaceAllString(input, "$1")
+
 	// Use a stack to track open structures in order, and track if we are inside a string
 	var stack []rune
 	inString := false

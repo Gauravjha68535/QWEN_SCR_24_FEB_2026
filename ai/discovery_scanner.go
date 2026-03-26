@@ -141,9 +141,9 @@ func buildProjectContext(targetDir string, filesToScan []string) string {
 	}
 
 	result := sb.String()
-	// Cap context to prevent prompt bloat (max 3000 chars)
-	if len(result) > 3000 {
-		result = result[:3000] + "\n  ... (context truncated)\n"
+	// Cap context to prevent prompt bloat (max 10000 chars)
+	if len(result) > 10000 {
+		result = result[:10000] + "\n  ... (context cap reached)\n"
 	}
 	return result
 }
@@ -300,6 +300,7 @@ func DiscoverVulnerabilities(ctx context.Context, modelName string, filePath str
 			"FORMATTING & OUTPUT:\n"+
 			"- Start with a <thinking> tag for step-by-step analysis.\n"+
 			"- Provide the final result ONLY in valid JSON format.\n"+
+			"- CRITICAL: Do NOT use placeholders, ellipses (...), or pseudo-code inside the JSON. The JSON array must be fully populated and strictly parsable exactly as written. Do not use '[...]' to abbreviate.\n"+
 			"- If no vulnerabilities are found, return '{\"vulnerabilities\": []}' in the JSON section.\n"+
 			"- Remediation must be plain text explanation, NO code diffs.\n\n"+
 			"JSON STRUCTURE:\n"+
@@ -344,7 +345,7 @@ func DiscoverVulnerabilities(ctx context.Context, modelName string, filePath str
 				reqCtx, reqCancel = context.WithTimeout(ctx, 30*time.Minute)
 				fullText, readErr = GenerateViaOpenAI(reqCtx, customURL, customKey, useModel, prompt, map[string]interface{}{
 					"temperature": 0.0,
-					"num_predict": 16384,
+					"num_predict": 8192,
 				})
 				reqCancel()
 			} else {
@@ -431,8 +432,8 @@ func DiscoverVulnerabilities(ctx context.Context, modelName string, filePath str
 					content, err := os.ReadFile(targetPath)
 					if err == nil {
 						snippet := string(content)
-						if len(snippet) > 8000 {
-							snippet = snippet[:8000] + "\n... (truncated)"
+						if len(snippet) > 32000 {
+							snippet = snippet[:32000] + "\n... (context cap reached)"
 						}
 						contextAdditions.WriteString(fmt.Sprintf("\n// File: %s\n```\n%s\n```\n", reqFile, snippet))
 					} else {
@@ -449,13 +450,9 @@ func DiscoverVulnerabilities(ctx context.Context, modelName string, filePath str
 			continue
 		}
 
-		// DEBUG: Log full raw response (truncated for readability)
+		// DEBUG: Log full raw response
 		if len(outputStr) > 0 {
-			logSnippet := outputStr
-			if len(logSnippet) > 500 {
-				logSnippet = logSnippet[:500] + "... (truncated)"
-			}
-			utils.LogInfo(fmt.Sprintf("Full AI Response for %s:\n\n%s\n\n", filePath, logSnippet))
+			utils.LogInfo(fmt.Sprintf("Full AI Response for %s:\n\n%s\n\n", filePath, outputStr))
 		} else {
 			utils.LogWarn(fmt.Sprintf("AI returned empty response for %s", filePath))
 		}
@@ -738,7 +735,7 @@ func RunAIDiscovery(ctx context.Context, modelName string, targetDir string, log
 	if errorCount > 0 {
 		color.Yellow("  Errors / Skipped: %d", errorCount)
 	}
-	color.White("  Vulnerable Files: %d", filesWithIssues)
+	color.White("  Vulnerable Files: %d of %d", filesWithIssues, filesProcessed)
 	color.HiRed("  Total Discovered: %d vulnerabilities", totalDiscovered)
 	color.Cyan("═══════════════════════════════════════════════════════\n")
 

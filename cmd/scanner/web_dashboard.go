@@ -243,13 +243,14 @@ func handleUploadScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Limit upload size to 500MB to prevent DoS
-	r.Body = http.MaxBytesReader(w, r.Body, 500<<20)
+	// Limit upload size to 10GB (10 << 30) for large projects
+	r.Body = http.MaxBytesReader(w, r.Body, 10<<30)
 
-	// Parse multipart (max 500MB)
-	r.ParseMultipartForm(500 << 20)
-
-	configJSON := r.FormValue("config")
+	reader, err := r.MultipartReader()
+	if err != nil {
+		http.Error(w, "Failed to create multipart reader: "+err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	// Save uploaded files to a temp directory
 	tmpDir, err := os.MkdirTemp("", "qwen-upload-")
@@ -258,32 +259,63 @@ func handleUploadScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	files := r.MultipartForm.File["files"]
-	for _, fileHeader := range files {
-		file, err := fileHeader.Open()
+	var configJSON string
+	fileCount := 0
+
+	for {
+		part, err := reader.NextPart()
+		if err == io.EOF {
+			break
+		}
 		if err != nil {
+			http.Error(w, "Error reading multipart part: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		if part.FormName() == "config" {
+			buf := new(strings.Builder)
+			io.Copy(buf, part)
+			configJSON = buf.String()
+			part.Close()
 			continue
 		}
 
-		// Preserve relative path structure with path traversal protection
-		relPath := filepath.Clean(fileHeader.Filename)
-		destPath := filepath.Join(tmpDir, relPath)
-		// Ensure destPath stays within tmpDir
-		if !strings.HasPrefix(filepath.Clean(destPath), filepath.Clean(tmpDir)) {
-			file.Close()
-			continue // Skip files that would escape the temp directory
-		}
-		os.MkdirAll(filepath.Dir(destPath), 0755)
+		if part.FormName() == "files" {
+			filename := part.FileName()
+			if filename == "" {
+				part.Close()
+				continue
+			}
 
-		destFile, err := os.Create(destPath)
-		if err != nil {
-			file.Close()
-			continue
-		}
+			// Preserve relative path structure with path traversal protection
+			relPath := filepath.Clean(filename)
+			destPath := filepath.Join(tmpDir, relPath)
 
-		io.Copy(destFile, file)
-		destFile.Close()
-		file.Close()
+			// Ensure destPath stays within tmpDir
+			if !strings.HasPrefix(filepath.Clean(destPath), filepath.Clean(tmpDir)) {
+				part.Close()
+				continue
+			}
+
+			os.MkdirAll(filepath.Dir(destPath), 0755)
+			destFile, err := os.Create(destPath)
+			if err != nil {
+				part.Close()
+				continue
+			}
+
+			io.Copy(destFile, part)
+			destFile.Close()
+			part.Close()
+			fileCount++
+		} else {
+			part.Close()
+		}
+	}
+
+	if fileCount == 0 && configJSON == "" {
+		http.Error(w, "No files or config found in upload", http.StatusBadRequest)
+		return
 	}
 
 	scanID, err := StartScanFromUpload(tmpDir, configJSON)
