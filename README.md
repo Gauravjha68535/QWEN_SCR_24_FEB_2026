@@ -9,7 +9,7 @@ SentryQ transforms security scanning from simple pattern matching into **Intelli
 
 ## 🏗️ System Architecture
 
-SentryQ follows a multi-tier analysis pipeline that prioritizes precision and context.
+SentryQ follows a multi-tier analysis pipeline that prioritizes precision and context. It is fully cross-platform (Windows, macOS, Linux).
 
 ```mermaid
 graph TD
@@ -61,48 +61,54 @@ graph TD
 ## 🔍 Security Engine Deep-Dive
 
 ### 1. Taint Analysis & Reachability
-SentryQ doesn't just look for "dangerous functions." Our **[Taint Analyzer](file:///home/justdial/Desktop/QWEN_SCR_24_FEB_2026/scanner/taint-analyzer.go)** builds a variable flow graph to see if untrusted input (e.g., `req.body`) can actually reach a sink (e.g., `sql.Execute`) without being sanitized or escaped. This is augmented by **[Reachability Analysis](file:///home/justdial/Desktop/QWEN_SCR_24_FEB_2026/scanner/reachability.go)** which verifies that the vulnerable code path is actually traversable in the application's call graph.
+Our **[Taint Analyzer](file:///home/justdial/Desktop/QWEN_SCR_24_FEB_2026/scanner/taint-analyzer.go)** builds a variable flow graph to see if untrusted input can reach a sink without being sanitized. This is augmented by **[Reachability Analysis](file:///home/justdial/Desktop/QWEN_SCR_24_FEB_2026/scanner/reachability.go)** which verifies that the vulnerable code path is traversable in the application's call graph.
 
 ### 2. AI Intelligence Layer
-The **[AI Layer](file:///home/justdial/Desktop/QWEN_SCR_24_FEB_2026/ai/)** operates in three phases:
-- **Discovery**: The LLM scans files for logic flaws that static tools miss (e.g., broken access control, IDOR).
-- **Validation**: Every finding is passed to the **[Validator](file:///home/justdial/Desktop/QWEN_SCR_24_FEB_2026/ai/validator.go)** with full-file context to confirm exploitability.
-- **Judge Merger**: The **[Judge Engine](file:///home/justdial/Desktop/QWEN_SCR_24_FEB_2026/ai/judge_engine.go)** uses a larger model to semantically deduplicate findings that overlap (e.g., a static rule and AI discovery hitting the same line).
+The **[AI Layer](file:///home/justdial/Desktop/QWEN_SCR_24_FEB_2026/ai/)** operates in three phases: Discovery, Validation (via **[Validator](file:///home/justdial/Desktop/QWEN_SCR_24_FEB_2026/ai/validator.go)**), and the **[Judge Engine](file:///home/justdial/Desktop/QWEN_SCR_24_FEB_2026/ai/judge_engine.go)** merger.
 
 ### 3. Threat Intelligence Enrichment
-Findings are enriched via the **[Threat Intel Scanner](file:///home/justdial/Desktop/QWEN_SCR_24_FEB_2026/scanner/threat_intel.go)** using:
-- **MITRE ATT&CK** Mapping
-- **CISA KEV** (Known Exploited Vulnerabilities)
-- **EPSS** (Exploit Prediction Scoring System)
+Findings are enriched via the **[Threat Intel Scanner](file:///home/justdial/Desktop/QWEN_SCR_24_FEB_2026/scanner/threat_intel.go)** using MITRE ATT&CK, CISA KEV, and EPSS mapping.
 
 ---
 
 ## 🏁 Quick Start
 
-### 1. Prerequisites (One-Liner Install)
+### 1. Prerequisites (Platform Specific)
 
 #### 🐧 Linux / 🍏 macOS
 ```bash
-# Install Go, Ollama, and dependencies
-curl -sSL https://raw.githubusercontent.com/SentryQ/setup/main/install.sh | bash
-
-# Ensure you have the AI model running
+# Ensure Go (1.21+) and Node.js (18+) are installed
+# Install Ollama from ollama.com
 ollama run qwen2.5-coder:7b
+
+# Install External Scanners
+go install github.com/google/osv-scanner/v2/cmd/osv-scanner@v2
+pip3 install semgrep
 ```
 
 #### 🪟 Windows
-1. Install **Go** from [golang.org](https://golang.org/dl/).
-2. Install **Ollama** and run `ollama run qwen2.5-coder:7b`.
-3. Install **Semgrep** (`pip install semgrep`).
+SentryQ is fully supported on Windows.
+1. Install **Go** (1.21+) from [golang.org](https://golang.org/dl/).
+2. Install **Node.js** (18+) from [nodejs.org](https://nodejs.org/).
+3. Install **Ollama** and run `ollama run qwen2.5-coder:7b`.
+4. Install **Python** and **Semgrep** (`pip install semgrep`).
+5. Install **OSV-Scanner** (`go install github.com/google/osv-scanner/v2/cmd/osv-scanner@v2`).
 
 ### 2. Build & Deploy
-```bash
-# Build the embedded Frontend & Backend
-./build.sh
 
-# Start SentryQ
+#### 🐧 Linux / 🍏 macOS
+```bash
+chmod +x build.sh
+./build.sh
 ./sentryq
 ```
+
+#### 🪟 Windows (Native CMD/PowerShell)
+```batch
+build.bat
+sentryq.exe
+```
+
 *Access the dashboard at `http://localhost:5336`*
 
 ---
@@ -115,13 +121,12 @@ ollama run qwen2.5-coder:7b
 | `-ollama-host` | Remote Ollama instance (default: `localhost:11434`) |
 | `[target]` | Optional: Path to a directory for an immediate CLI scan |
 
-**Configuration**: Edit **[`.qwen-settings.json`](./.qwen-settings.json.example)** to configure AI providers (OpenAI/Ollama), custom API endpoints, and model preferences.
+**Configuration**: Edit **[`.qwen-settings.json`](./.qwen-settings.json.example)** to configure AI providers (OpenAI/Ollama) and model preferences.
 
 ---
 
-## 🤝 Contributing
+## 🤝 Contributing & Extension
 
-We welcome contributions to the SentryQ core!
 - **Core Engine**: See **[`cmd/scanner/`](./cmd/scanner/)** and **[`scanner/`](./scanner/)**.
 - **Rules**: Add custom YAML rules to **[`rules/`](./rules/)**.
 - **Frontend**: Built with React in **[`web/`](./web/)**.
