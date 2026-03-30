@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Sidebar from './components/Sidebar'
 import PageTransition from './components/PageTransition'
@@ -13,11 +13,13 @@ import ChatBot from './components/ChatBot'
 import './index.css'
 
 export default function App() {
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+
   return (
     <BrowserRouter>
       <div className="app-layout">
-        <Sidebar />
-        <main className="main-content">
+        <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(prev => !prev)} />
+        <main className={`main-content ${sidebarOpen ? '' : 'main-content-expanded'}`}>
           <AnimatePresence mode="wait">
             <Routes>
               <Route path="/" element={<PageTransition><Dashboard /></PageTransition>} />

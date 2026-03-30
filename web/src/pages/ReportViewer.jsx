@@ -324,173 +324,152 @@ export default function ReportViewer() {
                                 {expandedRow === i && (
                                     <tr>
                                         <td colSpan={9} style={{ background: 'var(--bg-elevated)', padding: '20px' }}>
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                                                <div>
-                                                    <h4 style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><FileText size={14} /> Description</span>
-                                                        <button
-                                                            className="btn btn-primary btn-sm"
-                                                            style={{ padding: '4px 10px', fontSize: '0.7rem' }}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                const event = new CustomEvent('qwen-chat-open', {
-                                                                    detail: {
-                                                                        content: `Explain this finding in detail:\nIssue: ${f.issue_name}\nFile: ${f.file_path}\nDescription: ${f.description}\nCWE: ${f.cwe}`,
-                                                                        autoSend: true
-                                                                    }
-                                                                });
-                                                                window.dispatchEvent(event);
-                                                            }}
-                                                        >
-                                                            <Sparkles size={12} /> Explain
-                                                        </button>
-                                                        <button
-                                                            className="btn btn-sm"
-                                                            style={{ padding: '4px 10px', fontSize: '0.7rem', background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.2)' }}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                const event = new CustomEvent('qwen-chat-open', {
-                                                                    detail: {
-                                                                        content: `Generate a proof-of-concept exploit for this vulnerability:\nIssue: ${f.issue_name}\nFile: ${f.file_path}:${f.line_number}\nSeverity: ${f.severity}\nDescription: ${f.description}\nCWE: ${f.cwe}\n\nProvide a safe, educational PoC that demonstrates the vulnerability is exploitable.`,
-                                                                        autoSend: true
-                                                                    }
-                                                                });
-                                                                window.dispatchEvent(event);
-                                                            }}
-                                                        >
-                                                            ⚡ PoC
-                                                        </button>
-                                                        <button
-                                                            className="btn btn-sm"
-                                                            style={{ padding: '4px 10px', fontSize: '0.7rem', background: 'rgba(34, 197, 94, 0.1)', color: '#4ade80', border: '1px solid rgba(34, 197, 94, 0.2)' }}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                const event = new CustomEvent('qwen-chat-open', {
-                                                                    detail: {
-                                                                        content: `Provide secure code to fix this vulnerability:\nIssue: ${f.issue_name}\nFile: ${f.file_path}:${f.line_number}\nCWE: ${f.cwe}\nCurrent code context: ${f.code_snippet || 'not available'}\n\nShow BEFORE and AFTER code with explanation.`,
-                                                                        autoSend: true
-                                                                    }
-                                                                });
-                                                                window.dispatchEvent(event);
-                                                            }}
-                                                        >
-                                                            🛡️ Fix
-                                                        </button>
-                                                    </h4>
-                                                    <p style={{ fontSize: '0.85rem', lineHeight: 1.6, color: 'var(--text-secondary)' }}>{f.description}</p>
-
-                                                    {f.ai_reasoning && (
-                                                        <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(99, 102, 241, 0.05)', borderRadius: '8px', borderLeft: '3px solid #6366f1' }}>
-                                                            <h4 style={{ fontSize: '0.75rem', color: '#818cf8', textTransform: 'uppercase', marginBottom: '6px', fontWeight: 700 }}>AI Reasoning Insight</h4>
-                                                            <p style={{ fontSize: '0.82rem', lineHeight: 1.5, color: '#94a3b8', fontStyle: 'italic' }}>"{f.ai_reasoning}"</p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div>
-                                                    <h4 style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                        <Shield size={14} /> Remediation
-                                                    </h4>
-                                                    <p style={{ fontSize: '0.85rem', lineHeight: 1.6, color: 'var(--text-secondary)' }}>{f.remediation || 'No remediation provided.'}</p>
-
-                                                    {f.exploit_path && f.exploit_path.length > 0 && (
-                                                        <div style={{ marginTop: '20px' }}>
-                                                            <h4 style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '14px', fontWeight: 700, letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                <Activity size={14} color="#ef4444" /> Taint Flow Analysis
-                                                            </h4>
-                                                            <div style={{ padding: '4px 8px' }}>
-                                                                {f.exploit_path.map((step, idx) => {
-                                                                    const isSource = idx === 0;
-                                                                    const isSink = idx === f.exploit_path.length - 1;
-                                                                    return (
-                                                                        <div key={idx} style={{ display: 'flex', gap: '16px', position: 'relative' }}>
-                                                                            {/* Vertical Line Connector */}
-                                                                            {idx < f.exploit_path.length - 1 && (
-                                                                                <div style={{ 
-                                                                                    position: 'absolute', 
-                                                                                    left: '7px', 
-                                                                                    top: '24px', 
-                                                                                    bottom: '-8px', 
-                                                                                    width: '2px', 
-                                                                                    background: 'linear-gradient(to bottom, #ef4444, #475569)',
-                                                                                    opacity: 0.4
-                                                                                }} />
-                                                                            )}
-                                                                            
-                                                                            {/* Node Icon */}
-                                                                            <div style={{ 
-                                                                                width: '16px', 
-                                                                                height: '16px', 
-                                                                                borderRadius: '50%', 
-                                                                                background: isSource ? '#ef4444' : isSink ? '#991b1b' : '#334155',
-                                                                                border: `3px solid ${isSource || isSink ? 'rgba(239, 68, 68, 0.2)' : 'rgba(71, 85, 105, 0.1)'}`,
-                                                                                zIndex: 2,
-                                                                                marginTop: '4px',
-                                                                                boxShadow: isSource ? '0 0 10px rgba(239, 68, 68, 0.4)' : 'none',
-                                                                                display: 'flex',
-                                                                                alignItems: 'center',
-                                                                                justifyContent: 'center'
-                                                                            }}>
-                                                                                {isSink && <div style={{ width: '4px', height: '4px', background: '#fff', borderRadius: '50%' }} />}
-                                                                            </div>
-
-                                                                            {/* Step Content */}
-                                                                            <div style={{ 
-                                                                                paddingBottom: idx === f.exploit_path.length - 1 ? '0' : '20px',
-                                                                                flex: 1
-                                                                            }}>
-                                                                                <div style={{ 
-                                                                                    display: 'flex', 
-                                                                                    alignItems: 'center', 
-                                                                                    gap: '8px',
-                                                                                    marginBottom: '4px'
-                                                                                }}>
-                                                                                    <span style={{ 
-                                                                                        fontSize: '0.7rem', 
-                                                                                        fontWeight: 700, 
-                                                                                        color: isSource ? '#ef4444' : isSink ? '#f87171' : 'var(--text-muted)',
-                                                                                        textTransform: 'uppercase'
-                                                                                    }}>
-                                                                                        {isSource ? 'Source' : isSink ? 'Sink' : `Hop ${idx}`}
-                                                                                    </span>
-                                                                                </div>
-                                                                                <div style={{ 
-                                                                                    fontSize: '0.82rem', 
-                                                                                    color: isSink ? '#fca5a5' : 'var(--text-primary)',
-                                                                                    lineHeight: 1.4,
-                                                                                    fontWeight: isSource || isSink ? 600 : 400
-                                                                                }}>
-                                                                                    {step}
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
+                                            {/* Action Buttons */}
+                                            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                                                <button
+                                                    className="btn btn-primary btn-sm"
+                                                    style={{ padding: '4px 10px', fontSize: '0.7rem' }}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        const event = new CustomEvent('qwen-chat-open', {
+                                                            detail: {
+                                                                content: `Explain this finding in detail:\nIssue: ${f.issue_name}\nFile: ${f.file_path}\nDescription: ${f.description}\nCWE: ${f.cwe}`,
+                                                                autoSend: true
+                                                            }
+                                                        });
+                                                        window.dispatchEvent(event);
+                                                    }}
+                                                >
+                                                    <Sparkles size={12} /> Explain
+                                                </button>
+                                                <button
+                                                    className="btn btn-sm"
+                                                    style={{ padding: '4px 10px', fontSize: '0.7rem', background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.2)' }}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        const event = new CustomEvent('qwen-chat-open', {
+                                                            detail: {
+                                                                content: `Generate a proof-of-concept exploit for this vulnerability:\nIssue: ${f.issue_name}\nFile: ${f.file_path}:${f.line_number}\nSeverity: ${f.severity}\nDescription: ${f.description}\nCWE: ${f.cwe}\n\nProvide a safe, educational PoC that demonstrates the vulnerability is exploitable.`,
+                                                                autoSend: true
+                                                            }
+                                                        });
+                                                        window.dispatchEvent(event);
+                                                    }}
+                                                >
+                                                    ⚡ PoC
+                                                </button>
+                                                <button
+                                                    className="btn btn-sm"
+                                                    style={{ padding: '4px 10px', fontSize: '0.7rem', background: 'rgba(34, 197, 94, 0.1)', color: '#4ade80', border: '1px solid rgba(34, 197, 94, 0.2)' }}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        const event = new CustomEvent('qwen-chat-open', {
+                                                            detail: {
+                                                                content: `Provide secure code to fix this vulnerability:\nIssue: ${f.issue_name}\nFile: ${f.file_path}:${f.line_number}\nCWE: ${f.cwe}\nCurrent code context: ${f.code_snippet || 'not available'}\n\nShow BEFORE and AFTER code with explanation.`,
+                                                                autoSend: true
+                                                            }
+                                                        });
+                                                        window.dispatchEvent(event);
+                                                    }}
+                                                >
+                                                    🛡️ Fix
+                                                </button>
                                             </div>
 
-                                            {f.exploit_poc && f.exploit_poc !== "N/A" && (
-                                                <div style={{ marginTop: '20px' }}>
-                                                    <h4 style={{ fontSize: '0.78rem', color: '#f87171', textTransform: 'uppercase', marginBottom: '6px', fontWeight: 700 }}>AI-Generated Concept Exploit (PoC)</h4>
-                                                    <pre style={{ background: '#1a1010', padding: '12px', borderRadius: '8px', fontSize: '0.78rem', overflow: 'auto', border: '1px solid #450a0a', color: '#fca5a5' }}>
-                                                        <code>{f.exploit_poc}</code>
+                                            {/* Description */}
+                                            <div style={{ marginBottom: '16px' }}>
+                                                <h4 style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                    <FileText size={14} /> Description
+                                                </h4>
+                                                <p style={{ fontSize: '0.85rem', lineHeight: 1.6, color: 'var(--text-secondary)', wordBreak: 'break-word', overflowWrap: 'break-word' }}>{f.description}</p>
+                                            </div>
+
+                                            {/* Vulnerable Code Snippet */}
+                                            {f.code_snippet && (
+                                                <div style={{ marginBottom: '16px' }}>
+                                                    <h4 style={{ fontSize: '0.78rem', color: '#f87171', textTransform: 'uppercase', marginBottom: '6px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                        <Code size={14} /> Vulnerable Code
+                                                    </h4>
+                                                    <pre style={{ background: '#1a0a0a', padding: '14px', borderRadius: '8px', fontSize: '0.78rem', border: '1px solid #450a0a', color: '#fca5a5', whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'break-word', overflowX: 'auto', maxWidth: '100%', margin: 0 }}>
+                                                        <code>{f.code_snippet}</code>
                                                     </pre>
                                                 </div>
                                             )}
 
+                                            {/* Secure Fix Code */}
                                             {f.fixed_code && (
-                                                <div style={{ marginTop: '16px' }}>
-                                                    <h4 style={{ fontSize: '0.78rem', color: '#4ade80', textTransform: 'uppercase', marginBottom: '6px', fontWeight: 700 }}>Secure Implementation Reference</h4>
-                                                    <pre style={{ background: '#0a1410', padding: '12px', borderRadius: '8px', fontSize: '0.8rem', overflow: 'auto', border: '1px solid #064e3b', color: '#6ee7b7' }}>
+                                                <div style={{ marginBottom: '16px' }}>
+                                                    <h4 style={{ fontSize: '0.78rem', color: '#4ade80', textTransform: 'uppercase', marginBottom: '6px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                        🛡️ Secure Fix
+                                                    </h4>
+                                                    <pre style={{ background: '#0a1410', padding: '14px', borderRadius: '8px', fontSize: '0.78rem', border: '1px solid #064e3b', color: '#6ee7b7', whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'break-word', overflowX: 'auto', maxWidth: '100%', margin: 0 }}>
                                                         <code>{f.fixed_code}</code>
                                                     </pre>
                                                 </div>
                                             )}
 
-                                            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-primary)', paddingTop: '12px' }}>
-                                                <div style={{ display: 'flex', gap: '16px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                            {/* AI Reasoning */}
+                                            {f.ai_reasoning && (
+                                                <div style={{ marginBottom: '16px', padding: '12px', background: 'rgba(99, 102, 241, 0.05)', borderRadius: '8px', borderLeft: '3px solid #6366f1' }}>
+                                                    <h4 style={{ fontSize: '0.75rem', color: '#818cf8', textTransform: 'uppercase', marginBottom: '6px', fontWeight: 700 }}>AI Reasoning Insight</h4>
+                                                    <p style={{ fontSize: '0.82rem', lineHeight: 1.5, color: '#94a3b8', fontStyle: 'italic', wordBreak: 'break-word', overflowWrap: 'break-word' }}>"{f.ai_reasoning}"</p>
+                                                </div>
+                                            )}
+
+                                            {/* Remediation */}
+                                            <div style={{ marginBottom: '16px' }}>
+                                                <h4 style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                    <Shield size={14} /> Remediation
+                                                </h4>
+                                                <p style={{ fontSize: '0.85rem', lineHeight: 1.6, color: 'var(--text-secondary)', wordBreak: 'break-word', overflowWrap: 'break-word' }}>{f.remediation || 'No remediation provided.'}</p>
+                                            </div>
+
+                                            {/* Exploit PoC */}
+                                            {f.exploit_poc && f.exploit_poc !== "N/A" && (
+                                                <div style={{ marginBottom: '16px' }}>
+                                                    <h4 style={{ fontSize: '0.78rem', color: '#f87171', textTransform: 'uppercase', marginBottom: '6px', fontWeight: 700 }}>AI-Generated Concept Exploit (PoC)</h4>
+                                                    <pre style={{ background: '#1a1010', padding: '14px', borderRadius: '8px', fontSize: '0.78rem', border: '1px solid #450a0a', color: '#fca5a5', whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'break-word', overflowX: 'auto', maxWidth: '100%', margin: 0 }}>
+                                                        <code>{f.exploit_poc}</code>
+                                                    </pre>
+                                                </div>
+                                            )}
+
+                                            {/* Taint Flow Analysis */}
+                                            {f.exploit_path && f.exploit_path.length > 0 && (
+                                                <div style={{ marginBottom: '16px' }}>
+                                                    <h4 style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '14px', fontWeight: 700, letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        Taint Flow Analysis
+                                                    </h4>
+                                                    <div style={{ padding: '4px 8px' }}>
+                                                        {f.exploit_path.map((step, idx) => {
+                                                            const isSource = idx === 0;
+                                                            const isSink = idx === f.exploit_path.length - 1;
+                                                            return (
+                                                                <div key={idx} style={{ display: 'flex', gap: '16px', position: 'relative' }}>
+                                                                    {idx < f.exploit_path.length - 1 && (
+                                                                        <div style={{ position: 'absolute', left: '7px', top: '24px', bottom: '-8px', width: '2px', background: 'linear-gradient(to bottom, #ef4444, #475569)', opacity: 0.4 }} />
+                                                                    )}
+                                                                    <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: isSource ? '#ef4444' : isSink ? '#991b1b' : '#334155', border: `3px solid ${isSource || isSink ? 'rgba(239, 68, 68, 0.2)' : 'rgba(71, 85, 105, 0.1)'}`, zIndex: 2, marginTop: '4px', boxShadow: isSource ? '0 0 10px rgba(239, 68, 68, 0.4)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                                                        {isSink && <div style={{ width: '4px', height: '4px', background: '#fff', borderRadius: '50%' }} />}
+                                                                    </div>
+                                                                    <div style={{ paddingBottom: idx === f.exploit_path.length - 1 ? '0' : '20px', flex: 1, minWidth: 0 }}>
+                                                                        <div style={{ fontSize: '0.7rem', fontWeight: 700, color: isSource ? '#ef4444' : isSink ? '#f87171' : 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>
+                                                                            {isSource ? 'Source' : isSink ? 'Sink' : `Hop ${idx}`}
+                                                                        </div>
+                                                                        <div style={{ fontSize: '0.82rem', color: isSink ? '#fca5a5' : 'var(--text-primary)', lineHeight: 1.4, fontWeight: isSource || isSink ? 600 : 400, wordBreak: 'break-word' }}>
+                                                                            {step}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Footer: Source, CWE, OWASP, Trust Score */}
+                                            <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-primary)', paddingTop: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                                                <div style={{ display: 'flex', gap: '16px', fontSize: '0.75rem', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
                                                     <span>Source: <strong style={{ color: 'var(--text-secondary)' }}>{f.source}</strong></span>
                                                     {f.cwe && <span>CWE: <strong style={{ color: 'var(--text-secondary)' }}>{f.cwe}</strong></span>}
                                                     {f.owasp && <span>OWASP: <strong style={{ color: 'var(--text-secondary)' }}>{f.owasp}</strong></span>}
