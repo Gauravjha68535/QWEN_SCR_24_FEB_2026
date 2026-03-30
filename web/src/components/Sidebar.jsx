@@ -22,28 +22,33 @@ export default function Sidebar({ isOpen, onToggle }) {
 
     return (
         <>
-            {/* Hamburger toggle button - always visible */}
-            <button
-                className={`sidebar-hamburger ${isOpen ? '' : 'sidebar-hamburger-collapsed'}`}
-                onClick={onToggle}
-                aria-label="Toggle sidebar"
-            >
-                {isOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
+            {/* Floating button for mobile only, when closed */}
+            {!isOpen && (
+                <button 
+                    className="mobile-hamburger" 
+                    onClick={onToggle}
+                    aria-label="Open menu"
+                >
+                    <Menu size={20} />
+                </button>
+            )}
 
             {/* Overlay for mobile when sidebar is open */}
             {isOpen && (
                 <div className="sidebar-overlay" onClick={onToggle} />
             )}
 
-            <aside className={`sidebar ${isOpen ? '' : 'sidebar-hidden'}`}>
-                <div className="sidebar-logo">
-                    <div className="sidebar-logo-icon">
-                        <Shield size={20} color="white" />
-                    </div>
-                    <div>
-                        <h1>SentryQ</h1>
-                        <span>AI Security Scanner</span>
+            <aside className={`sidebar ${isOpen ? '' : 'sidebar-collapsed'}`}>
+                <div className="sidebar-header">
+                    <button className="sidebar-toggle-inline" onClick={onToggle} aria-label="Toggle sidebar">
+                        {isOpen ? <X size={20} /> : <Menu size={20} />}
+                    </button>
+                    <div className="sidebar-logo-content">
+                        <Shield size={20} color="var(--accent-primary)" />
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <h1 style={{ fontSize: '1rem', margin: 0, fontWeight: 700, lineHeight: 1 }}>SentryQ</h1>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Security Scanner</span>
+                        </div>
                     </div>
                 </div>
                 <nav className="sidebar-nav">
@@ -56,6 +61,7 @@ export default function Sidebar({ isOpen, onToggle }) {
                                     to={link.to}
                                     end={link.to === '/'}
                                     className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                                    title={!isOpen ? link.label : ''}
                                     onClick={() => {
                                         // Close sidebar on mobile after navigation
                                         if (window.innerWidth <= 1024) onToggle()
@@ -68,11 +74,17 @@ export default function Sidebar({ isOpen, onToggle }) {
                         </div>
                     ))}
                 </nav>
-                <div style={{ padding: '16px 12px', borderTop: '1px solid var(--border-primary)' }}>
-                    <div style={{ padding: '12px', borderRadius: 'var(--radius-md)', background: 'var(--bg-card)', border: '1px solid var(--border-primary)' }}>
+                <div className="sidebar-version-box" style={{ padding: '16px 12px', borderTop: '1px solid var(--border-primary)', marginTop: 'auto' }}>
+                    <div className="sidebar-version" style={{ padding: '12px', borderRadius: 'var(--radius-md)', background: 'var(--bg-card)', border: '1px solid var(--border-primary)' }}>
                         <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>Version</div>
                         <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>v2.0.0 — SentryQ</div>
                     </div>
+                    {/* Compact version for collapsed state */}
+                    {!isOpen && (
+                        <div style={{ fontSize: '0.65rem', textAlign: 'center', color: 'var(--text-muted)', width: '100%', wordBreak: 'keep-all', whiteSpace: 'nowrap', display: 'block' }}>
+                            v2.0
+                        </div>
+                    )}
                 </div>
             </aside>
         </>
