@@ -48,4 +48,4 @@ claude_report.html
 feedback_report.html
 *.log
 sentryq
-.qwen-settings.json
+.sentryq-settings.json
