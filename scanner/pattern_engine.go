@@ -3,6 +3,8 @@ package scanner
 import (
 	"SentryQ/config"
 	"SentryQ/reporter"
+	"SentryQ/utils"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -236,6 +238,11 @@ func RunPatternScan(result *ScanResult, baseRules []config.Rule, rulesDir string
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					utils.LogWarn(fmt.Sprintf("Pattern engine worker recovered from panic: %v", r))
+				}
+			}()
 			for job := range jobChan {
 				findings := scanFile(job.filePath, job.rules, &srCounter)
 				resultChan <- scanResult{findings: findings}

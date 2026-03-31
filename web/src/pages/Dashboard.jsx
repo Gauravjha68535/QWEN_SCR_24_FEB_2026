@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PlusCircle, Clock, AlertTriangle, CheckCircle, XCircle, Trash2, ScanSearch } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -49,10 +49,12 @@ export default function Dashboard() {
         }
     }
 
-    const totalFindings = scans.reduce((sum, s) => sum + (s.total_findings || 0), 0)
-    const completedScans = scans.filter(s => s.status === 'completed').length
-    const criticalTotal = scans.reduce((sum, s) => sum + (s.critical_count || 0), 0)
-    const highTotal = scans.reduce((sum, s) => sum + (s.high_count || 0), 0)
+    const { totalFindings, completedScans, criticalTotal, highTotal } = useMemo(() => ({
+        totalFindings: scans.reduce((sum, s) => sum + (s.total_findings || 0), 0),
+        completedScans: scans.filter(s => s.status === 'completed').length,
+        criticalTotal: scans.reduce((sum, s) => sum + (s.critical_count || 0), 0),
+        highTotal: scans.reduce((sum, s) => sum + (s.high_count || 0), 0),
+    }), [scans])
 
     return (
         <div className="animate-fade-in">

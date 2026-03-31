@@ -60,6 +60,7 @@ func (ra *ReachabilityAnalyzer) BuildCallGraph(targetDir string) error {
 
 	err := filepath.Walk(targetDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
+			utils.LogWarn(fmt.Sprintf("Reachability: skipping unreadable path %s: %v", path, err))
 			return nil
 		}
 		if info.IsDir() {

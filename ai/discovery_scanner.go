@@ -65,6 +65,7 @@ type DiscoveryFinding struct {
 	OWASP            string  `json:"owasp"`
 	Confidence       float64 `json:"confidence"`
 	FixedCodeSnippet string  `json:"fixed_code_snippet"`
+	VulnerableCode   string  `json:"vulnerable_code"` // Exact short code fragment the AI flagged (used to anchor snippet to real line)
 }
 
 // DiscoveryResponse is the expected JSON response from the AI
@@ -237,19 +238,33 @@ func DiscoverVulnerabilities(ctx context.Context, modelName string, filePath str
 	}
 
 	for startLine := 0; startLine < totalLines; startLine += (maxChunkLines - chunkOverlap) {
+		if ctx.Err() != nil {
+			return allFindings, ctx.Err()
+		}
 		endLine := startLine + maxChunkLines
 		if endLine > totalLines {
 			endLine = totalLines
 		}
 
 		chunkLines := lines[startLine:endLine]
-		chunkContent := strings.Join(chunkLines, "\n")
 
-		if len(chunkContent) > maxFileSize {
-			chunkContent = chunkContent[:maxFileSize] + "\n// ... [truncated horizontal minified blob] ..."
+
+		var b strings.Builder
+		b.WriteString("```\n")
+		b.WriteString(fmt.Sprintf("// File: %s (Lines %d to %d)\n", filePath, startLine+1, endLine))
+		
+		var charCount int
+		for i, l := range chunkLines {
+			lineText := fmt.Sprintf("%d: %s\n", startLine+i+1, l)
+			if charCount+len(lineText) > maxFileSize {
+				b.WriteString("// ... [truncated horizontal minified blob] ...\n")
+				break
+			}
+			b.WriteString(lineText)
+			charCount += len(lineText)
 		}
-
-		codeBlock := fmt.Sprintf("```\n// File: %s (Lines %d to %d)\n%s\n```", filePath, startLine+1, endLine, chunkContent)
+		b.WriteString("```")
+		codeBlock := b.String()
 
 		ext := strings.ToLower(filepath.Ext(filePath))
 		langSpecific := ""
@@ -310,11 +325,12 @@ func DiscoverVulnerabilities(ctx context.Context, modelName string, filePath str
 			"      \"issue_name\": \"Brief title of vulnerability\",\n"+
 			"      \"severity\": \"critical/high/medium/low/info\",\n"+
 			"      \"line_number\": 42,\n"+
+			"      \"vulnerable_code\": \"Exact verbatim code fragment from that line (max 120 chars, no paraphrasing)\",\n"+
 			"      \"description\": \"Detailed explanation of the vulnerability\",\n"+
 			"      \"remediation\": \"How to fix the vulnerability\",\n"+
 			"      \"exploit_poc\": \"Example exploit payload or N/A\",\n"+
 			"      \"cwe\": \"CWE-XX\",\n"+
-			"      \"owasp\": \"AXX:2021\",\n"+
+			"      \"owasp\": \"AXX:2021-ShortName (MUST be exactly this format, e.g. A03:2021-Injection — no other text)\",\n"+
 			"      \"confidence\": 0.95\n"+
 			"    }\n"+
 			"  ],\n"+
@@ -332,6 +348,9 @@ func DiscoverVulnerabilities(ctx context.Context, modelName string, filePath str
 		var outputStr string
 
 		for loopIdx := 0; loopIdx < maxAgenticLoops; loopIdx++ {
+			if ctx.Err() != nil {
+				break
+			}
 			var fullText string
 			var readErr error
 
@@ -463,12 +482,22 @@ func DiscoverVulnerabilities(ctx context.Context, modelName string, filePath str
 			fmt.Printf("\n[DEBUG] Raw AI output for %s:\n%s\n", filePath, outputStr)
 		}
 
+		// clampLine ensures a line number returned by the AI stays within file bounds.
+		// We do NOT add startLine here: the prompt already labels every line with its
+		// absolute number (startLine+i+1), so the AI returns absolute line numbers.
+		clampLine := func(ln FlexInt) FlexInt {
+			if ln < 1 {
+				return 1
+			}
+			if ln > FlexInt(totalLines) {
+				return FlexInt(totalLines)
+			}
+			return ln
+		}
+
 		if err2 := json.Unmarshal([]byte(jsonContent), &response); err2 == nil {
 			for i := range response.Vulnerabilities {
-				response.Vulnerabilities[i].LineNumber += FlexInt(startLine)
-				if response.Vulnerabilities[i].LineNumber > FlexInt(totalLines) {
-					response.Vulnerabilities[i].LineNumber = FlexInt(totalLines)
-				}
+				response.Vulnerabilities[i].LineNumber = clampLine(response.Vulnerabilities[i].LineNumber)
 			}
 			allFindings = append(allFindings, response.Vulnerabilities...)
 		} else {
@@ -477,10 +506,7 @@ func DiscoverVulnerabilities(ctx context.Context, modelName string, filePath str
 			if err3 := json.Unmarshal([]byte(repaired), &response); err3 == nil {
 				utils.LogInfo(fmt.Sprintf("Recovered JSON for %s after escaping unescaped quotes", filePath))
 				for i := range response.Vulnerabilities {
-					response.Vulnerabilities[i].LineNumber += FlexInt(startLine)
-					if response.Vulnerabilities[i].LineNumber > FlexInt(totalLines) {
-						response.Vulnerabilities[i].LineNumber = FlexInt(totalLines)
-					}
+					response.Vulnerabilities[i].LineNumber = clampLine(response.Vulnerabilities[i].LineNumber)
 				}
 				allFindings = append(allFindings, response.Vulnerabilities...)
 			} else {
@@ -489,10 +515,7 @@ func DiscoverVulnerabilities(ctx context.Context, modelName string, filePath str
 				if err4 := json.Unmarshal([]byte(repaired2), &response); err4 == nil {
 					utils.LogInfo(fmt.Sprintf("Recovered JSON for %s after full repair", filePath))
 					for i := range response.Vulnerabilities {
-						response.Vulnerabilities[i].LineNumber += FlexInt(startLine)
-						if response.Vulnerabilities[i].LineNumber > FlexInt(totalLines) {
-							response.Vulnerabilities[i].LineNumber = FlexInt(totalLines)
-						}
+						response.Vulnerabilities[i].LineNumber = clampLine(response.Vulnerabilities[i].LineNumber)
 					}
 					allFindings = append(allFindings, response.Vulnerabilities...)
 				} else {
@@ -683,20 +706,21 @@ func RunAIDiscovery(ctx context.Context, modelName string, targetDir string, log
 			if scanErr == nil && len(vulns) > 0 {
 				for _, v := range vulns {
 					mappedFindings = append(mappedFindings, reporter.Finding{
-						Source:      "ai-discovery",
-						IssueName:   v.IssueName,
-						Severity:    strings.ToLower(v.Severity),
-						FilePath:    job.filePath,
-						LineNumber:  fmt.Sprintf("%d", int(v.LineNumber)),
-						Description: v.Description,
-						Remediation: v.Remediation,
-						ExploitPoC:  v.ExploitPoC,
-						CWE:         v.CWE,
-						OWASP:       v.OWASP,
-						AiReasoning: v.Description,
-						AiValidated: "Discovered by AI",
-						FixedCode:   v.FixedCodeSnippet,
-						Confidence:  v.Confidence,
+						Source:             "ai-discovery",
+						IssueName:          v.IssueName,
+						Severity:           strings.ToLower(strings.TrimSpace(v.Severity)),
+						FilePath:           job.filePath,
+						LineNumber:         fmt.Sprintf("%d", int(v.LineNumber)),
+						Description:        v.Description,
+						Remediation:        v.Remediation,
+						ExploitPoC:         v.ExploitPoC,
+						CWE:                reporter.NormalizeCWE(v.CWE),
+						OWASP:              reporter.NormalizeOWASP(v.OWASP),
+						AiReasoning:        v.Description,
+						AiValidated:        "Discovered by AI",
+						FixedCode:          v.FixedCodeSnippet,
+						Confidence:         v.Confidence,
+						VulnerablePattern:  strings.TrimSpace(v.VulnerableCode),
 					})
 				}
 			}

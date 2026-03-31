@@ -13,7 +13,6 @@ var InfoColor = color.New(color.FgGreen, color.Bold)
 var ErrorColor = color.New(color.FgRed, color.Bold)
 var WarnColor = color.New(color.FgYellow, color.Bold)
 var ProgressColor = color.New(color.FgCyan, color.Bold)
-var HeaderColor = color.New(color.FgMagenta, color.Bold)
 
 func InitLogger() {
 	Logger = log.New(os.Stdout, "", 0)
@@ -39,20 +38,6 @@ func LogProgress(step, detail string) {
 	ProgressColor.Print("[→] ")
 	fmt.Printf("%s: %s\n", step, detail)
 }
-
-func LogHeader(msg string) {
-	fmt.Println()
-	HeaderColor.Println("═══════════════════════════════════════════════════════")
-	HeaderColor.Printf("  %s\n", msg)
-	HeaderColor.Println("═══════════════════════════════════════════════════════")
-	fmt.Println()
-}
-
-func LogSubHeader(msg string) {
-	ProgressColor.Println(fmt.Sprintf("\n┌─ %s", msg))
-	ProgressColor.Println("└────────────────────────────────────────")
-}
-
 
 
 func PrintBanner() {

@@ -62,22 +62,25 @@ func unregisterScan(scanID string) {
 
 // StopScan terminates an active scan
 func StopScan(scanID string) error {
+	// Cancel and unregister inside a single lock to avoid calling cancel()
+	// after it has already been cleaned up by another goroutine.
 	activeScansMu.Lock()
 	cancel, exists := activeScans[scanID]
+	if exists {
+		cancel()
+		delete(activeScans, scanID)
+	}
 	activeScansMu.Unlock()
 
 	if !exists {
 		return fmt.Errorf("scan %s not found or already completed", scanID)
 	}
 
-	// Actually cancel the running scan context
-	cancel()
-
 	utils.LogInfo(fmt.Sprintf("Scan %s terminated by user request", scanID))
-	// 5. Unregister
-	unregisterScan(scanID)
 
-	UpdateScanStatus(scanID, "stopped")
+	if err := UpdateScanStatus(scanID, "stopped"); err != nil {
+		utils.LogError(fmt.Sprintf("Failed to update scan %s status to stopped", scanID), err)
+	}
 	wsHub.BroadcastLog(scanID, "🛑 Scan terminated by user", "warning")
 	wsHub.BroadcastError(scanID, "Scan aborted by user")
 
@@ -99,6 +102,14 @@ func StartScanFromUpload(targetDir string, configJSON string) (string, error) {
 	}
 
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				wsHub.BroadcastError(scanID, fmt.Sprintf("Scan crashed with panic: %v", r))
+				if err := UpdateScanStatus(scanID, "failed"); err != nil {
+					utils.LogError(fmt.Sprintf("Failed to mark scan %s as failed after panic", scanID), err)
+				}
+			}
+		}()
 		ctx, cancel := context.WithCancel(context.Background())
 		registerScan(scanID, cancel)
 		defer unregisterScan(scanID)
@@ -155,17 +166,29 @@ func StartScanFromGit(repoURL string, configJSON string) (string, error) {
 	}
 
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				wsHub.BroadcastError(scanID, fmt.Sprintf("Scan crashed with panic: %v", r))
+				if err := UpdateScanStatus(scanID, "failed"); err != nil {
+					utils.LogError(fmt.Sprintf("Failed to mark scan %s as failed after panic", scanID), err)
+				}
+			}
+		}()
 		defer os.RemoveAll(tmpDir)
 
 		wsHub.BroadcastLog(scanID, fmt.Sprintf("Cloning repository: %s", repoURL), "phase")
 		wsHub.BroadcastProgress(scanID, "Cloning Repository", 5)
 
-		// Extra safety check for exec
-		cmd := exec.Command("git", "clone", "--depth", "1", "--", repoURL, tmpDir)
+		// Use a 5-minute timeout for git clone so a dead/slow server never hangs the scan.
+		cloneCtx, cloneCancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		defer cloneCancel()
+		cmd := exec.CommandContext(cloneCtx, "git", "clone", "--depth", "1", "--", repoURL, tmpDir)
 		output, err := cmd.CombinedOutput()
 		if err != nil {
 			wsHub.BroadcastError(scanID, fmt.Sprintf("Git clone failed: %s", string(output)))
-			UpdateScanStatus(scanID, "failed")
+			if err := UpdateScanStatus(scanID, "failed"); err != nil {
+				utils.LogError(fmt.Sprintf("Failed to mark scan %s as failed", scanID), err)
+			}
 			return
 		}
 
@@ -204,18 +227,12 @@ func runScan(ctx context.Context, scanID string, targetDir string, cfg WebScanCo
 		wsHub.BroadcastLog(scanID, fmt.Sprintf("Set Ollama Host to %s", cfg.OllamaHost), "info")
 	}
 
-	// Load rules
 	rulesDir := "rules"
 	if cfg.CustomRulesDir != "" {
 		rulesDir = cfg.CustomRulesDir
 	}
-	rules, err := config.LoadRules(rulesDir)
-	if err != nil {
-		wsHub.BroadcastLog(scanID, fmt.Sprintf("Warning: Failed to load rules: %v", err), "warning")
-	}
-	wsHub.BroadcastLog(scanID, fmt.Sprintf("Loaded %d rules from %s", len(rules), rulesDir), "info")
 
-	// Walking directory
+	// Walk directory first so we know which languages are present
 	wsHub.BroadcastProgress(scanID, "Scanning Files", 10)
 	wsHub.BroadcastLog(scanID, "Walking target directory...", "info")
 	if ctx.Err() != nil {
@@ -224,7 +241,9 @@ func runScan(ctx context.Context, scanID string, targetDir string, cfg WebScanCo
 	result, err := scanner.WalkDirectory(targetDir)
 	if err != nil {
 		wsHub.BroadcastError(scanID, fmt.Sprintf("Failed to walk directory: %v", err))
-		UpdateScanStatus(scanID, "failed")
+		if err := UpdateScanStatus(scanID, "failed"); err != nil {
+			utils.LogError(fmt.Sprintf("Failed to mark scan %s as failed", scanID), err)
+		}
 		return
 	}
 	totalFiles := 0
@@ -232,6 +251,17 @@ func runScan(ctx context.Context, scanID string, targetDir string, cfg WebScanCo
 		totalFiles += len(files)
 	}
 	wsHub.BroadcastLog(scanID, fmt.Sprintf("Found %d files across %d languages", totalFiles, len(result.FilePaths)), "success")
+
+	// Load only rules relevant to the detected languages
+	detectedLangs := make(map[string]bool)
+	for lang := range result.FilePaths {
+		detectedLangs[lang] = true
+	}
+	rules, err := config.LoadRulesForLanguages(rulesDir, detectedLangs)
+	if err != nil {
+		wsHub.BroadcastLog(scanID, fmt.Sprintf("Warning: Failed to load rules: %v", err), "warning")
+	}
+	wsHub.BroadcastLog(scanID, fmt.Sprintf("Loaded %d rules for %d detected language(s)", len(rules), len(detectedLangs)), "info")
 
 	var allFindings []reporter.Finding
 
@@ -247,9 +277,6 @@ func runScan(ctx context.Context, scanID string, targetDir string, cfg WebScanCo
 	wsHub.BroadcastProgress(scanID, "Pattern Matching", 20)
 	wsHub.BroadcastLog(scanID, "Running pattern engine...", "phase")
 	patternFindings := scanner.RunPatternScan(result, rules, rulesDir)
-	for i := range patternFindings {
-		patternFindings[i].Confidence = 0.70 // Base confidence for pattern matching
-	}
 	allFindings = append(allFindings, patternFindings...)
 	wsHub.BroadcastLog(scanID, fmt.Sprintf("Pattern engine found %d issues", len(patternFindings)), "info")
 
@@ -359,7 +386,7 @@ func runScan(ctx context.Context, scanID string, targetDir string, cfg WebScanCo
 		wsHub.BroadcastProgress(scanID, "Container Scanning", 62)
 		wsHub.BroadcastLog(scanID, "Scanning Dockerfiles & Kubernetes manifests...", "phase")
 		containerScanner := scanner.NewContainerScanner(int64(len(allFindings) + 1000))
-		containerFindings, cErr := containerScanner.ScanContainers(targetDir)
+		containerFindings, cErr := containerScanner.ScanContainers(targetDir, ctx)
 		if cErr == nil {
 			allFindings = append(allFindings, containerFindings...)
 			wsHub.BroadcastLog(scanID, fmt.Sprintf("Container scan found %d issues", len(containerFindings)), "info")
@@ -402,6 +429,9 @@ func runScan(ctx context.Context, scanID string, targetDir string, cfg WebScanCo
 	}
 
 	consolidationModel := cfg.ConsolidationModel
+	if consolidationModel == "" {
+		consolidationModel = cfg.JudgeModel // Treat JudgeModel as alias for ConsolidationModel
+	}
 	if consolidationModel == "" {
 		consolidationModel = ai.GetDefaultModel() // Heavy default fallback
 	}
@@ -468,8 +498,8 @@ func runScan(ctx context.Context, scanID string, targetDir string, cfg WebScanCo
 		var validatedStatic []reporter.Finding
 		var validatedAI []reporter.Finding
 		for _, f := range validatedFindings {
-			if strings.Contains(f.AiValidated, "No") || strings.Contains(f.AiValidated, "Error") {
-				// Drop findings explicitly rejected by AI or that failed validation
+			if f.AiValidated == "No (False Positive)" || f.AiValidated == "Error" {
+				// Drop findings explicitly rejected by AI or that had a validation API error
 				continue
 			}
 			if strings.Contains(f.Source, "ai") {
@@ -507,21 +537,22 @@ func runScan(ctx context.Context, scanID string, targetDir string, cfg WebScanCo
 		}
 	}
 
-	// ── Post-Judge Cleanup: Drop AI-rejected findings ────────────
-	// The Judge may re-introduce or pass-through findings that were explicitly
-	// rejected by the AI Validator. This final filter ensures they are dropped.
+	// ── Post-Judge Cleanup: Drop explicitly rejected findings ───────
+	// Only drop findings the AI validator explicitly marked as false positives.
+	// Plain "No" (default for unprocessed static findings) must NOT be dropped
+	// here because the Judge has already made the final keep/reject decision.
 	if cfg.EnableAI {
 		var cleanFindings []reporter.Finding
 		droppedCount := 0
 		for _, f := range allFindings {
-			if strings.Contains(f.AiValidated, "No") || strings.Contains(f.AiValidated, "Error") {
+			if f.AiValidated == "No (False Positive)" {
 				droppedCount++
 				continue
 			}
 			cleanFindings = append(cleanFindings, f)
 		}
 		if droppedCount > 0 {
-			wsHub.BroadcastLog(scanID, fmt.Sprintf("Post-Judge cleanup: dropped %d AI-rejected findings", droppedCount), "info")
+			wsHub.BroadcastLog(scanID, fmt.Sprintf("Post-Judge cleanup: dropped %d false-positive findings", droppedCount), "info")
 		}
 		allFindings = cleanFindings
 	}
@@ -664,28 +695,103 @@ func webGenerateReportFiles(scanID string, findings []reporter.Finding, targetDi
 	utils.LogInfo(fmt.Sprintf("Reports saved for scan %s at %s", scanID, reportsDir))
 }
 
-// webDeduplicateFindings removes duplicate findings using proximity-based clustering.
-// Old approach: group by exact FilePath+startLine (misses same vuln at L12, L22, L31 from different engines).
-// New approach: group by FilePath + normalized vuln type (CWE/keyword), then cluster within ±15 lines.
+// mergeTwoFindings merges f into best, keeping the most informative fields.
+func mergeTwoFindings(best *reporter.Finding, f reporter.Finding, severityWeight map[string]int, sources map[string]bool) {
+	w := severityWeight[strings.ToLower(f.Severity)]
+	bw := severityWeight[strings.ToLower(best.Severity)]
+	if w > bw {
+		best.Severity = f.Severity
+		best.IssueName = f.IssueName
+		best.Description = f.Description
+		best.Remediation = f.Remediation
+		best.CWE = f.CWE
+		best.OWASP = f.OWASP
+	} else if w == bw && len(f.Description) > len(best.Description) {
+		best.Description = f.Description
+		best.IssueName = f.IssueName
+	}
+	if f.Source != "" {
+		sources[f.Source] = true
+	}
+	if f.AiValidated == "Yes" {
+		best.AiValidated = "Yes"
+	}
+	if f.Confidence > best.Confidence {
+		best.Confidence = f.Confidence
+	}
+	if best.RuleID == "" && f.RuleID != "" {
+		best.RuleID = f.RuleID
+	}
+	if best.VulnerablePattern == "" && f.VulnerablePattern != "" {
+		best.VulnerablePattern = f.VulnerablePattern
+	}
+	if best.ExploitPoC == "" || best.ExploitPoC == "N/A" {
+		if f.ExploitPoC != "" && f.ExploitPoC != "N/A" {
+			best.ExploitPoC = f.ExploitPoC
+		}
+	}
+	if best.FixedCode == "" && f.FixedCode != "" {
+		best.FixedCode = f.FixedCode
+	}
+}
+
+// webDeduplicateFindings removes duplicate findings using two-pass deduplication:
+//
+//  Pass 1 — Exact-line dedup: findings at the exact same file+line are always merged
+//            regardless of vulnerability family (catches cross-engine same-line matches).
+//
+//  Pass 2 — Proximity clustering: within each file+vulnFamily group, cluster findings
+//            within ±15 lines (±0 for secrets) and keep the best per cluster.
 func webDeduplicateFindings(findings []reporter.Finding) []reporter.Finding {
 	severityWeight := map[string]int{
 		"critical": 5, "high": 4, "medium": 3, "low": 2, "info": 1,
 	}
 
-	// Step 1: Group findings by file + normalized vulnerability type
+	// ── Pass 1: Exact file+line deduplication ────────────────────────────────
+	// Two findings at the identical file+line are always the same issue regardless
+	// of how different engines label the vulnerability type.
+	type exactKey struct {
+		filePath string
+		line     int
+	}
+	exactBest := make(map[exactKey]int) // key → index in pass1 slice
+	var pass1 []reporter.Finding
+
+	for _, f := range findings {
+		line := parseStartLine(f.LineNumber)
+		key := exactKey{filePath: f.FilePath, line: line}
+		if existIdx, seen := exactBest[key]; seen {
+			sources := map[string]bool{}
+			for _, s := range strings.Split(pass1[existIdx].Source, ", ") {
+				if s != "" {
+					sources[s] = true
+				}
+			}
+			mergeTwoFindings(&pass1[existIdx], f, severityWeight, sources)
+			var sl []string
+			for s := range sources {
+				sl = append(sl, s)
+			}
+			sort.Strings(sl)
+			pass1[existIdx].Source = strings.Join(sl, ", ")
+		} else {
+			exactBest[key] = len(pass1)
+			pass1 = append(pass1, f)
+		}
+	}
+
+	// ── Pass 2: Proximity clustering within file+vulnFamily ──────────────────
 	type groupKey struct {
 		filePath string
 		vulnType string
 	}
 	grouped := make(map[groupKey][]reporter.Finding)
-
-	for _, f := range findings {
+	for _, f := range pass1 {
 		vtype := normalizeVulnType(f)
 		key := groupKey{filePath: f.FilePath, vulnType: vtype}
 		grouped[key] = append(grouped[key], f)
 	}
 
-	// Step 2: Within each group, cluster by line proximity
 	var unique []reporter.Finding
 	for key, group := range grouped {
 		if len(group) == 1 {
@@ -693,27 +799,22 @@ func webDeduplicateFindings(findings []reporter.Finding) []reporter.Finding {
 			continue
 		}
 
-		// Sort by line number for clustering
 		sort.Slice(group, func(i, j int) bool {
-			li := parseStartLine(group[i].LineNumber)
-			lj := parseStartLine(group[j].LineNumber)
-			return li < lj
+			return parseStartLine(group[i].LineNumber) < parseStartLine(group[j].LineNumber)
 		})
 
-		// Greedy clustering: merge findings within dynamic lineProximity lines
+		// Proximity threshold: 0 for secrets (exact only), 15 for everything else
+		prox := 15
+		upperVuln := strings.ToUpper(key.vulnType)
+		if strings.Contains(upperVuln, "SECRET") || strings.Contains(upperVuln, "CREDENTIAL") || strings.Contains(upperVuln, "HARDCODED") {
+			prox = 0
+		}
+
 		clusters := [][]reporter.Finding{{group[0]}}
 		for _, f := range group[1:] {
 			lastCluster := &clusters[len(clusters)-1]
 			lastLine := parseStartLine((*lastCluster)[len(*lastCluster)-1].LineNumber)
 			thisLine := parseStartLine(f.LineNumber)
-
-			// Determine proximity threshold (0 for secrets, else 5)
-			prox := 5
-			upperVuln := strings.ToUpper(key.vulnType)
-			if strings.Contains(upperVuln, "SECRET") || strings.Contains(upperVuln, "CREDENTIAL") {
-				prox = 0
-			}
-
 			if thisLine-lastLine <= prox {
 				*lastCluster = append(*lastCluster, f)
 			} else {
@@ -721,55 +822,23 @@ func webDeduplicateFindings(findings []reporter.Finding) []reporter.Finding {
 			}
 		}
 
-		// Step 3: For each cluster, keep the best finding and merge metadata
 		for _, cluster := range clusters {
 			best := cluster[0]
-			bestWeight := severityWeight[strings.ToLower(best.Severity)]
 			sources := make(map[string]bool)
-			if best.Source != "" {
-				sources[best.Source] = true
+			for _, s := range strings.Split(best.Source, ", ") {
+				if s != "" {
+					sources[s] = true
+				}
 			}
-
 			for _, f := range cluster[1:] {
-				w := severityWeight[strings.ToLower(f.Severity)]
-				if w > bestWeight {
-					// Keep higher severity's details
-					best.Severity = f.Severity
-					best.IssueName = f.IssueName
-					best.Description = f.Description
-					best.Remediation = f.Remediation
-					best.CWE = f.CWE
-					best.OWASP = f.OWASP
-					bestWeight = w
-				}
-				// Prefer longer (more detailed) description at same severity
-				if w == bestWeight && len(f.Description) > len(best.Description) {
-					best.Description = f.Description
-					best.IssueName = f.IssueName
-				}
-				if f.Source != "" {
-					sources[f.Source] = true
-				}
-				if f.AiValidated == "Yes" {
-					best.AiValidated = "Yes"
-				}
-				// Take highest confidence
-				if f.Confidence > best.Confidence {
-					best.Confidence = f.Confidence
-				}
-				// Prefer non-empty RuleID
-				if best.RuleID == "" && f.RuleID != "" {
-					best.RuleID = f.RuleID
-				}
+				mergeTwoFindings(&best, f, severityWeight, sources)
 			}
-
 			var sourceList []string
 			for s := range sources {
 				sourceList = append(sourceList, s)
 			}
 			sort.Strings(sourceList)
 			best.Source = strings.Join(sourceList, ", ")
-
 			unique = append(unique, best)
 		}
 	}
@@ -843,6 +912,10 @@ func normalizeVulnType(f reporter.Finding) string {
 		{[]string{"csrf", "cross site request"}, "CSRF"},
 		{[]string{"idor", "insecure direct object"}, "IDOR"},
 		{[]string{"mass assignment"}, "MASS_ASSIGNMENT"},
+		{[]string{"cookie", "set-cookie", "samesite", "httponly", "secure flag"}, "COOKIE_SECURITY"},
+		{[]string{"cors", "cross origin", "cross-origin", "access-control"}, "CORS_MISCONFIG"},
+		{[]string{"cache", "cache-control", "pragma"}, "CACHE_MISCONFIG"},
+		{[]string{"header", "hsts", "x-frame-options", "content-type-options", "security header"}, "INSECURE_HEADER"},
 	}
 
 	for _, kf := range keywordFamilies {
@@ -972,7 +1045,97 @@ func parseStartLine(lineRef string) int {
 	return n
 }
 
-// webPopulateCodeSnippets reads source files and extracts ~5 lines around each vulnerable line
+// isTrivialLine returns true for lines that are blank, pure comments, or lone braces/brackets.
+// Used to detect when the AI pointed to a non-meaningful line so we can shift the marker.
+func isTrivialLine(line string) bool {
+	t := strings.TrimSpace(line)
+	if t == "" {
+		return true
+	}
+	// Pure comment lines
+	if strings.HasPrefix(t, "//") || strings.HasPrefix(t, "#") ||
+		strings.HasPrefix(t, "*") || strings.HasPrefix(t, "/*") ||
+		strings.HasPrefix(t, "<!--") {
+		return true
+	}
+	// Lone structural tokens
+	switch t {
+	case "{", "}", "};", "){", ");", "];", "]", "[", "(", ")", "<?php", "?>":
+		return true
+	}
+	return false
+}
+
+// bestLineInWindow finds the nearest non-trivial line within [start, end) (0-indexed) relative to
+// preferredIdx (also 0-indexed). It searches outward: preferred → preferred+1 → preferred-1 → …
+func bestLineInWindow(lines []string, start, end, preferredIdx int) int {
+	if !isTrivialLine(lines[preferredIdx]) {
+		return preferredIdx
+	}
+	for delta := 1; delta <= 2; delta++ {
+		if fwd := preferredIdx + delta; fwd < end && !isTrivialLine(lines[fwd]) {
+			return fwd
+		}
+		if bwd := preferredIdx - delta; bwd >= start && !isTrivialLine(lines[bwd]) {
+			return bwd
+		}
+	}
+	return preferredIdx // nothing better found, keep original
+}
+
+// findPatternLine searches lines[searchStart:searchEnd] for the line that best contains
+// the given pattern (case-insensitive substring match). Returns the 0-indexed line index
+// within lines[], or -1 if not found. Prefers lines closer to preferredIdx.
+func findPatternLine(lines []string, pattern string, preferredIdx, searchStart, searchEnd int) int {
+	if pattern == "" {
+		return -1
+	}
+	lowerPat := strings.ToLower(strings.TrimSpace(pattern))
+	if lowerPat == "" {
+		return -1
+	}
+	// Clamp search range
+	if searchStart < 0 {
+		searchStart = 0
+	}
+	if searchEnd > len(lines) {
+		searchEnd = len(lines)
+	}
+
+	// Expand the candidate: try the exact fragment first, then the first token of it
+	// (handles cases where the AI adds/removes whitespace or trailing chars)
+	shortPat := lowerPat
+	if idx := strings.IndexAny(lowerPat, " \t(=;"); idx > 6 {
+		shortPat = lowerPat[:idx]
+	}
+
+	best := -1
+	bestDist := searchEnd - searchStart + 1
+	for i := searchStart; i < searchEnd; i++ {
+		lower := strings.ToLower(lines[i])
+		if strings.Contains(lower, lowerPat) || (shortPat != lowerPat && strings.Contains(lower, shortPat)) {
+			dist := i - preferredIdx
+			if dist < 0 {
+				dist = -dist
+			}
+			if dist < bestDist {
+				bestDist = dist
+				best = i
+			}
+		}
+	}
+	return best
+}
+
+// webPopulateCodeSnippets reads source files and extracts ~5 lines around each vulnerable line.
+//
+// Anchor strategy (in priority order):
+//  1. If the finding has a VulnerablePattern (exact code fragment from the AI), search the
+//     file within ±30 lines of the AI-reported line for that fragment. Use the matching line.
+//  2. If the AI-reported line is trivial (blank/comment/brace), shift ±2 to nearest real code.
+//  3. Otherwise use the AI-reported line as-is.
+//
+// In all cases the stored LineNumber is updated to match the final arrow position.
 func webPopulateCodeSnippets(findings []reporter.Finding, targetDir string) {
 	// Group findings by file to limit memory to one file at a time
 	indicesByFile := make(map[string][]int)
@@ -985,7 +1148,6 @@ func webPopulateCodeSnippets(findings []reporter.Finding, targetDir string) {
 		}
 
 		filePath := findings[i].FilePath
-		// Try absolute path first, then relative to targetDir
 		if !filepath.IsAbs(filePath) {
 			filePath = filepath.Join(targetDir, filePath)
 		}
@@ -1003,6 +1165,41 @@ func webPopulateCodeSnippets(findings []reporter.Finding, targetDir string) {
 			var lineNum int
 			fmt.Sscanf(findings[idx].LineNumber, "%d", &lineNum)
 
+			preferredIdx := lineNum - 1 // 0-indexed
+
+			// ── Strategy 1: pattern-based anchoring ──────────────────────
+			if pat := findings[idx].VulnerablePattern; pat != "" {
+				searchStart := preferredIdx - 30
+				searchEnd := preferredIdx + 31
+				if found := findPatternLine(lines, pat, preferredIdx, searchStart, searchEnd); found >= 0 {
+					preferredIdx = found
+					lineNum = found + 1
+					findings[idx].LineNumber = fmt.Sprintf("%d", lineNum)
+				}
+			}
+
+			// ── Strategy 2: trivial-line shifting (±2) ───────────────────
+			if preferredIdx >= 0 && preferredIdx < len(lines) {
+				// Build a temporary window just for the shift check
+				shiftStart := preferredIdx - 2
+				if shiftStart < 0 {
+					shiftStart = 0
+				}
+				shiftEnd := preferredIdx + 3
+				if shiftEnd > len(lines) {
+					shiftEnd = len(lines)
+				}
+				if isTrivialLine(lines[preferredIdx]) {
+					bestIdx := bestLineInWindow(lines, shiftStart, shiftEnd, preferredIdx)
+					if bestIdx != preferredIdx {
+						preferredIdx = bestIdx
+						lineNum = bestIdx + 1
+						findings[idx].LineNumber = fmt.Sprintf("%d", lineNum)
+					}
+				}
+			}
+
+			// ── Build the 5-line context snippet ─────────────────────────
 			start := lineNum - 3
 			if start < 0 {
 				start = 0
@@ -1022,7 +1219,6 @@ func webPopulateCodeSnippets(findings []reporter.Finding, targetDir string) {
 			}
 			findings[idx].CodeSnippet = snippet.String()
 		}
-		// Memory for `content` and `lines` will be garbage collected after this loop iteration
 	}
 }
 
@@ -1047,18 +1243,12 @@ func runEnsembleScan(ctx context.Context, scanID string, targetDir string, cfg W
 		wsHub.BroadcastLog(scanID, fmt.Sprintf("Set Ollama Host to %s", cfg.OllamaHost), "info")
 	}
 
-	// Load rules
 	rulesDir := "rules"
 	if cfg.CustomRulesDir != "" {
 		rulesDir = cfg.CustomRulesDir
 	}
-	rules, err := config.LoadRules(rulesDir)
-	if err != nil {
-		wsHub.BroadcastLog(scanID, fmt.Sprintf("Warning: Failed to load rules: %v", err), "warning")
-	}
-	wsHub.BroadcastLog(scanID, fmt.Sprintf("Loaded %d rules from %s", len(rules), rulesDir), "info")
 
-	// Walk directory
+	// Walk directory first so we know which languages are present
 	if ctx.Err() != nil {
 		return
 	}
@@ -1067,7 +1257,9 @@ func runEnsembleScan(ctx context.Context, scanID string, targetDir string, cfg W
 	result, err := scanner.WalkDirectory(targetDir)
 	if err != nil {
 		wsHub.BroadcastError(scanID, fmt.Sprintf("Failed to walk directory: %v", err))
-		UpdateScanStatus(scanID, "failed")
+		if err := UpdateScanStatus(scanID, "failed"); err != nil {
+			utils.LogError(fmt.Sprintf("Failed to mark scan %s as failed", scanID), err)
+		}
 		return
 	}
 	totalFiles := 0
@@ -1075,6 +1267,17 @@ func runEnsembleScan(ctx context.Context, scanID string, targetDir string, cfg W
 		totalFiles += len(files)
 	}
 	wsHub.BroadcastLog(scanID, fmt.Sprintf("Found %d files across %d languages", totalFiles, len(result.FilePaths)), "success")
+
+	// Load only rules relevant to the detected languages
+	detectedLangs := make(map[string]bool)
+	for lang := range result.FilePaths {
+		detectedLangs[lang] = true
+	}
+	rules, err := config.LoadRulesForLanguages(rulesDir, detectedLangs)
+	if err != nil {
+		wsHub.BroadcastLog(scanID, fmt.Sprintf("Warning: Failed to load rules: %v", err), "warning")
+	}
+	wsHub.BroadcastLog(scanID, fmt.Sprintf("Loaded %d rules for %d detected language(s)", len(rules), len(detectedLangs)), "info")
 
 	// ════════════════════════════════════════════════════════
 	//  PHASE 1: STATIC EXPERT (0-40%)
@@ -1092,9 +1295,6 @@ func runEnsembleScan(ctx context.Context, scanID string, targetDir string, cfg W
 	wsHub.BroadcastProgress(scanID, "Phase 1: Pattern Matching", 5)
 	wsHub.BroadcastLog(scanID, "Running pattern engine...", "info")
 	patternFindings := scanner.RunPatternScan(result, rules, rulesDir)
-	for i := range patternFindings {
-		patternFindings[i].Confidence = 0.70
-	}
 	staticFindings = append(staticFindings, patternFindings...)
 	wsHub.BroadcastLog(scanID, fmt.Sprintf("Pattern engine found %d issues", len(patternFindings)), "info")
 
@@ -1171,7 +1371,7 @@ func runEnsembleScan(ctx context.Context, scanID string, targetDir string, cfg W
 	wsHub.BroadcastProgress(scanID, "Phase 1: Container Scanning", 32)
 	wsHub.BroadcastLog(scanID, "Scanning Dockerfiles & Kubernetes manifests...", "info")
 	containerScanner := scanner.NewContainerScanner(int64(len(staticFindings) + 1000))
-	containerFindings, cErr := containerScanner.ScanContainers(targetDir)
+	containerFindings, cErr := containerScanner.ScanContainers(targetDir, ctx)
 	if cErr == nil {
 		staticFindings = append(staticFindings, containerFindings...)
 	}
@@ -1222,7 +1422,9 @@ func runEnsembleScan(ctx context.Context, scanID string, targetDir string, cfg W
 	wsHub.BroadcastProgress(scanID, "Phase 2: AI Discovery", 45)
 	wsHub.BroadcastLog(scanID, fmt.Sprintf("Running AI Discovery with model: %s", modelName), "info")
 	wsHub.BroadcastLog(scanID, "AI is independently scanning all supported files...", "info")
-	aiFindings := ai.RunAIDiscovery(ctx, modelName, targetDir)
+	aiFindings := ai.RunAIDiscovery(ctx, modelName, targetDir, func(msg string, level string) {
+		wsHub.BroadcastLog(scanID, msg, level)
+	})
 
 	// AI self-validation of its own findings
 	if len(aiFindings) > 0 {
@@ -1306,7 +1508,7 @@ func runEnsembleScan(ctx context.Context, scanID string, targetDir string, cfg W
 	// ── ML False Positive Reduction (if enabled) ─────────────
 	if cfg.EnableMLFPReduction {
 		wsHub.BroadcastLog(scanID, "Applying ML-based False Positive reduction...", "info")
-		reducer := ai.NewMLFPReducer(".qwen-ml-cache")
+		reducer := ai.NewMLFPReducer(".sentryq-ml-cache")
 		reducer.LoadHistory()
 		allFindings = reducer.FilterFindingsByFPProbability(allFindings, 0.8)
 		reducer.SaveHistory()
@@ -1322,6 +1524,9 @@ func runEnsembleScan(ctx context.Context, scanID string, targetDir string, cfg W
 	// Severity Recalibration + UNREACHABLE fix
 	wsHub.BroadcastLog(scanID, "Recalibrating severities...", "phase")
 	allFindings = recalibrateSeverities(allFindings, targetDir)
+
+	// Final dedup pass after recalibration (severity changes can affect clustering)
+	allFindings = webDeduplicateFindings(allFindings)
 
 	// Sort by severity
 	severityOrder := map[string]int{

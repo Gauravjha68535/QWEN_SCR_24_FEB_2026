@@ -2,6 +2,7 @@ package scanner
 
 import (
 	"SentryQ/reporter"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -40,6 +41,8 @@ func SuppressFalsePositives(findings []reporter.Finding, targetDir string) []rep
 			continue
 		}
 
+		f = adjustLinePointer(f, content)
+
 		if shouldSuppress(f, content) {
 			// Mark as suppressed FP — don't remove, just downgrade
 			f.AiValidated = "No (False Positive - Safe Pattern)"
@@ -50,6 +53,55 @@ func SuppressFalsePositives(findings []reporter.Finding, targetDir string) []rep
 		result = append(result, f)
 	}
 	return result
+}
+
+// adjustLinePointer shifts the finding's line number up or down if it points
+// to a useless target like a blank line, `}`, or a comment.
+func adjustLinePointer(f reporter.Finding, fileContent string) reporter.Finding {
+	if strings.Contains(f.LineNumber, "-") {
+		return f // Don't try to adjust multi-line spans
+	}
+	lineNum := parseLineNum(f.LineNumber)
+	if lineNum <= 0 {
+		return f
+	}
+
+	lines := strings.Split(fileContent, "\n")
+	if lineNum > len(lines) {
+		return f
+	}
+
+	isJunkLine := func(line string) bool {
+		s := strings.TrimSpace(line)
+		if s == "" || s == "}" || s == "{" || s == "];" || s == "};" || s == ");" {
+			return true
+		}
+		if strings.HasPrefix(s, "//") || strings.HasPrefix(s, "/*") || strings.HasPrefix(s, "*") || strings.HasPrefix(s, "#") || strings.HasPrefix(s, "<!--") {
+			return true
+		}
+		return false
+	}
+
+	idx := lineNum - 1
+	if !isJunkLine(lines[idx]) {
+		return f
+	}
+
+	// Search closest non-junk line within 3 lines up or down
+	for offset := 1; offset <= 3; offset++ {
+		// Try UP first (compensates for off-by-one/two from AI)
+		if idx-offset >= 0 && !isJunkLine(lines[idx-offset]) {
+			f.LineNumber = fmt.Sprintf("%d", lineNum-offset)
+			return f
+		}
+		// Try DOWN next (compensates for comments placed right above code)
+		if idx+offset < len(lines) && !isJunkLine(lines[idx+offset]) {
+			f.LineNumber = fmt.Sprintf("%d", lineNum+offset)
+			return f
+		}
+	}
+
+	return f
 }
 
 // shouldSuppress checks if a finding matches known safe patterns in the source code.

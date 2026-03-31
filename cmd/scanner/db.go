@@ -152,6 +152,7 @@ func SaveFindingsWithPhase(scanID string, findings []reporter.Finding, phase str
 	for _, f := range findings {
 		data, err := json.Marshal(f)
 		if err != nil {
+			utils.LogError(fmt.Sprintf("Failed to marshal finding '%s' for scan %s — skipping", f.IssueName, scanID), err)
 			continue
 		}
 		if _, err := stmt.Exec(scanID, string(data), phase); err != nil {
@@ -223,10 +224,12 @@ func GetFindingsByPhase(scanID string, phase string) ([]reporter.Finding, error)
 		var id int
 		var data string
 		if err := rows.Scan(&id, &data); err != nil {
+			utils.LogError(fmt.Sprintf("Failed to scan finding row for scan %s", scanID), err)
 			continue
 		}
 		var f reporter.Finding
 		if err := json.Unmarshal([]byte(data), &f); err != nil {
+			utils.LogError(fmt.Sprintf("Failed to unmarshal finding id=%d for scan %s", id, scanID), err)
 			continue
 		}
 		f.ID = id
@@ -254,10 +257,12 @@ func getAllFindingsForScan(scanID string) ([]reporter.Finding, error) {
 		var id int
 		var data string
 		if err := rows.Scan(&id, &data); err != nil {
+			utils.LogError(fmt.Sprintf("Failed to scan finding row for scan %s", scanID), err)
 			continue
 		}
 		var f reporter.Finding
 		if err := json.Unmarshal([]byte(data), &f); err != nil {
+			utils.LogError(fmt.Sprintf("Failed to unmarshal finding id=%d for scan %s", id, scanID), err)
 			continue
 		}
 		f.ID = id

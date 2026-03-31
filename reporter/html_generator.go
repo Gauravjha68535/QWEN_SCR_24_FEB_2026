@@ -103,11 +103,56 @@ type KVCount struct {
 	Count int
 }
 
+// owaspRe extracts the canonical AXX:YYYY or AXX:YYYY-Category form from any OWASP string.
+// It deliberately stops at the first sentence-ending punctuation so AI reasoning text
+// that leaks into this field (e.g. "A03:2021-Injection**? No. Wait...") is truncated.
+var owaspRe = regexp.MustCompile(`(A\d{2}:\d{4})([-\s]+[A-Za-z][A-Za-z\s/()]{0,50})?`)
+
+// cweRe extracts just the CWE-NNN identifier from any CWE string.
+var cweRe = regexp.MustCompile(`CWE-\d+`)
+
+// NormalizeOWASP returns a clean canonical OWASP string (e.g. "A03:2021-Injection").
+// If the input contains no recognisable OWASP pattern it returns "".
+func NormalizeOWASP(s string) string {
+	s = strings.TrimSpace(s)
+	if s == "" || strings.EqualFold(s, "N/A") {
+		return s
+	}
+	m := owaspRe.FindStringSubmatch(s)
+	if m == nil {
+		return ""
+	}
+	result := m[1] // e.g. "A03:2021"
+	if m[2] != "" {
+		cat := strings.TrimSpace(m[2])
+		cat = strings.TrimLeft(cat, "- ")
+		cat = strings.TrimRight(cat, " .,;:?!*")
+		if cat != "" {
+			result += "-" + cat
+		}
+	}
+	return result
+}
+
+// NormalizeCWE returns just the "CWE-NNN" identifier from any CWE string.
+// Strings like "CWE-89: SQL Injection" become "CWE-89".
+func NormalizeCWE(s string) string {
+	s = strings.TrimSpace(s)
+	if s == "" || strings.EqualFold(s, "N/A") {
+		return s
+	}
+	if m := cweRe.FindString(s); m != "" {
+		return m
+	}
+	return s // keep as-is if no CWE-NNN pattern found
+}
+
 func aggregateCWE(findings []Finding) []KVCount {
 	counts := make(map[string]int)
 	for _, f := range findings {
-		if f.CWE != "" && f.CWE != "N/A" {
-			counts[f.CWE]++
+		key := NormalizeCWE(f.CWE)
+		if key != "" && key != "N/A" {
+			counts[key]++
 		}
 	}
 	var result []KVCount
@@ -124,8 +169,9 @@ func aggregateCWE(findings []Finding) []KVCount {
 func aggregateOWASP(findings []Finding) []KVCount {
 	counts := make(map[string]int)
 	for _, f := range findings {
-		if f.OWASP != "" && f.OWASP != "N/A" {
-			counts[f.OWASP]++
+		key := NormalizeOWASP(f.OWASP)
+		if key != "" && key != "N/A" {
+			counts[key]++
 		}
 	}
 	var result []KVCount
@@ -339,7 +385,6 @@ const htmlTemplate = `<!DOCTYPE html>
         </div>
         <div class="header-actions">
             <button class="btn" onclick="toggleTheme()">Theme</button>
-            <button class="btn" id="exportBtn" onclick="exportPDF()">Export PDF</button>
         </div>
     </div>
 
@@ -470,7 +515,7 @@ const htmlTemplate = `<!DOCTYPE html>
                     <td class="cell-file" title="{{.FilePath}}">{{.FilePath}}</td>
                     <td class="cell-line">{{.LineNumber}}</td>
                     <td><span class="severity-badge {{.Severity}}">{{.Severity}}</span></td>
-                    <td>{{if .CWE}}<span class="ref-badge">{{.CWE}}</span>{{end}}</td>
+                    <td>{{if and .CWE (ne .CWE "N/A")}}<span class="ref-badge">{{.CWE}}</span>{{end}}</td>
                     <td>
                         {{if contains .Source "ai"}}<span class="source-badge ai">AI</span>
                         {{else if contains .Source "semgrep"}}<span class="source-badge semgrep">Semgrep</span>
@@ -593,8 +638,8 @@ const htmlTemplate = `<!DOCTYPE html>
                                     <div class="detail-section" style="margin-top:16px;">
                                         <h4>Metadata</h4>
                                         <table style="font-size:0.82rem; border-collapse:collapse; width:100%;">
-                                            <tr><td style="padding:6px 8px; color:var(--text-dim); border-bottom:1px solid var(--border); width:120px;">CWE</td><td style="padding:6px 8px; border-bottom:1px solid var(--border);">{{if .CWE}}{{.CWE}}{{else}}N/A{{end}}</td></tr>
-                                            <tr><td style="padding:6px 8px; color:var(--text-dim); border-bottom:1px solid var(--border);">OWASP</td><td style="padding:6px 8px; border-bottom:1px solid var(--border);">{{if .OWASP}}{{.OWASP}}{{else}}N/A{{end}}</td></tr>
+                                            <tr><td style="padding:6px 8px; color:var(--text-dim); border-bottom:1px solid var(--border); width:120px;">CWE</td><td style="padding:6px 8px; border-bottom:1px solid var(--border);">{{if and .CWE (ne .CWE "N/A")}}{{.CWE}}{{else}}N/A{{end}}</td></tr>
+                                            <tr><td style="padding:6px 8px; color:var(--text-dim); border-bottom:1px solid var(--border);">OWASP</td><td style="padding:6px 8px; border-bottom:1px solid var(--border);">{{if and .OWASP (ne .OWASP "N/A")}}{{.OWASP}}{{else}}N/A{{end}}</td></tr>
                                             <tr><td style="padding:6px 8px; color:var(--text-dim); border-bottom:1px solid var(--border);">Confidence</td><td style="padding:6px 8px; border-bottom:1px solid var(--border);">{{confidencePct .Confidence}}</td></tr>
                                             <tr><td style="padding:6px 8px; color:var(--text-dim); border-bottom:1px solid var(--border);">Source</td><td style="padding:6px 8px; border-bottom:1px solid var(--border);">{{.Source}}</td></tr>
                                             <tr><td style="padding:6px 8px; color:var(--text-dim); border-bottom:1px solid var(--border);">AI Validated</td><td style="padding:6px 8px; border-bottom:1px solid var(--border);">{{.AiValidated}}</td></tr>
@@ -689,7 +734,7 @@ const htmlTemplate = `<!DOCTYPE html>
                         <td style="font-weight: 600;">{{.IssueName}}</td>
                         <td class="cell-file" title="{{.FilePath}}">{{.FilePath}}:{{.LineNumber}}</td>
                         <td><span class="severity-badge {{.Severity}}">{{.Severity}}</span></td>
-                        <td>{{if .CWE}}<span class="ref-badge">{{.CWE}}</span>{{end}}</td>
+                        <td>{{if and .CWE (ne .CWE "N/A")}}<span class="ref-badge">{{.CWE}}</span>{{end}}</td>
                         <td class="cell-desc">{{truncate .Description 1000}}</td>
                     </tr>
                     <tr class="detail-row" data-severity="{{.Severity}}" data-source="{{.Source}}" style="display: none;">
@@ -728,7 +773,6 @@ const htmlTemplate = `<!DOCTYPE html>
     </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
     // Copy code to clipboard
     function copyCode(btn, event) {
@@ -760,22 +804,31 @@ const htmlTemplate = `<!DOCTYPE html>
 
     // Charts
     const chartColors = { text: '#64748b', grid: 'rgba(148,163,184,0.08)' };
-    new Chart(document.getElementById('severityChart'), {
-        type: 'doughnut',
-        data: {
-            labels: ['Critical', 'High', 'Medium', 'Low', 'Info'],
-            datasets: [{
-                data: [{{.Summary.CriticalCount}}, {{.Summary.HighCount}}, {{.Summary.MediumCount}}, {{.Summary.LowCount}}, {{.Summary.InfoCount}}],
-                backgroundColor: ['#ef4444', '#f97316', '#eab308', '#0ea5e9', '#8b5cf6'],
-                borderWidth: 0, spacing: 2, borderRadius: 3
-            }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { position: 'right', labels: { padding: 14, usePointStyle: true, pointStyle: 'circle', color: chartColors.text, font: { family: 'Inter', size: 12 } } } },
-            cutout: '68%'
-        }
-    });
+    (function() {
+        const sevAll = [
+            { label: 'Critical', value: {{.Summary.CriticalCount}}, color: '#ef4444' },
+            { label: 'High',     value: {{.Summary.HighCount}},     color: '#f97316' },
+            { label: 'Medium',   value: {{.Summary.MediumCount}},   color: '#eab308' },
+            { label: 'Low',      value: {{.Summary.LowCount}},      color: '#0ea5e9' },
+            {{if gt .Summary.InfoCount 0}}{ label: 'Info', value: {{.Summary.InfoCount}}, color: '#8b5cf6' },{{end}}
+        ].filter(s => s.value > 0);
+        new Chart(document.getElementById('severityChart'), {
+            type: 'doughnut',
+            data: {
+                labels: sevAll.map(s => s.label),
+                datasets: [{
+                    data: sevAll.map(s => s.value),
+                    backgroundColor: sevAll.map(s => s.color),
+                    borderWidth: 0, spacing: 2, borderRadius: 3
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'right', labels: { padding: 14, usePointStyle: true, pointStyle: 'circle', color: chartColors.text, font: { family: 'Inter', size: 12 } } } },
+                cutout: '68%'
+            }
+        });
+    })();
 
     const cweLabels = [{{range .CWECounts}}'{{.Key}}',{{end}}];
     const cweCounts = [{{range .CWECounts}}{{.Count}},{{end}}];
@@ -861,26 +914,6 @@ const htmlTemplate = `<!DOCTYPE html>
         });
         groups.forEach(g => table.appendChild(g));
         filterAndPaginate();
-    }
-
-    // PDF Export
-    async function exportPDF() {
-        const btn = document.getElementById('exportBtn');
-        const actions = document.querySelector('.header-actions');
-        btn.disabled = true; btn.textContent = 'Generating...';
-        actions.style.display = 'none';
-        try {
-            await html2pdf().set({
-                margin: [0.4, 0.4], filename: 'security-report.pdf',
-                image: { type: 'jpeg', quality: 0.95 },
-                html2canvas: { scale: 2, useCORS: true },
-                jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' },
-                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-            }).from(document.querySelector('.container')).save();
-            btn.textContent = 'Downloaded!';
-        } catch(e) { alert('PDF export failed'); }
-        actions.style.display = 'flex';
-        setTimeout(() => { btn.disabled = false; btn.textContent = 'Export PDF'; }, 2000);
     }
 
     // Init

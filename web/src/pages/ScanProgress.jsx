@@ -14,58 +14,77 @@ export default function ScanProgress() {
     const wsRef = useRef(null)
 
     useEffect(() => {
-        const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
-        const wsUrl = `${protocol}://${window.location.host}/ws/scan/${id}`
-        const ws = new WebSocket(wsUrl)
-        wsRef.current = ws
+        let reconnectTimer = null
+        let reconnectDelay = 1000
+        let destroyed = false
+        const maxReconnectDelay = 16000
 
-        ws.onopen = () => {
-            setStatus('running')
-            addLog('Connected to scan engine...', 'info')
-        }
+        const connect = () => {
+            if (destroyed) return
+            const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
+            const wsUrl = `${protocol}://${window.location.host}/ws/scan/${id}`
+            const ws = new WebSocket(wsUrl)
+            wsRef.current = ws
 
-        ws.onmessage = (event) => {
-            try {
-                const msg = JSON.parse(event.data)
-                switch (msg.type) {
-                    case 'log':
-                        addLog(msg.message, msg.level || 'info')
-                        break
-                    case 'progress':
-                        setProgress(msg.percent || 0)
-                        setPhase(msg.phase || '')
-                        break
-                    case 'findings_update':
-                        setFindingsCount(msg.count || 0)
-                        break
-                    case 'complete':
-                        setStatus('completed')
-                        setProgress(100)
-                        setPhase('Scan Complete')
-                        addLog('✅ Scan completed successfully!', 'success')
-                        break
-                    case 'error':
-                        setStatus('failed')
-                        addLog(`❌ Error: ${msg.message}`, 'error')
-                        break
-                    default:
-                        addLog(msg.message || JSON.stringify(msg), 'info')
+            ws.onopen = () => {
+                reconnectDelay = 1000 // reset backoff on successful connect
+                setStatus(prev => prev === 'connecting' ? 'running' : prev)
+                addLog('Connected to scan engine...', 'info')
+            }
+
+            ws.onmessage = (event) => {
+                try {
+                    const msg = JSON.parse(event.data)
+                    switch (msg.type) {
+                        case 'log':
+                            addLog(msg.message, msg.level || 'info')
+                            break
+                        case 'progress':
+                            setProgress(msg.percent || 0)
+                            setPhase(msg.phase || '')
+                            break
+                        case 'findings_update':
+                            setFindingsCount(msg.count || 0)
+                            break
+                        case 'complete':
+                            setStatus('completed')
+                            setProgress(100)
+                            setPhase('Scan Complete')
+                            addLog('✅ Scan completed successfully!', 'success')
+                            break
+                        case 'error':
+                            setStatus('failed')
+                            addLog(`❌ Error: ${msg.message}`, 'error')
+                            break
+                        default:
+                            addLog(msg.message || JSON.stringify(msg), 'info')
+                    }
+                } catch {
+                    addLog(event.data, 'info')
                 }
-            } catch {
-                addLog(event.data, 'info')
+            }
+
+            ws.onclose = (event) => {
+                if (destroyed) return
+                // Don't reconnect if scan is already done
+                setStatus(prev => {
+                    if (prev === 'completed' || prev === 'failed' || prev === 'stopped') return prev
+                    addLog(`Connection lost — reconnecting in ${reconnectDelay / 1000}s...`, 'warning')
+                    reconnectTimer = setTimeout(() => {
+                        reconnectDelay = Math.min(reconnectDelay * 2, maxReconnectDelay)
+                        connect()
+                    }, reconnectDelay)
+                    return prev
+                })
+            }
+
+            ws.onerror = () => {
+                // onclose fires after onerror, so reconnect is handled there
+                addLog('WebSocket error.', 'warning')
             }
         }
 
-        ws.onclose = () => {
-            if (status === 'running') {
-                addLog('Connection closed.', 'warning')
-            }
-        }
-
-        ws.onerror = () => {
-            setStatus('failed')
-            addLog('WebSocket connection error.', 'error')
-        }
+        connect()
 
         // Also poll status via REST as fallback
         const pollInterval = setInterval(async () => {
@@ -87,7 +106,9 @@ export default function ScanProgress() {
         }, 3000)
 
         return () => {
-            ws.close()
+            destroyed = true
+            clearTimeout(reconnectTimer)
+            if (wsRef.current) wsRef.current.close()
             clearInterval(pollInterval)
         }
     }, [id])

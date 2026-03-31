@@ -70,7 +70,8 @@ func WalkDirectory(root string) (*ScanResult, error) {
 
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return err
+			utils.LogWarn(fmt.Sprintf("Skipping unreadable path %s: %v", path, err))
+			return nil
 		}
 
 		if info.IsDir() {

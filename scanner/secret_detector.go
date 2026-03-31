@@ -129,6 +129,8 @@ func (sd *SecretDetector) ScanSecrets(targetDir string) ([]reporter.Finding, err
 						Remediation: "Remove hardcoded secret. Use environment variables, secrets manager, or vault. If VERIFIED LIVE, revoke immediately.",
 						RuleID:      "secret-detector-entropy",
 						Source:      "secret-detector",
+						CWE:         "CWE-798",
+						OWASP:       "A07:2021-Identification and Authentication Failures",
 						Confidence:  0.95,
 					})
 					srNo++

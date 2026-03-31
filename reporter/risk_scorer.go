@@ -1,6 +1,8 @@
 package reporter
 
 import (
+	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -44,7 +46,7 @@ func CalculateRiskScore(findings []Finding) RiskScore {
 	aiValidatedCount := 0
 
 	for _, f := range findings {
-		switch f.Severity {
+		switch strings.ToLower(strings.TrimSpace(f.Severity)) {
 		case "critical":
 			criticalCount++
 			score += criticalWt
@@ -142,6 +144,11 @@ func GetPriorityMatrix(findings []Finding) PriorityMatrix {
 
 // GenerateReportSummary creates summary statistics from findings
 func GenerateReportSummary(findings []Finding, targetDir string) ReportSummary {
+	absDir, err := filepath.Abs(targetDir)
+	if err == nil {
+		targetDir = absDir
+	}
+	
 	summary := ReportSummary{
 		TotalFindings:   len(findings),
 		TargetDirectory: targetDir,
@@ -150,7 +157,7 @@ func GenerateReportSummary(findings []Finding, targetDir string) ReportSummary {
 	}
 
 	for _, f := range findings {
-		switch f.Severity {
+		switch strings.ToLower(strings.TrimSpace(f.Severity)) {
 		case "critical":
 			summary.CriticalCount++
 		case "high":

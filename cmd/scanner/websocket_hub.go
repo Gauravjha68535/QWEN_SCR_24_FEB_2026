@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"sync"
+	"time"
 
 	"SentryQ/utils"
 
@@ -65,20 +66,41 @@ func NewWebSocketHub() *WebSocketHub {
 	}
 }
 
+const maxWSClientsPerScan = 10
+
 // HandleWS upgrades an HTTP connection to WebSocket for a specific scan
 func (h *WebSocketHub) HandleWS(w http.ResponseWriter, r *http.Request, scanID string) {
+	// Check-and-add under a single write lock to avoid TOCTOU race.
+	h.mu.Lock()
+	if h.clients[scanID] == nil {
+		h.clients[scanID] = make(map[*WSClient]bool)
+	}
+	if len(h.clients[scanID]) >= maxWSClientsPerScan {
+		h.mu.Unlock()
+		http.Error(w, "too many connections for this scan", http.StatusTooManyRequests)
+		return
+	}
+	// Reserve the slot before releasing the lock so no other goroutine
+	// can slip in between the upgrade and the registration.
+	placeholder := &WSClient{}
+	h.clients[scanID][placeholder] = true
+	h.mu.Unlock()
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
+		// Remove the reserved placeholder since upgrade failed.
+		h.mu.Lock()
+		delete(h.clients[scanID], placeholder)
+		h.mu.Unlock()
 		utils.LogError("WebSocket upgrade failed", err)
 		return
 	}
 
 	wsClient := &WSClient{conn: conn}
 
+	// Replace placeholder with real client.
 	h.mu.Lock()
-	if h.clients[scanID] == nil {
-		h.clients[scanID] = make(map[*WSClient]bool)
-	}
+	delete(h.clients[scanID], placeholder)
 	h.clients[scanID][wsClient] = true
 	h.mu.Unlock()
 
@@ -99,6 +121,9 @@ func (h *WebSocketHub) HandleWS(w http.ResponseWriter, r *http.Request, scanID s
 			wsClient.Close()
 		}()
 		for {
+			// Refresh read deadline on every iteration so idle connections
+			// are reaped after 10 minutes instead of leaking forever.
+			wsClient.conn.SetReadDeadline(time.Now().Add(10 * time.Minute))
 			_, _, err := wsClient.ReadMessage()
 			if err != nil {
 				return

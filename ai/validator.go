@@ -22,6 +22,7 @@ type ValidationResult struct {
 	SuggestedFix               string  `json:"suggested_fix"`
 	SeverityAdjustment         string  `json:"severity_adjustment"`
 	ExploitPoC                 string  `json:"exploit_poc"`
+	FixedCodeSnippet           string  `json:"fixed_code_snippet"`
 }
 
 // ValidateFinding sends a single finding to the AI model for validation
@@ -78,7 +79,6 @@ OUTPUT:
 
 INSTRUCTIONS:
 - Be thorough but fair. Do NOT dismiss Configuration/Secret vulnerabilities just because there is "no user input".
-- Do NOT generate git diffs or code blocks in suggested_fix. Describe the fix in plain text.
 - Do NOT flag standard DevOps/Infra commands as vulnerabilities.
 - Provide a clear 'exploit_poc' field with the HTTP request, curl command, or payload. Use 'N/A' if the issue is not externally triggerable.
 
@@ -91,6 +91,7 @@ Return ONLY a valid JSON object in the final part of your response:
   "confidence": 0.0-1.0,
   "explanation": "Your analysis summary.",
   "suggested_fix": "Describe the fix in plain text.",
+  "fixed_code_snippet": "Provide ONLY the secure code replacement for the vulnerable lines (no markdown fences or explanation) or N/A.",
   "severity_adjustment": "critical/high/medium/low/info or same",
   "exploit_poc": "Proof of concept or N/A."
 }`,

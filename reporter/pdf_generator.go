@@ -185,7 +185,11 @@ func drawFindingDetail(pdf *gofpdf.Fpdf, f Finding) {
 		fileInfo += fmt.Sprintf("  |  %s", extractCWEID(f.CWE))
 	}
 	if f.OWASP != "" {
-		fileInfo += fmt.Sprintf("  |  OWASP %s", sanitizePDFText(f.OWASP))
+		owaspDisplay := NormalizeOWASP(f.OWASP)
+		if owaspDisplay == "" {
+			owaspDisplay = truncateString(f.OWASP, 20)
+		}
+		fileInfo += fmt.Sprintf("  |  OWASP %s", sanitizePDFText(owaspDisplay))
 	}
 	if f.Source != "" {
 		fileInfo += fmt.Sprintf("  |  Source: %s", sanitizePDFText(truncateSource(f.Source)))
@@ -206,7 +210,7 @@ func drawFindingDetail(pdf *gofpdf.Fpdf, f Finding) {
 
 	// ── Vulnerable Code Snippet ──
 	if f.CodeSnippet != "" {
-		if pdf.GetY() > 240 {
+		if pdf.GetY() > 210 {
 			pdf.AddPage()
 			addPortraitHeader(pdf, "Detailed Findings (continued)")
 		}
@@ -257,7 +261,7 @@ func drawFindingDetail(pdf *gofpdf.Fpdf, f Finding) {
 
 	// ── Fixed Code (AI-generated) ──
 	if f.FixedCode != "" {
-		if pdf.GetY() > 240 {
+		if pdf.GetY() > 210 {
 			pdf.AddPage()
 			addPortraitHeader(pdf, "Detailed Findings (continued)")
 		}
@@ -328,9 +332,8 @@ func generateSeverityChart(summary ReportSummary) ([]byte, error) {
 		values = append(values, chart.Value{Value: float64(summary.LowCount), Label: "Low", Style: chart.Style{FillColor: drawing.ColorFromHex("16a34a")}})
 	}
 
-	infoCount := summary.TotalFindings - summary.CriticalCount - summary.HighCount - summary.MediumCount - summary.LowCount
-	if infoCount > 0 {
-		values = append(values, chart.Value{Value: float64(infoCount), Label: "Info", Style: chart.Style{FillColor: drawing.ColorFromHex("4b5563")}})
+	if summary.InfoCount > 0 {
+		values = append(values, chart.Value{Value: float64(summary.InfoCount), Label: "Info", Style: chart.Style{FillColor: drawing.ColorFromHex("4b5563")}})
 	}
 
 	if len(values) == 0 {

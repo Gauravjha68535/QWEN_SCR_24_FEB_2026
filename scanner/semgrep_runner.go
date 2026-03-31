@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -79,7 +80,10 @@ func RunSemgrep(ctx context.Context, targetDir string) ([]reporter.Finding, erro
 
 	args = append(args, targetDir)
 
-	cmd := exec.Command(getSemgrepBin(), args...)
+	// 10-minute hard cap — semgrep on a huge codebase can otherwise run forever.
+	semCtx, semCancel := context.WithTimeout(ctx, 10*time.Minute)
+	defer semCancel()
+	cmd := exec.CommandContext(semCtx, getSemgrepBin(), args...)
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout

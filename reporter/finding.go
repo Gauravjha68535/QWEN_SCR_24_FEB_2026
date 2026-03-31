@@ -22,8 +22,9 @@ type Finding struct {
 	AiReasoning string   `json:"ai_reasoning"` // AI's detailed reasoning for the finding
 	ExploitPath []string `json:"exploit_path"` // Step-by-step data flow path (for taint)
 	TrustScore  float64  `json:"trust_score"`  // Multi-engine confidence score (0-100)
-	ExploitPoC  string   `json:"exploit_poc"`  // AI-generated proof of concept exploit
-	FixedCode   string   `json:"fixed_code"`   // AI-generated fixed code snippet
+	ExploitPoC         string   `json:"exploit_poc"`          // AI-generated proof of concept exploit
+	FixedCode          string   `json:"fixed_code"`           // AI-generated fixed code snippet
+	VulnerablePattern  string   `json:"vulnerable_pattern"`   // Short exact code fragment the AI flagged; used to anchor snippet to real line
 	Status      string   `json:"status"`       // Triage status: "open", "resolved", "ignored", "false_positive"
 }
 

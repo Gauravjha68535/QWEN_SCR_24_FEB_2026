@@ -1,6 +1,7 @@
 package scanner
 
 import (
+	"context"
 	"SentryQ/reporter"
 	"SentryQ/utils"
 	"bufio"
@@ -14,6 +15,7 @@ import (
 	"runtime"
 	"strings"
 	"sync/atomic"
+	"time"
 )
 
 // getTrivyBin returns the correct executable name based on OS
@@ -37,7 +39,11 @@ func NewContainerScanner(counter int64) *ContainerScanner {
 }
 
 // ScanContainers scans Dockerfiles in the target directory
-func (cs *ContainerScanner) ScanContainers(targetDir string) ([]reporter.Finding, error) {
+func (cs *ContainerScanner) ScanContainers(targetDir string, ctx ...context.Context) ([]reporter.Finding, error) {
+	scanCtx := context.Background()
+	if len(ctx) > 0 && ctx[0] != nil {
+		scanCtx = ctx[0]
+	}
 	var findings []reporter.Finding
 	var dockerfiles []string
 	var k8sManifests []string
@@ -45,7 +51,8 @@ func (cs *ContainerScanner) ScanContainers(targetDir string) ([]reporter.Finding
 	// Find all Dockerfiles and K8s YAML files
 	err := filepath.Walk(targetDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return err
+			utils.LogWarn(fmt.Sprintf("Container scanner: skipping unreadable path %s: %v", path, err))
+			return nil
 		}
 		if !info.IsDir() {
 			base := strings.ToLower(filepath.Base(path))
@@ -82,7 +89,7 @@ func (cs *ContainerScanner) ScanContainers(targetDir string) ([]reporter.Finding
 	// Try running external container scanners natively (Trivy)
 	if hasTrivy() && len(parsedImages) > 0 {
 		utils.LogInfo(fmt.Sprintf("Trivy detected, running container image vulnerability scan on %d unique images...", len(parsedImages)))
-		trivyFindings := cs.runTrivyScan(parsedImages)
+		trivyFindings := cs.runTrivyScan(parsedImages, scanCtx)
 		findings = append(findings, trivyFindings...)
 	}
 
@@ -213,7 +220,7 @@ func hasTrivy() bool {
 	return err == nil
 }
 
-func (cs *ContainerScanner) runTrivyScan(images []string) []reporter.Finding {
+func (cs *ContainerScanner) runTrivyScan(images []string, parentCtx context.Context) []reporter.Finding {
 	var findings []reporter.Finding
 
 	// Deduplicate images
@@ -244,10 +251,14 @@ func (cs *ContainerScanner) runTrivyScan(images []string) []reporter.Finding {
 	for image := range uniqueImages {
 		utils.LogInfo(fmt.Sprintf("    Scanning base image: %s...", image))
 
-		cmd := exec.Command(getTrivyBin(), "image", "-q", "--format", "json", image)
+		// 2-minute cap per image — prevents hanging on unreachable registries.
+		imgCtx, imgCancel := context.WithTimeout(parentCtx, 2*time.Minute)
+		cmd := exec.CommandContext(imgCtx, getTrivyBin(), "image", "-q", "--format", "json", image)
 		var out bytes.Buffer
 		cmd.Stdout = &out
-		if err := cmd.Run(); err != nil {
+		err := cmd.Run()
+		imgCancel()
+		if err != nil {
 			utils.LogWarn(fmt.Sprintf("Failed to run Trivy on %s (it might need to be downloaded first or not exist). Skipping.", image))
 			continue
 		}

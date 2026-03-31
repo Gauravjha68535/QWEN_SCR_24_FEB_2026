@@ -75,6 +75,13 @@ func ValidateFindingsBatch(ctx context.Context, modelName string, findings []rep
 	worker := func() {
 		defer wg.Done()
 		for job := range jobs {
+			// Respect context cancellation between jobs
+			if ctx.Err() != nil {
+				job.finding.AiValidated = "Skipped (Cancelled)"
+				results <- job
+				continue
+			}
+
 			// Pre-check for skip conditions
 			if job.finding.Severity == "low" || job.finding.Severity == "info" {
 				job.finding.AiValidated = "Skipped (Low/Info)"
@@ -201,7 +208,9 @@ func ValidateFindingsBatch(ctx context.Context, modelName string, findings []rep
 					}
 					if result.SuggestedFix != "" {
 						job.finding.Remediation = result.SuggestedFix
-						job.finding.FixedCode = result.SuggestedFix
+					}
+					if result.FixedCodeSnippet != "" && result.FixedCodeSnippet != "N/A" {
+						job.finding.FixedCode = result.FixedCodeSnippet
 					}
 					if result.SeverityAdjustment != "same" && result.SeverityAdjustment != "" {
 						job.finding.Severity = result.SeverityAdjustment

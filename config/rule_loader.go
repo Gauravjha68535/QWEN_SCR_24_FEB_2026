@@ -291,38 +291,81 @@ func compilePatterns(rules []Rule) []Rule {
 	return rules
 }
 
-// LoadRules loads all .yaml rule files from the rules directory (including subdirectories)
-func LoadRules(rulesDir string) ([]Rule, error) {
-	var allRules []Rule
+// langToRuleFiles maps a detected language name to the rule YAML file(s) it should load.
+// Most languages follow the "{lang}.yaml" convention; exceptions are listed explicitly.
+// Languages that map to multiple files (e.g. yaml infra files) return a slice.
+var langToRuleFiles = map[string][]string{
+	"dockerfile":    {"docker.yaml"},
+	"objective-c":   {"objective-c.yaml"},
+	"objective-cpp": {"cpp.yaml"},
+	// yaml files may be k8s/ansible/helm/cloud manifests — load all infra rule sets
+	"yaml": {"kubernetes.yaml", "ansible.yaml", "helm.yaml", "cloudformation.yaml", "azure.yaml", "gcp.yaml", "serverless.yaml"},
+	"json": {"cloudformation.yaml", "azure.yaml"},
+	"xml":  {"aspnet.yaml"},
+	"asp":  {"asp.yaml", "aspnet.yaml"},
+	// vb / vbscript have no dedicated rule files — skip
+	"vb":       {},
+	"vbscript": {},
+	// misc languages without rule files
+	"css":         {},
+	"sass":        {},
+	"less":        {},
+	"vue":         {},
+	"svelte":      {},
+	"toml":        {},
+	"ini":         {},
+	"env":         {},
+	"text":        {},
+	"markdown":    {},
+	"tsql":        {"sql.yaml"},
+	"plsql":       {"sql.yaml"},
+	"webassembly": {},
+}
 
-	err := filepath.Walk(rulesDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			utils.LogError(fmt.Sprintf("Error accessing path %s", path), err)
-			return nil // continue walking
-		}
-		if info.IsDir() {
-			// Skip the frameworks subdirectory to avoid loading them globally
-			if info.Name() == "frameworks" {
-				return filepath.SkipDir
+// alwaysLoadRuleFiles are loaded for every scan regardless of detected languages.
+var alwaysLoadRuleFiles = []string{
+	"general.yaml",
+	"insecure_randomness.yaml",
+	"racecondition.yaml",
+	"supplychain.yaml",
+}
+
+// LoadRulesForLanguages loads only the rule files relevant to the detected languages,
+// plus the always-on cross-language rule files. This avoids loading hundreds of
+// irrelevant rules when scanning a single-language codebase.
+func LoadRulesForLanguages(rulesDir string, languages map[string]bool) ([]Rule, error) {
+	// Build the set of rule file names to load
+	toLoad := make(map[string]bool)
+	for _, f := range alwaysLoadRuleFiles {
+		toLoad[f] = true
+	}
+
+	for lang := range languages {
+		if fileNames, ok := langToRuleFiles[lang]; ok {
+			for _, f := range fileNames {
+				if f != "" {
+					toLoad[f] = true
+				}
 			}
-			return nil
+		} else {
+			// Default convention: {lang}.yaml
+			toLoad[lang+".yaml"] = true
 		}
-		if filepath.Ext(info.Name()) != ".yaml" {
-			return nil
-		}
+	}
 
+	var allRules []Rule
+	for fileName := range toLoad {
+		path := filepath.Join(rulesDir, fileName)
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			continue // No rule file for this language — skip silently
+		}
 		rules, err := LoadRulesFile(path)
 		if err != nil {
-			utils.LogError(fmt.Sprintf("Failed to parse rule YAML (%s)", info.Name()), err)
-			return nil // continue walking
+			utils.LogError(fmt.Sprintf("Failed to parse rule YAML (%s)", fileName), err)
+			continue
 		}
-
 		allRules = append(allRules, rules...)
-		utils.LogInfo(fmt.Sprintf("Loaded %d rules from %s", len(rules), info.Name()))
-		return nil
-	})
-	if err != nil {
-		return nil, err
+		utils.LogInfo(fmt.Sprintf("Loaded %d rules from %s", len(rules), fileName))
 	}
 
 	return allRules, nil

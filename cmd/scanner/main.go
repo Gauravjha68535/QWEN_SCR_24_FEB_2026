@@ -24,7 +24,6 @@ func main() {
 
 	if port <= 0 || port > 65535 {
 		port = 5336
-		fmt.Printf("📡 Web UI: http://localhost:%d\n", port)
 	}
 
 	if ollamaHost != "" {

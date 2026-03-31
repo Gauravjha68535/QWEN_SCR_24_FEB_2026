@@ -176,13 +176,16 @@ func StartWebServer(port int) {
 		http.FileServer(http.FS(staticFS)).ServeHTTP(w, r)
 	})
 
-	addr := fmt.Sprintf("localhost:%d", port)
+	// Bind to all interfaces (0.0.0.0) so the UI is reachable from other
+	// machines on the same network, not just localhost.
+	addr := fmt.Sprintf("0.0.0.0:%d", port)
+	localAddr := fmt.Sprintf("localhost:%d", port)
 	server := &http.Server{
 		Addr:    addr,
 		Handler: corsMiddleware(mux),
 	}
 
-	utils.LogInfo(fmt.Sprintf("🌐 SentryQ Web UI starting on http://%s", addr))
+	utils.LogInfo(fmt.Sprintf("🌐 SentryQ Web UI starting on http://%s", localAddr))
 
 	// ── Startup Dependency Checks ──
 	checkStartupDependencies()
@@ -191,7 +194,7 @@ func StartWebServer(port int) {
 	go startReportCleanup()
 
 	// Auto-open browser
-	go openBrowser("http://" + addr)
+	go openBrowser("http://" + localAddr)
 
 	// Setup graceful shutdown
 	stop := make(chan os.Signal, 1)
@@ -297,8 +300,9 @@ func handleUploadScan(w http.ResponseWriter, r *http.Request) {
 			relPath := filepath.Clean(filename)
 			destPath := filepath.Join(tmpDir, relPath)
 
-			// Ensure destPath stays within tmpDir
+			// Ensure destPath stays within tmpDir (path traversal protection)
 			if !strings.HasPrefix(filepath.Clean(destPath), filepath.Clean(tmpDir)) {
+				utils.LogWarn(fmt.Sprintf("Path traversal attempt blocked: filename=%q from %s", filename, r.RemoteAddr))
 				part.Close()
 				continue
 			}
@@ -381,7 +385,11 @@ func handleScanRoutes(w http.ResponseWriter, r *http.Request) {
 
 	// PATCH /api/scan/:id/finding/:findingId/status
 	if len(parts) >= 4 && parts[1] == "finding" && parts[3] == "status" && r.Method == http.MethodPatch {
-		findingID, _ := strconv.Atoi(parts[2])
+		findingID, err := strconv.Atoi(parts[2])
+		if err != nil {
+			httpJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid finding ID: must be a number"})
+			return
+		}
 		var req struct {
 			Status string `json:"status"`
 		}
@@ -460,14 +468,15 @@ func handleScanRoutes(w http.ResponseWriter, r *http.Request) {
 						if err != nil {
 							continue
 						}
-						defer f1.Close()
 
 						w1, err := archive.Create(fileName)
 						if err != nil {
+							f1.Close()
 							continue
 						}
 
 						io.Copy(w1, f1)
+						f1.Close()
 					}
 					return nil
 				}()
@@ -500,10 +509,15 @@ func handleScanRoutes(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if _, err := os.Stat(filePath); os.IsNotExist(err) {
-			// Try to regenerate
-			findings, _ := GetFindingsForScan(scanID)
+			// Report file missing — try to regenerate from DB
+			findings, dbErr := GetFindingsForScan(scanID)
+			if dbErr != nil {
+				utils.LogError(fmt.Sprintf("Failed to load findings for report regeneration (scan %s)", scanID), dbErr)
+				httpJSON(w, http.StatusInternalServerError, map[string]string{"error": "report not found and could not be regenerated"})
+				return
+			}
 			if len(findings) > 0 {
-				webGenerateReportFiles(scanID, findings, ".")
+				webGenerateReportFiles(scanID, findings, reportsDir)
 			}
 		}
 
@@ -593,7 +607,8 @@ func handleSystemStatus(w http.ResponseWriter, r *http.Request) {
 	appSettings.RLock()
 	host := appSettings.OllamaHost
 	appSettings.RUnlock()
-	resp, err := http.Get(fmt.Sprintf("http://%s/api/version", host))
+	ollamaClient := &http.Client{Timeout: 3 * time.Second}
+	resp, err := ollamaClient.Get(fmt.Sprintf("http://%s/api/version", host))
 	if err == nil {
 		defer resp.Body.Close()
 		if resp.StatusCode == 200 {

@@ -130,7 +130,10 @@ export default function NewScan() {
             if (tab === 'upload' && files) {
                 const formData = new FormData()
                 for (let i = 0; i < files.length; i++) {
-                    formData.append('files', files[i])
+                    // Use webkitRelativePath so the server can reconstruct the full folder structure.
+                    // Falls back to the plain filename if the browser doesn't provide a relative path.
+                    const relativePath = files[i].webkitRelativePath || files[i].name
+                    formData.append('files', files[i], relativePath)
                 }
                 formData.append('config', JSON.stringify(config))
                 res = await fetch('/api/scan/upload', { method: 'POST', body: formData })
