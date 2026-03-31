@@ -60,6 +60,15 @@ graph TD
     H --> J[PDF/JSON/CSV Export]
 ```
 
+## 🧠 How the AI Validation Works
+
+One of SentryQ’s biggest strengths is its suppression of False Positives. Instead of relying solely on dumb regex matches, SentryQ uses an intelligent **Chain-of-Thought Pipeline**:
+
+1. **Discovery**: The static analyzer finds a potential issue (e.g., `Math.random()` used in JavaScript).
+2. **Context Gathering**: SentryQ extracts the surrounding code context (functions, comments, imports).
+3. **Judge LLM Prompting**: It asks the specialized local AI Model: _"Is this `Math.random()` being used securely (e.g. for generating an arbitrary non-secure UI color) or insecurely (e.g. for generating an authentication token)?"_
+4. **Resolution**: The AI effectively marks the false positives as "Ignored" so humans only review what actually matters.
+
 ## 🚀 Quick Start
 
 ### 1. Prerequisites (Platform Specific)
@@ -125,13 +134,30 @@ SentryQ can be run directly from the command line for CI/CD integration or quick
 ### Advanced AI Configuration
 Edit `.sentryq-settings.json` in your workspace to configure custom OpenAI endpoints, switch active AI providers, or change model preferences.
 
+## 📝 Writing Custom Rules
+
+SentryQ supports extending its static scanning engine with simple YAML files in the `rules/` directory.
+
+**Example: `rules/custom-jwt-secret.yaml`**
+```yaml
+- id: hardcoded-jwt-secret
+  languages: [javascript, typescript, python, go]
+  patterns:
+    - regex: '(?i)(jwt_secret|jwt_key|secret_key)\s*=\s*["\'][a-zA-Z0-9_\-\.]{10,}["\']'
+  severity: critical
+  description: "Detected a dangerously hardcoded JWT Token Secret"
+  remediation: "Use environment variables (e.g., process.env.JWT_SECRET) to load sensitive keys"
+  cwe: "CWE-798"
+  owasp: "A07:2021"
+```
+*SentryQ will instantly load this upon next execution, applying it specifically to the defined `languages` list.*
+
 ## 🤝 Contributing & Extension
 
 SentryQ is designed to be highly modular and extensible.
 - **Core Engine**: The primary scanner logic is located in `scanner/` and `cmd/scanner/`.
 - **AI Triage**: Explore the AI processing pipeline in `ai/`.
-- **Rules Mapping**: Add your custom generic or framework-specific YAML rules to the `rules/` directory.
-- **Frontend Panel**: The React/Vite frontend UI is situated in `web/` and served via websocket hubs in the backend.
+- **UI & Reports**: PDF and HTML generation is located in `internal/reporter/`. The React/Vite UI is located in `web/`.
 
 **Run tests via:**
 ```bash
