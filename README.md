@@ -1,11 +1,29 @@
 # 🛡️ SentryQ
 
-> **Next-Gen AI-Orchestrated Security Analysis Platform**
-> A high-performance, local-first security tool designed for elite engineering teams. Powered by Go and Local AI (Ollama).
+<div align="center">
+  <p><strong>Next-Gen AI-Orchestrated Security Analysis Platform</strong></p>
+  <p><i>A high-performance, local-first security tool designed for elite engineering teams. Powered by Go and AI.</i></p>
+
+  [![Go Version](https://img.shields.io/badge/Go-1.24+-00ADD8?style=flat-square&logo=go)](https://golang.org)
+  [![React Version](https://img.shields.io/badge/React-18+-61DAFB?style=flat-square&logo=react)](https://react.dev)
+  [![Ollama Support](https://img.shields.io/badge/AI-Ollama%20%7C%20OpenAI-FF9900?style=flat-square&logo=openai)](https://ollama.com)
+</div>
+
+<hr/>
 
 SentryQ transforms security scanning from simple pattern matching into **Intelligent Orchestration**. It runs your codebase through **12,400+ static rules** across 60+ languages, performs **AI-driven vulnerability discovery**, and uses a **"Security Judge" LLM** to deduplicate and validate findings—all running 100% locally on your machine.
 
----
+## ✨ Core Capabilities
+
+| 🚀 Feature | 🛠️ Technical Breakdown |
+| :--- | :--- |
+| **Multi-Engine SAST** | Combines AST-based logic, Taint-flow analysis, and 12,000+ regex patterns across 60+ languages. |
+| **AI-Orchestrated Triage** | Uses local LLMs (Ollama/Qwen2.5) or OpenAI endpoints to validate findings via Chain-of-Thought, drastically reducing False Positives. |
+| **Deep Taint Tracking** | Analyzes data flow from user-controlled sources to dangerous sinks across variables and functions. |
+| **Threat Intel Enrichment** | Findings are mapped against **MITRE ATT&CK**, **CISA KEV**, and **EPSS** threat intelligence databases. |
+| **Supply Chain & SCA** | Seamless integrations with Google **OSV-Scanner** and **Semgrep** for dependency audits and framework vulnerabilities. |
+| **Decision Judge Model** | A specialized "Judge Engine" compares static findings and AI heuristics to produce a unified, trusted security report. |
+| **Rich Reporting & Dashboard**| Real-time web UI dashboard (React/Vite), plus PDF, CSV, and HTML report exports. |
 
 ## 🏗️ System Architecture
 
@@ -42,57 +60,26 @@ graph TD
     H --> J[PDF/JSON/CSV Export]
 ```
 
----
-
-## 🌟 Core Features
-
-| Feature | Technical Breakdown |
-| :--- | :--- |
-| **🔍 Multi-Engine SAST** | Combines AST-based logic, Taint-flow analysis, and 12,000+ regex-based patterns. |
-| **🧠 AI-Orchestrated Triage** | Uses local LLMs (Qwen2.5-Coder) to validate findings (Chain-of-Thought) and suppress FPs. |
-| **🌊 Deep Taint Tracking** | Analyzes data flow from user-controlled sources to dangerous sinks across variables and functions. |
-| **🛡️ Mitigation Awareness** | AI recognizes secure coding patterns (e.g., `nonce` checks, `path.resolve` guards) to reduce noise. |
-| **📦 Supply Chain & SCA** | Integrates Google **OSV-Scanner** and **Semgrep** for dependency and framework-specific audits. |
-| **⚖️ Decision Judge** | A specialized "Judge LLM" compares static and AI results to produce a unified, trusted report. |
-| **🏢 Triage Dashboard** | Real-time scan updates, finding drill-downs, and a built-in AI Security Chatbot. |
-
----
-
-## 🔍 Security Engine Deep-Dive
-
-### 1. Taint Analysis & Reachability
-Our **[Taint Analyzer](./scanner/taint-analyzer.go)** builds a variable flow graph to see if untrusted input can reach a sink without being sanitized. This is augmented by **[Reachability Analysis](./scanner/reachability.go)** which verifies that the vulnerable code path is traversable in the application's call graph.
-
-### 2. AI Intelligence Layer
-The **[AI Layer](./ai/)** operates in three phases: Discovery, Validation (via **[Validator](./ai/validator.go)**), and the **[Judge Engine](./ai/judge_engine.go)** merger.
-
-### 3. Threat Intelligence Enrichment
-Findings are enriched via the **[Threat Intel Scanner](./scanner/threat_intel.go)** using MITRE ATT&CK, CISA KEV, and EPSS mapping.
-
----
-
-## 🏁 Quick Start
+## 🚀 Quick Start
 
 ### 1. Prerequisites (Platform Specific)
 
 #### 🐧 Linux / 🍏 macOS
 ```bash
-# Ensure Go (1.21+) and Node.js (18+) are installed
-# Install Ollama from ollama.com
+# Ensure Go (1.24+) and Node.js (18+) are installed
+# Install Ollama from ollama.com and run the default model
 ollama run qwen2.5-coder:7b
 
-# Install External Scanners
+# Install External Scanners (Required for SCA and Framework Audits)
 go install github.com/google/osv-scanner/v2/cmd/osv-scanner@v2
 pip3 install semgrep
 ```
 
 #### 🪟 Windows
-SentryQ is fully supported on Windows.
-1. Install **Go** (1.21+) from [golang.org](https://golang.org/dl/).
-2. Install **Node.js** (18+) from [nodejs.org](https://nodejs.org/).
-3. Install **Ollama** and run `ollama run qwen2.5-coder:7b`.
-4. Install **Python** and **Semgrep** (`pip install semgrep`).
-5. Install **OSV-Scanner** (`go install github.com/google/osv-scanner/v2/cmd/osv-scanner@v2`).
+1. Install **[Go](https://go.dev/dl/)** (1.24+) and **[Node.js](https://nodejs.org/)** (18+).
+2. Install **[Ollama](https://ollama.com/)** and run `ollama run qwen2.5-coder:7b`.
+3. Install Python and set up Semgrep: `pip install semgrep`.
+4. Install OSV-Scanner: `go install github.com/google/osv-scanner/v2/cmd/osv-scanner@v2`.
 
 ### 2. Build & Deploy
 
@@ -105,36 +92,52 @@ chmod +x build.sh
 
 #### 🪟 Windows (Native CMD/PowerShell)
 ```batch
-build.bat
-sentryq.exe
+.\build.bat
+.\sentryq.exe
 ```
 
-*Access the dashboard at `http://localhost:5336`*
+Access the real-time Triage Dashboard at: **`http://localhost:5336`**
 
----
+## 💻 CLI Usage & Configuration
 
-## ⌨️ CLI & Configuration
+SentryQ can be run directly from the command line for CI/CD integration or quick local scans.
 
-| Flag | Description |
-| :--- | :--- |
-| `-port` | Web Dashboard port (default: `5336`) |
-| `-ollama-host` | Remote Ollama instance (default: `localhost:11434`) |
-| `[target]` | Optional: Path to a directory for an immediate CLI scan |
+### Common Flags
 
-**Configuration**: Edit **[`.sentryq-settings.json`](./.sentryq-settings.json.example)** to configure AI providers (OpenAI/Ollama) and model preferences.
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `-port` | Web Dashboard listening port | `5336` |
+| `-ollama-host` | Specify a remote Ollama instance (e.g. `192.168.1.10:11434`) | `localhost:11434` |
+| `[target]` | Pass a target directory for an immediate blocking CLI scan | `None` |
 
----
+**Example:**
+```bash
+# Start Web Dashboard
+./sentryq
+
+# Immediate CLI Scan on local directory
+./sentryq ./my-project-dir
+
+# Connect to Remote Ollama
+./sentryq -ollama-host "172.29.190.139:11434" ./my-project-dir
+```
+
+### Advanced AI Configuration
+Edit `.sentryq-settings.json` in your workspace to configure custom OpenAI endpoints, switch active AI providers, or change model preferences.
 
 ## 🤝 Contributing & Extension
 
-- **Core Engine**: See **[`cmd/scanner/`](./cmd/scanner/)** and **[`scanner/`](./scanner/)**.
-- **Rules**: Add custom YAML rules to **[`rules/`](./rules/)**.
-- **Frontend**: Built with React in **[`web/`](./web/)**.
+SentryQ is designed to be highly modular and extensible.
+- **Core Engine**: The primary scanner logic is located in `scanner/` and `cmd/scanner/`.
+- **AI Triage**: Explore the AI processing pipeline in `ai/`.
+- **Rules Mapping**: Add your custom generic or framework-specific YAML rules to the `rules/` directory.
+- **Frontend Panel**: The React/Vite frontend UI is situated in `web/` and served via websocket hubs in the backend.
 
-Run tests via: `go test ./...`
+**Run tests via:**
+```bash
+go test ./...
+```
 
----
-
-## 📄 License
+## 📜 License
 
 © 2026 SentryQ Security Team.
