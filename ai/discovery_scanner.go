@@ -28,9 +28,6 @@ var aiHTTPClient = &http.Client{
 	},
 }
 
-func init() {
-}
-
 // FlexInt handles AI models returning line_number as either int (42) or array ([14, 20, 26]).
 // When an array is returned, we take the first element.
 type FlexInt int
@@ -441,13 +438,17 @@ func DiscoverVulnerabilities(ctx context.Context, modelName string, filePath str
 			var contextAdditions strings.Builder
 			contextAdditions.WriteString("\n\n--- AGENTIC SEARCH RESULTS ---\nYou requested additional context. Here are the contents:\n")
 			for _, reqFile := range agenticResp.NeedsContext {
-				// Prevent traversal above project root (rough heuristic)
+				// Prevent path traversal: reject absolute paths and any ".." components.
 				cleanPath := filepath.Clean(reqFile)
-				if !strings.Contains(cleanPath, "..") {
-					// Use filepath.Dir(filePath) or just try blindly since we don't know the exact project root here
-					// Better: search relative to the file being scanned
+				if !filepath.IsAbs(cleanPath) && !strings.Contains(cleanPath, "..") {
 					dir := filepath.Dir(filePath)
 					targetPath := filepath.Join(dir, cleanPath)
+					// Final check: ensure resolved path stays within the scan directory
+					absScanDir, e1 := filepath.Abs(dir)
+					absTarget, e2 := filepath.Abs(targetPath)
+					if e1 != nil || e2 != nil || !strings.HasPrefix(absTarget, absScanDir+string(filepath.Separator)) {
+						continue
+					}
 					content, err := os.ReadFile(targetPath)
 					if err == nil {
 						snippet := string(content)
@@ -469,17 +470,14 @@ func DiscoverVulnerabilities(ctx context.Context, modelName string, filePath str
 			continue
 		}
 
-		// DEBUG: Log full raw response
-		if len(outputStr) > 0 {
-			utils.LogInfo(fmt.Sprintf("Full AI Response for %s:\n\n%s\n\n", filePath, outputStr))
-		} else {
-			utils.LogWarn(fmt.Sprintf("AI returned empty response for %s", filePath))
-		}
-
 		var response DiscoveryResponse
 
 		if os.Getenv("AI_DEBUG") == "true" {
-			fmt.Printf("\n[DEBUG] Raw AI output for %s:\n%s\n", filePath, outputStr)
+			if len(outputStr) > 0 {
+				fmt.Printf("\n[DEBUG] Raw AI output for %s:\n%s\n", filePath, outputStr)
+			} else {
+				fmt.Printf("\n[DEBUG] AI returned empty response for %s\n", filePath)
+			}
 		}
 
 		// clampLine ensures a line number returned by the AI stays within file bounds.

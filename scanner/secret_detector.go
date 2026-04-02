@@ -170,8 +170,6 @@ func calculateEntropy(s string) float64 {
 	return entropy
 }
 
-// Moved to helpers.go
-
 // Pre-compiled regexes for known secret patterns (avoid recompiling per match)
 var knownSecretPatterns = []*regexp.Regexp{
 	regexp.MustCompile(`^AKIA[0-9A-Z]{16}$`),                // AWS Access Key
@@ -246,14 +244,15 @@ func generateSecretDescription(matchedText string) string {
 	return "Potential hardcoded secret detected"
 }
 
-// isTestFile checks if a file is a test file or example
+// isTestFile checks if a file is a test file or mock
 func isTestFile(path string) bool {
 	testPatterns := []string{
-		"_test.", ".spec.", ".test.", "example", "sample", "demo",
-		"test_", "spec_", "mock", "fixture",
+		"_test.", ".spec.", ".test.",
+		"test_", "spec_", "/mock/", "/mocks/", "/fixture/", "/fixtures/",
+		"/test/", "/tests/", "/testdata/", "/__tests__/", "/__mocks__/",
 	}
 
-	lowerPath := strings.ToLower(path)
+	lowerPath := strings.ToLower(strings.ReplaceAll(path, "\\", "/"))
 	for _, pattern := range testPatterns {
 		if strings.Contains(lowerPath, pattern) {
 			return true
@@ -261,6 +260,3 @@ func isTestFile(path string) bool {
 	}
 	return false
 }
-
-// countLines counts newlines in a string
-// Moved to helpers.go

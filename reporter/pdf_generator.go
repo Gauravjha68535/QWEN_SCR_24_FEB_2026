@@ -8,6 +8,8 @@ import (
 	"github.com/jung-kurt/gofpdf"
 	"github.com/wcharczuk/go-chart/v2"
 	"github.com/wcharczuk/go-chart/v2/drawing"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // GeneratePDF generates a professional PDF report with cover page, executive summary,
@@ -144,7 +146,7 @@ func GeneratePDF(filename string, findings []Finding, summary ReportSummary, ris
 	for _, sev := range []string{"critical", "high", "medium", "low", "info"} {
 		if n := sevGroups[sev]; n > 0 {
 			tocEntries = append(tocEntries, struct{ label string; count int }{
-				fmt.Sprintf("  — %s findings", strings.Title(sev)), n,
+				fmt.Sprintf("  — %s findings", cases.Title(language.English).String(sev)), n,
 			})
 		}
 	}

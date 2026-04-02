@@ -43,11 +43,17 @@ func WriteCSV(filename string, findings []Finding) error {
 	// Write unreachable findings (optional, but keep them separate)
 	if len(unreachable) > 0 {
 		blankRow := make([]string, len(header))
-		writer.Write(blankRow)
+		if err := writer.Write(blankRow); err != nil {
+			return err
+		}
 		sepRow := make([]string, len(header))
 		sepRow[0] = "=== POTENTIALLY UNREACHABLE (TEST FILES / LOW CONFIDENCE) ==="
-		writer.Write(sepRow)
-		writer.Write(header)
+		if err := writer.Write(sepRow); err != nil {
+			return err
+		}
+		if err := writer.Write(header); err != nil {
+			return err
+		}
 
 		for _, f := range unreachable {
 			if err := writer.Write(findingToRow(f)); err != nil {
@@ -59,11 +65,17 @@ func WriteCSV(filename string, findings []Finding) error {
 	// Separator + FP section
 	if len(falsePositives) > 0 {
 		blankRow := make([]string, len(header))
-		writer.Write(blankRow)
+		if err := writer.Write(blankRow); err != nil {
+			return err
+		}
 		sepRow := make([]string, len(header))
 		sepRow[0] = "=== MANUAL REVIEW — POTENTIAL FALSE POSITIVES ==="
-		writer.Write(sepRow)
-		writer.Write(header) // repeat header for the FP section
+		if err := writer.Write(sepRow); err != nil {
+			return err
+		}
+		if err := writer.Write(header); err != nil { // repeat header for the FP section
+			return err
+		}
 
 		for _, f := range falsePositives {
 			if err := writer.Write(findingToRow(f)); err != nil {
@@ -76,9 +88,9 @@ func WriteCSV(filename string, findings []Finding) error {
 }
 
 func findingToRow(f Finding) []string {
-	confidence := f.Confidence
-	if confidence <= 0 {
-		confidence = 1.0
+	confidenceStr := "N/A"
+	if f.Confidence > 0 {
+		confidenceStr = fmt.Sprintf("%.0f%%", f.Confidence*100)
 	}
 	taintFlow := strings.Join(f.ExploitPath, " → ")
 	return []string{
@@ -90,7 +102,7 @@ func findingToRow(f Finding) []string {
 		f.LineNumber,
 		f.CWE,
 		f.OWASP,
-		fmt.Sprintf("%.0f%%", confidence*100),
+		confidenceStr,
 		fmt.Sprintf("%.0f", f.TrustScore),
 		f.Source,
 		f.AiValidated,

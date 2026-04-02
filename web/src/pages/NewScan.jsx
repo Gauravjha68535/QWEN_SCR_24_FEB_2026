@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Upload, GitBranch, FolderUp, Play, Cpu, Search, Shield, Lock, Brain, Box, FileCheck, Globe, Sparkles, FolderOpen, Layers } from 'lucide-react'
+import { GitBranch, FolderUp, Play, Shield, Lock, Brain, Globe, Sparkles, FolderOpen, Layers } from 'lucide-react'
 
 const defaultConfig = {
     enableDeepScan: false,
@@ -28,17 +28,19 @@ export default function NewScan() {
     const navigate = useNavigate()
 
     React.useEffect(() => {
-        fetchSettings()
-        fetchInstalledModels()
+        const ac = new AbortController()
+        fetchSettings(ac.signal)
+        fetchInstalledModels(null, ac.signal)
+        return () => ac.abort()
     }, [])
 
-    const fetchSettings = async () => {
+    const fetchSettings = async (signal) => {
         try {
-            const res = await fetch('/api/settings')
+            const res = await fetch('/api/settings', { signal })
             if (res.ok) {
                 const data = await res.json()
-                setConfig(prev => ({ 
-                    ...prev, 
+                setConfig(prev => ({
+                    ...prev,
                     ollamaHost: data.ollama_host || 'localhost:11434',
                     aiProvider: data.ai_provider || 'ollama',
                     customApiUrl: data.custom_api_url || '',
@@ -46,21 +48,21 @@ export default function NewScan() {
                 }))
             }
         } catch (e) {
-            console.error("Failed to fetch settings", e)
+            if (e.name !== 'AbortError') console.error("Failed to fetch settings", e)
         }
     }
 
-    const fetchInstalledModels = async (explicitHost = null) => {
+    const fetchInstalledModels = async (explicitHost = null, signal = null) => {
         setLoadingModels(true)
         if (explicitHost) setAvailableModels([]) // Indicate refresh
         try {
             let modelUrl = ''
             let hostStr = ''
-            
+
             // If explicitHost is passed, it means user clicked refresh on a specific input
             // Otherwise, we use the provider from settings on initial load
             const isCustomAPI = config.aiProvider === 'openai'
-            
+
             if (isCustomAPI) {
                 hostStr = explicitHost || config.customApiUrl
                 if (!hostStr) {
@@ -77,7 +79,7 @@ export default function NewScan() {
                 modelUrl = hostStr ? `/api/models?host=${encodeURIComponent(hostStr)}` : '/api/models'
             }
 
-            const res = await fetch(modelUrl)
+            const res = await fetch(modelUrl, signal ? { signal } : {})
             if (res.ok) {
                 const data = await res.json()
                 const models = data.models || []
@@ -103,8 +105,10 @@ export default function NewScan() {
                 if (explicitHost) alert(`Failed to fetch models from ${hostStr}`)
             }
         } catch (e) {
-            console.error("Failed to fetch models", e)
-            if (explicitHost) alert(`Connection error to endpoint: ${e.message}`)
+            if (e.name !== 'AbortError') {
+                console.error("Failed to fetch models", e)
+                if (explicitHost) alert(`Connection error to endpoint: ${e.message}`)
+            }
         } finally {
             setLoadingModels(false)
         }

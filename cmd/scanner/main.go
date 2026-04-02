@@ -4,6 +4,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
+	"strconv"
 
 	"SentryQ/ai"
 	"SentryQ/utils"
@@ -16,14 +18,24 @@ func main() {
 	utils.PrintBanner()
 
 	portPtr := flag.Int("port", 5336, "Web server port")
-	ollamaPtr := flag.String("ollama-host", "", "Remote Ollama host:port")
+	ollamaPtr := flag.String("ollama-host", "", "Remote Ollama host:port (overrides OLLAMA_HOST env var)")
 	flag.Parse()
 
+	// PORT env var support for container deployments
 	port := *portPtr
-	ollamaHost := *ollamaPtr
-
+	if envPort := os.Getenv("PORT"); envPort != "" && *portPtr == 5336 {
+		if p, err := strconv.Atoi(envPort); err == nil && p > 0 && p <= 65535 {
+			port = p
+		}
+	}
 	if port <= 0 || port > 65535 {
 		port = 5336
+	}
+
+	// OLLAMA_HOST env var support; --ollama-host flag takes precedence
+	ollamaHost := *ollamaPtr
+	if ollamaHost == "" {
+		ollamaHost = os.Getenv("OLLAMA_HOST")
 	}
 
 	if ollamaHost != "" {

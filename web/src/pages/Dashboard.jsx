@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { PlusCircle, Clock, AlertTriangle, CheckCircle, XCircle, Trash2, ScanSearch } from 'lucide-react'
+import { PlusCircle, Clock, CheckCircle, XCircle, Trash2, ScanSearch } from 'lucide-react'
 import { motion } from 'framer-motion'
 import SeverityBadge from '../components/SeverityBadge'
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler } from 'chart.js'
@@ -12,13 +12,7 @@ export default function Dashboard() {
     const [loading, setLoading] = useState(true)
     const navigate = useNavigate()
 
-    useEffect(() => {
-        fetchScans()
-        const interval = setInterval(fetchScans, 5000)
-        return () => clearInterval(interval)
-    }, [])
-
-    const fetchScans = async () => {
+    const fetchScans = useCallback(async () => {
         try {
             const res = await fetch('/api/scans')
             if (res.ok) {
@@ -30,16 +24,24 @@ export default function Dashboard() {
         } finally {
             setLoading(false)
         }
-    }
+    }, [])
+
+    useEffect(() => {
+        fetchScans()
+        const interval = setInterval(fetchScans, 5000)
+        return () => clearInterval(interval)
+    }, [fetchScans])
 
     const deleteScan = async (id, e) => {
         e.stopPropagation()
         if (!confirm('Delete this scan and all its data?')) return
         try {
-            await fetch(`/api/scan/${id}`, { method: 'DELETE' })
+            const res = await fetch(`/api/scan/${id}`, { method: 'DELETE' })
+            if (!res.ok) throw new Error(`HTTP ${res.status}`)
             fetchScans()
-        } catch (e) {
-            console.error('Delete failed:', e)
+        } catch (err) {
+            console.error('Delete failed:', err)
+            alert(`Failed to delete scan: ${err.message}`)
         }
     }
 

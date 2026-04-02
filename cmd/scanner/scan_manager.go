@@ -571,7 +571,11 @@ func runScan(ctx context.Context, scanID string, targetDir string, cfg WebScanCo
 	if cfg.EnableMLFPReduction {
 		wsHub.BroadcastProgress(scanID, "ML FP Reduction", 87)
 		wsHub.BroadcastLog(scanID, "Applying ML-based False Positive reduction...", "info")
-		reducer := ai.NewMLFPReducer(".sentryq-ml-cache")
+		mlCacheDir := ".sentryq-ml-cache"
+		if homeDir, err := os.UserHomeDir(); err == nil {
+			mlCacheDir = filepath.Join(homeDir, ".sentryq", "ml-cache")
+		}
+		reducer := ai.NewMLFPReducer(mlCacheDir)
 		reducer.LoadHistory()
 		allFindings = reducer.FilterFindingsByFPProbability(allFindings, 0.8)
 		reducer.SaveHistory()
@@ -1520,7 +1524,11 @@ func runEnsembleScan(ctx context.Context, scanID string, targetDir string, cfg W
 	// ── ML False Positive Reduction (if enabled) ─────────────
 	if cfg.EnableMLFPReduction {
 		wsHub.BroadcastLog(scanID, "Applying ML-based False Positive reduction...", "info")
-		reducer := ai.NewMLFPReducer(".sentryq-ml-cache")
+		mlCacheDir := ".sentryq-ml-cache"
+		if homeDir, err := os.UserHomeDir(); err == nil {
+			mlCacheDir = filepath.Join(homeDir, ".sentryq", "ml-cache")
+		}
+		reducer := ai.NewMLFPReducer(mlCacheDir)
 		reducer.LoadHistory()
 		allFindings = reducer.FilterFindingsByFPProbability(allFindings, 0.8)
 		reducer.SaveHistory()

@@ -9,6 +9,11 @@ if not exist "node_modules" (
     call npm install
 )
 call npm run build
+if errorlevel 1 (
+    echo ❌ Frontend build failed. Aborting.
+    cd ..
+    exit /b 1
+)
 cd ..
 
 :: 2. Synchronize assets to internal\ui\dist
@@ -17,7 +22,8 @@ if not exist "internal\ui\dist" mkdir "internal\ui\dist"
 
 :: Clean destination to avoid stale assets
 echo 🗑️ Cleaning old assets...
-if exist "internal\ui\dist\*" del /q /s "internal\ui\dist\*"
+if exist "internal\ui\dist" rmdir /s /q "internal\ui\dist"
+mkdir "internal\ui\dist"
 
 if exist "web\dist" (
     echo 📂 Copying build assets...
@@ -37,5 +43,9 @@ if exist "web\dist" (
 :: 3. Build the Go Application
 echo 🐹 Building Go application (sentryq.exe)...
 go build -o sentryq.exe ./cmd/scanner
+if errorlevel 1 (
+    echo ❌ Go build failed. Aborting.
+    exit /b 1
+)
 
 echo ✅ Build Complete! You can now run the scanner with: sentryq.exe

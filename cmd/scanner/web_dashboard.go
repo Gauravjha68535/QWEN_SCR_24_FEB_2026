@@ -176,7 +176,9 @@ func StartWebServer(port int) {
 			}
 			defer index.Close()
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			io.Copy(w, index)
+			if _, err := io.Copy(w, index); err != nil {
+				utils.LogWarn("Failed to serve index.html: " + err.Error())
+			}
 			return
 		}
 		f.Close()
@@ -290,7 +292,11 @@ func handleUploadScan(w http.ResponseWriter, r *http.Request) {
 
 		if part.FormName() == "config" {
 			buf := new(strings.Builder)
-			io.Copy(buf, part)
+			if _, err := io.Copy(buf, part); err != nil {
+				part.Close()
+				http.Error(w, "Failed to read config field", http.StatusBadRequest)
+				return
+			}
 			configJSON = buf.String()
 			part.Close()
 			continue
@@ -325,7 +331,13 @@ func handleUploadScan(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			io.Copy(destFile, part)
+			if _, err := io.Copy(destFile, part); err != nil {
+				destFile.Close()
+				part.Close()
+				os.Remove(destPath)
+				utils.LogWarn("Failed to write uploaded file: " + err.Error())
+				continue
+			}
 			destFile.Close()
 			part.Close()
 			fileCount++
@@ -426,8 +438,19 @@ func handleScanRoutes(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Invalid request body", http.StatusBadRequest)
 			return
 		}
+		var failed []int
 		for _, dbID := range req.IDs {
-			_ = UpdateFindingStatus(scanID, dbID, req.Status)
+			if err := UpdateFindingStatus(scanID, dbID, req.Status); err != nil {
+				utils.LogWarn(fmt.Sprintf("bulk-status: failed to update finding %d: %v", dbID, err))
+				failed = append(failed, dbID)
+			}
+		}
+		if len(failed) > 0 {
+			httpJSON(w, http.StatusInternalServerError, map[string]interface{}{
+				"error":  "some findings failed to update",
+				"failed": failed,
+			})
+			return
 		}
 		httpJSON(w, http.StatusOK, map[string]string{"status": "updated"})
 		return
@@ -503,7 +526,9 @@ func handleScanRoutes(w http.ResponseWriter, r *http.Request) {
 							continue
 						}
 
-						io.Copy(w1, f1)
+						if _, err := io.Copy(w1, f1); err != nil {
+							utils.LogWarn("Failed to write zip entry: " + err.Error())
+						}
 						f1.Close()
 					}
 					return nil

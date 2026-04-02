@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { ChevronDown, ChevronRight, Plus, Play, Save, FileCode, AlertTriangle, CheckCircle, XCircle } from 'lucide-react'
 
 export default function RuleBuilder() {
@@ -22,15 +22,18 @@ export default function RuleBuilder() {
     const [testResult, setTestResult] = useState(null)
     const [testing, setTesting] = useState(false)
 
-    useEffect(() => { fetchRuleFiles() }, [])
-
-    const fetchRuleFiles = async () => {
+    const fetchRuleFiles = useCallback(async () => {
         try {
             const res = await fetch('/api/rules')
             if (res.ok) setRuleFiles(await res.json())
-        } catch (e) { console.error(e) }
-        finally { setLoading(false) }
-    }
+            else alert(`Failed to load rule files (HTTP ${res.status})`)
+        } catch (e) {
+            console.error(e)
+            alert('Failed to load rule files: ' + e.message)
+        } finally { setLoading(false) }
+    }, [])
+
+    useEffect(() => { fetchRuleFiles() }, [fetchRuleFiles])
 
     const fetchRulesForFile = async (filename) => {
         setSelectedFile(filename)
@@ -38,7 +41,11 @@ export default function RuleBuilder() {
         try {
             const res = await fetch(`/api/rules/${filename}`)
             if (res.ok) setRules(await res.json())
-        } catch (e) { console.error(e) }
+            else alert(`Failed to load rules (HTTP ${res.status})`)
+        } catch (e) {
+            console.error(e)
+            alert('Failed to load rules: ' + e.message)
+        }
     }
 
     const handleTest = async () => {
@@ -51,8 +58,11 @@ export default function RuleBuilder() {
                 body: JSON.stringify({ pattern: testPattern, code: testCode })
             })
             if (res.ok) setTestResult(await res.json())
-        } catch (e) { console.error(e) }
-        finally { setTesting(false) }
+            else alert(`Test failed (HTTP ${res.status})`)
+        } catch (e) {
+            console.error(e)
+            alert('Test request failed: ' + e.message)
+        } finally { setTesting(false) }
     }
 
     const handleSaveRule = async () => {
@@ -68,8 +78,13 @@ export default function RuleBuilder() {
                 setShowForm(false)
                 setNewRule({ id: '', languages: [''], severity: 'medium', patterns: [{ regex: '' }], description: '', remediation: '', cwe: '', owasp: '' })
                 fetchRulesForFile(selectedFile)
+            } else {
+                alert(`Failed to save rule (HTTP ${res.status})`)
             }
-        } catch (e) { console.error(e) }
+        } catch (e) {
+            console.error(e)
+            alert('Failed to save rule: ' + e.message)
+        }
     }
 
     const sevColor = (s) => {
@@ -161,7 +176,7 @@ export default function RuleBuilder() {
                             {/* Existing Rules */}
                             <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
                                 {rules.map((rule, i) => (
-                                    <div key={rule.id || i} style={{ borderBottom: '1px solid var(--border-primary)', padding: '10px 0' }}>
+                                    <div key={rule.id} style={{ borderBottom: '1px solid var(--border-primary)', padding: '10px 0' }}>
                                         <div onClick={() => setExpandedRule(expandedRule === i ? null : i)}
                                             style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
                                             {expandedRule === i ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
@@ -231,7 +246,7 @@ export default function RuleBuilder() {
                                             <CheckCircle size={16} /> <strong>{testResult.matches.length} match(es) found</strong>
                                         </div>
                                         {testResult.matches.map((m, i) => (
-                                            <div key={i} style={{ padding: '6px 10px', background: 'rgba(34, 197, 94, 0.05)', borderLeft: '3px solid var(--success)', marginBottom: '4px', borderRadius: '0 6px 6px 0', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
+                                            <div key={`${m.line}-${i}`} style={{ padding: '6px 10px', background: 'rgba(34, 197, 94, 0.05)', borderLeft: '3px solid var(--success)', marginBottom: '4px', borderRadius: '0 6px 6px 0', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
                                                 <span style={{ color: 'var(--text-muted)', marginRight: '8px' }}>L{m.line}:</span>
                                                 {m.content}
                                             </div>

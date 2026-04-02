@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -85,13 +86,22 @@ func InitDB() error {
 		}
 
 		// Enable foreign keys
-		db.Exec("PRAGMA foreign_keys = ON")
+		if _, err := db.Exec("PRAGMA foreign_keys = ON"); err != nil {
+			utils.LogWarn("PRAGMA foreign_keys: " + err.Error())
+		}
 
 		// Add phase column if it doesn't exist (migration for existing DBs)
-		db.Exec("ALTER TABLE findings ADD COLUMN phase TEXT NOT NULL DEFAULT 'final'")
+		// Ignore "duplicate column" errors — that just means the migration already ran.
+		if _, err := db.Exec("ALTER TABLE findings ADD COLUMN phase TEXT NOT NULL DEFAULT 'final'"); err != nil {
+			if !strings.Contains(err.Error(), "duplicate column") {
+				utils.LogWarn("ALTER TABLE findings (phase): " + err.Error())
+			}
+		}
 
 		// Create phase index (safe to run after column is guaranteed to exist)
-		db.Exec("CREATE INDEX IF NOT EXISTS idx_findings_phase ON findings(scan_id, phase)")
+		if _, err := db.Exec("CREATE INDEX IF NOT EXISTS idx_findings_phase ON findings(scan_id, phase)"); err != nil {
+			utils.LogWarn("CREATE INDEX idx_findings_phase: " + err.Error())
+		}
 
 		utils.LogInfo("📦 Database initialized at " + dbPath)
 	})

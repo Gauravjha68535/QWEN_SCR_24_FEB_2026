@@ -31,7 +31,10 @@ type Finding struct {
 // IsFalsePositive returns true if the AI validator marked this finding as a false positive
 func (f Finding) IsFalsePositive() bool {
 	lower := strings.ToLower(f.AiValidated)
-	return strings.Contains(lower, "false positive") || strings.Contains(lower, "no ")
+	return strings.Contains(lower, "false positive") ||
+		lower == "no" ||
+		strings.HasPrefix(lower, "no (") ||
+		strings.HasPrefix(lower, "no,")
 }
 
 // IsUnreachable returns true if the finding is in a test file or has very low confidence

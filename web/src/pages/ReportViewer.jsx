@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
-import { Download, Filter, ChevronDown, ChevronUp, FileText, Code, ArrowLeft, AlertTriangle, Shield, Layers } from 'lucide-react'
+import { Download, ChevronDown, ChevronUp, FileText, Code, ArrowLeft, Shield } from 'lucide-react'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js'
 import { Doughnut, Bar } from 'react-chartjs-2'
 import SeverityBadge from '../components/SeverityBadge'
@@ -94,7 +94,7 @@ export default function ReportViewer() {
         }
     }
 
-    const filtered = findings.filter(f => {
+    const filtered = useMemo(() => findings.filter(f => {
         const matchesSeverity = filter === 'all' || (f.severity || '').toLowerCase() === filter
         const matchesStatus = statusFilter === 'all' || (f.status || 'open') === statusFilter
         const q = searchQuery.toLowerCase()
@@ -104,36 +104,46 @@ export default function ReportViewer() {
             (f.description || '').toLowerCase().includes(q) ||
             (f.cwe || '').toLowerCase().includes(q)
         return matchesSeverity && matchesStatus && matchesSearch
-    })
+    }), [findings, filter, statusFilter, searchQuery])
 
     // Calculate stats
-    const stats = { critical: 0, high: 0, medium: 0, low: 0, info: 0 }
-    findings.forEach(f => {
-        const s = (f.severity || '').toLowerCase()
-        if (stats[s] !== undefined) stats[s]++
-    })
+    const stats = useMemo(() => {
+        const s = { critical: 0, high: 0, medium: 0, low: 0, info: 0 }
+        findings.forEach(f => {
+            const sev = (f.severity || '').toLowerCase()
+            if (s[sev] !== undefined) s[sev]++
+        })
+        return s
+    }, [findings])
 
     // CWE distribution
-    const cweCounts = {}
-    findings.forEach(f => { if (f.cwe) cweCounts[f.cwe] = (cweCounts[f.cwe] || 0) + 1 })
-    const topCWEs = Object.entries(cweCounts).sort((a, b) => b[1] - a[1]).slice(0, 8)
+    const topCWEs = useMemo(() => {
+        const cweCounts = {}
+        findings.forEach(f => { if (f.cwe) cweCounts[f.cwe] = (cweCounts[f.cwe] || 0) + 1 })
+        return Object.entries(cweCounts).sort((a, b) => b[1] - a[1]).slice(0, 8)
+    }, [findings])
 
     // Compute risk score (mirrors reporter/risk_scorer.go logic)
-    const riskRaw = Math.min(100, stats.critical * 10 + stats.high * 5 + stats.medium * 2 + stats.low * 0.5)
-    const riskLevel = riskRaw >= 75 ? 'Critical Risk' : riskRaw >= 50 ? 'High Risk' : riskRaw >= 25 ? 'Medium Risk' : 'Low Risk'
-    const riskColor = riskRaw >= 75 ? '#ef4444' : riskRaw >= 50 ? '#f97316' : riskRaw >= 25 ? '#eab308' : '#22c55e'
-    const aiValidatedCount = findings.filter(f => f.ai_validated === 'Yes').length
+    const { riskRaw, riskLevel, riskColor, aiValidatedCount } = useMemo(() => {
+        const raw = Math.min(100, stats.critical * 10 + stats.high * 5 + stats.medium * 2 + stats.low * 0.5)
+        return {
+            riskRaw: raw,
+            riskLevel: raw >= 75 ? 'Critical Risk' : raw >= 50 ? 'High Risk' : raw >= 25 ? 'Medium Risk' : 'Low Risk',
+            riskColor: raw >= 75 ? '#ef4444' : raw >= 50 ? '#f97316' : raw >= 25 ? '#eab308' : '#22c55e',
+            aiValidatedCount: findings.filter(f => f.ai_validated === 'Yes').length,
+        }
+    }, [stats, findings])
 
-    const sevChartData = {
+    const sevChartData = useMemo(() => ({
         labels: ['Critical', 'High', 'Medium', 'Low', 'Info'],
         datasets: [{
             data: [stats.critical, stats.high, stats.medium, stats.low, stats.info],
             backgroundColor: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#6366f1'],
             borderWidth: 0,
         }],
-    }
+    }), [stats])
 
-    const cweChartData = {
+    const cweChartData = useMemo(() => ({
         labels: topCWEs.map(c => c[0]),
         datasets: [{
             label: 'Findings',
@@ -143,7 +153,7 @@ export default function ReportViewer() {
             borderWidth: 1,
             borderRadius: 6,
         }],
-    }
+    }), [topCWEs])
 
     const chartOptions = {
         responsive: true,
@@ -349,7 +359,7 @@ export default function ReportViewer() {
                     </thead>
                     <tbody>
                         {filtered.map((f, i) => (
-                            <React.Fragment key={i}>
+                            <React.Fragment key={f.db_id ?? i}>
                                 <tr style={{ cursor: 'pointer' }} onClick={() => setExpandedRow(expandedRow === i ? null : i)}>
                                     <td onClick={e => e.stopPropagation()}>
                                         <input type="checkbox"

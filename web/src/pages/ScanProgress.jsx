@@ -12,6 +12,7 @@ export default function ScanProgress() {
     const [findingsCount, setFindingsCount] = useState(0)
     const terminalRef = useRef(null)
     const wsRef = useRef(null)
+    const statusRef = useRef('connecting')
 
     useEffect(() => {
         if (Notification.permission === 'default') Notification.requestPermission()
@@ -51,6 +52,7 @@ export default function ScanProgress() {
                             setFindingsCount(msg.count || 0)
                             break
                         case 'complete':
+                            statusRef.current = 'completed'
                             setStatus('completed')
                             setProgress(100)
                             setPhase('Scan Complete')
@@ -62,6 +64,7 @@ export default function ScanProgress() {
                             }
                             break
                         case 'error':
+                            statusRef.current = 'failed'
                             setStatus('failed')
                             addLog(`❌ Error: ${msg.message}`, 'error')
                             break
@@ -76,15 +79,13 @@ export default function ScanProgress() {
             ws.onclose = (event) => {
                 if (destroyed) return
                 // Don't reconnect if scan is already done
-                setStatus(prev => {
-                    if (prev === 'completed' || prev === 'failed' || prev === 'stopped') return prev
-                    addLog(`Connection lost — reconnecting in ${reconnectDelay / 1000}s...`, 'warning')
-                    reconnectTimer = setTimeout(() => {
-                        reconnectDelay = Math.min(reconnectDelay * 2, maxReconnectDelay)
-                        connect()
-                    }, reconnectDelay)
-                    return prev
-                })
+                const cur = statusRef.current
+                if (cur === 'completed' || cur === 'failed' || cur === 'stopped') return
+                addLog(`Connection lost — reconnecting in ${reconnectDelay / 1000}s...`, 'warning')
+                reconnectTimer = setTimeout(() => {
+                    reconnectDelay = Math.min(reconnectDelay * 2, maxReconnectDelay)
+                    connect()
+                }, reconnectDelay)
             }
 
             ws.onerror = () => {

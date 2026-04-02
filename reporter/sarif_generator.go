@@ -17,7 +17,6 @@ type sarifLog struct {
 type sarifRun struct {
 	Tool    sarifTool     `json:"tool"`
 	Results []sarifResult `json:"results"`
-	Rules   []sarifRule   `json:"tool.driver.rules,omitempty"`
 }
 
 type sarifTool struct {
@@ -149,10 +148,7 @@ func GenerateSARIF(filename string, findings []Finding) error {
 			lineNum = 1
 		}
 
-		uri := f.FilePath
-		if strings.HasPrefix(uri, "/") {
-			uri = uri[1:]
-		}
+		uri := strings.TrimPrefix(f.FilePath, "/")
 
 		msg := f.Description
 		if f.Remediation != "" {

@@ -88,6 +88,7 @@ export default function Settings() {
                     model: settings.custom_model
                 })
             })
+            if (!res.ok) throw new Error(`HTTP ${res.status}`)
             const data = await res.json()
             setTestResult(data)
         } catch (e) {
@@ -109,6 +110,7 @@ export default function Settings() {
                 api_key: settings.custom_api_key
             })
             const res = await fetch(`/api/custom-endpoint/models?${params}`)
+            if (!res.ok) throw new Error(`HTTP ${res.status}`)
             const data = await res.json()
             if (data.error) {
                 setTestResult({ success: false, message: data.error })

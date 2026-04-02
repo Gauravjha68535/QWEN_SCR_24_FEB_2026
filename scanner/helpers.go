@@ -12,17 +12,16 @@ import (
 func IsTestFile(filePath string) bool {
 	// Normalize to forward slashes so checks work on Windows too
 	lowerPath := strings.ToLower(strings.ReplaceAll(filePath, "\\", "/"))
-	if strings.Contains(lowerPath, "_test.go") ||
-		strings.Contains(lowerPath, "/test/") ||
-		strings.Contains(lowerPath, "/tests/") ||
-		strings.Contains(lowerPath, "/mock/") ||
-		strings.Contains(lowerPath, "/fixture/") ||
-		strings.Contains(lowerPath, "__test__") ||
-		strings.Contains(lowerPath, "test.js") ||
-		strings.Contains(lowerPath, "test.ts") ||
-		strings.Contains(lowerPath, "spec.js") ||
-		strings.Contains(lowerPath, "spec.ts") {
-		return true
+	testIndicators := []string{
+		"_test.go", "_test.py", "test.js", "test.ts", "spec.js", "spec.ts",
+		"/test/", "/tests/", "/testdata/", "/mock/", "/mocks/", "/fixture/", "/fixtures/",
+		"/__tests__/", "/__mocks__/", "/node_modules/", "/spec/", "/specs/",
+		"test_",
+	}
+	for _, indicator := range testIndicators {
+		if strings.Contains(lowerPath, indicator) {
+			return true
+		}
 	}
 	return false
 }
