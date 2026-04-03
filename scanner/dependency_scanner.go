@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -129,7 +130,12 @@ func scanDependenciesFallback(ctx context.Context, targetDir string) ([]reporter
 				Severity:    severity,
 				LineNumber:  fmt.Sprintf("%d", dep.LineNumber),
 				AiValidated: "No",
-				Remediation: fmt.Sprintf("Update %s to version %s or later. Details: %s", dep.Name, fixedVersion, vuln.Details),
+				Remediation: func() string {
+						if fixedVersion == "unknown" {
+							return fmt.Sprintf("No fixed version available for %s yet. Monitor the advisory for updates. Details: %s", dep.Name, vuln.Details)
+						}
+						return fmt.Sprintf("Update %s to version %s or later. Details: %s", dep.Name, fixedVersion, vuln.Details)
+					}(),
 				RuleID:      vuln.ID,
 				Source:      "osv",
 			})
@@ -191,10 +197,11 @@ func collectDependencies(targetDir string) []Dependency {
 	return deps
 }
 
-// queryOSV queries the OSV API for vulnerabilities
-func queryOSV(ctx context.Context, dep Dependency) ([]OSVVulnerability, error) {
-	client := &http.Client{Timeout: 30 * time.Second}
+// osvHTTPClient is shared across all queryOSV calls to reuse TCP connections.
+var osvHTTPClient = &http.Client{Timeout: 30 * time.Second}
 
+// queryOSV queries the OSV API for vulnerabilities, with exponential backoff on 429/5xx.
+func queryOSV(ctx context.Context, dep Dependency) ([]OSVVulnerability, error) {
 	request := map[string]interface{}{
 		"package": map[string]string{
 			"name":      dep.Name,
@@ -208,28 +215,52 @@ func queryOSV(ctx context.Context, dep Dependency) ([]OSVVulnerability, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.osv.dev/v1/query", strings.NewReader(string(requestBody)))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
+	const maxRetries = 3
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
 
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
+		req, err := http.NewRequestWithContext(ctx, "POST", "https://api.osv.dev/v1/query", strings.NewReader(string(requestBody)))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/json")
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("OSV API returned status %d", resp.StatusCode)
+		resp, err := osvHTTPClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
+
+		if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500 {
+			resp.Body.Close()
+			if attempt == maxRetries {
+				return nil, fmt.Errorf("OSV API returned status %d after %d retries", resp.StatusCode, maxRetries)
+			}
+			// Exponential backoff: 1s, 2s, 4s ± up to 500ms jitter
+			backoff := time.Duration(1<<uint(attempt))*time.Second +
+				time.Duration(rand.Int63n(int64(500*time.Millisecond)))
+			select {
+			case <-time.After(backoff):
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			}
+			continue
+		}
+
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("OSV API returned status %d", resp.StatusCode)
+		}
+
+		var osvResp OSVResponse
+		if err := json.NewDecoder(resp.Body).Decode(&osvResp); err != nil {
+			return nil, err
+		}
+		return osvResp.Vulns, nil
 	}
 
-	var osvResp OSVResponse
-	if err := json.NewDecoder(resp.Body).Decode(&osvResp); err != nil {
-		return nil, err
-	}
-
-	return osvResp.Vulns, nil
+	return nil, fmt.Errorf("OSV API: exceeded retry limit for %s", dep.Name)
 }
 
 // parsePackageJSON parses Node.js package.json
@@ -566,5 +597,5 @@ func getFixedVersion(vuln OSVVulnerability, ecosystem string) string {
 			}
 		}
 	}
-	return "latest"
+	return "unknown"
 }
