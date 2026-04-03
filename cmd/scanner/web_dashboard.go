@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -63,6 +64,13 @@ func loadSettings() {
 			CustomModel  string `json:"custom_model"`
 		}
 		if err := json.Unmarshal(data, &s); err == nil {
+			// Environment variable takes precedence over the stored key so that
+			// users can inject credentials via the process environment without
+			// ever writing them to disk.
+			if envKey := os.Getenv("SENTRYQ_CUSTOM_API_KEY"); envKey != "" {
+				s.CustomAPIKey = envKey
+			}
+
 			appSettings.Lock()
 			appSettings.OllamaHost = s.OllamaHost
 			appSettings.DefaultModel = s.DefaultModel
@@ -79,6 +87,13 @@ func loadSettings() {
 			if s.CustomAPIURL != "" {
 				ai.SetCustomEndpoint(s.CustomAPIURL, s.CustomAPIKey, s.CustomModel)
 			}
+		}
+	} else {
+		// Settings file doesn't exist yet — still honour the env-var override.
+		if envKey := os.Getenv("SENTRYQ_CUSTOM_API_KEY"); envKey != "" {
+			appSettings.Lock()
+			appSettings.CustomAPIKey = envKey
+			appSettings.Unlock()
 		}
 	}
 }
@@ -273,8 +288,8 @@ func handleUploadScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Limit upload size to 10GB (10 << 30) for large projects
-	r.Body = http.MaxBytesReader(w, r.Body, 10<<30)
+	// Limit upload size to 1 GB — sufficient for any real project; prevents disk exhaustion.
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<30)
 
 	reader, err := r.MultipartReader()
 	if err != nil {
@@ -398,7 +413,11 @@ func handleGitScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	configJSON, _ := json.Marshal(req.Config)
+	configJSON, err := json.Marshal(req.Config)
+	if err != nil {
+		http.Error(w, "Failed to serialize scan config", http.StatusInternalServerError)
+		return
+	}
 	scanID, err := StartScanFromGit(req.URL, string(configJSON))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -746,16 +765,18 @@ func handleModels(w http.ResponseWriter, r *http.Request) {
 // ──────────────────────────────────────────────────────────
 
 // allowedOrigin returns true for origins that SentryQ (a local tool) should accept.
-// We allow any localhost / 127.0.0.1 port so the built-in browser and dev servers work,
-// but block cross-origin requests from arbitrary websites.
+// We parse the Origin header with url.Parse so that hostnames like "localhostevil.com"
+// or "127.0.0.1.attacker.com" cannot bypass a naive HasPrefix check.
 func allowedOrigin(origin string) bool {
 	if origin == "" {
 		return true // same-origin requests have no Origin header
 	}
-	return strings.HasPrefix(origin, "http://localhost:") ||
-		strings.HasPrefix(origin, "http://127.0.0.1:") ||
-		strings.HasPrefix(origin, "http://localhost") ||
-		strings.HasPrefix(origin, "http://127.0.0.1")
+	u, err := url.Parse(origin)
+	if err != nil {
+		return false
+	}
+	host := u.Hostname() // strips port; returns bare hostname or IP
+	return host == "localhost" || host == "127.0.0.1"
 }
 
 func corsMiddleware(next http.Handler) http.Handler {
@@ -910,6 +931,10 @@ func handleRulesList(w http.ResponseWriter, r *http.Request) {
 	rulesDir := "rules"
 	entries, err := os.ReadDir(rulesDir)
 	if err != nil {
+		if os.IsNotExist(err) {
+			httpJSON(w, http.StatusOK, []interface{}{})
+			return
+		}
 		httpJSON(w, http.StatusInternalServerError, map[string]string{"error": "Cannot read rules directory"})
 		return
 	}
@@ -927,7 +952,9 @@ func handleRulesList(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		var rules []YAMLRule
-		yaml3Unmarshal(data, &rules)
+		if parseErr := yaml3Unmarshal(data, &rules); parseErr != nil {
+			utils.LogWarn(fmt.Sprintf("handleRulesList: failed to parse %s: %v", e.Name(), parseErr))
+		}
 		files = append(files, RuleFileSummary{Filename: e.Name(), RuleCount: len(rules)})
 	}
 	if files == nil {
@@ -952,7 +979,9 @@ func handleRulesFile(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		var rules []YAMLRule
-		yaml3Unmarshal(data, &rules)
+		if parseErr := yaml3Unmarshal(data, &rules); parseErr != nil {
+			utils.LogWarn(fmt.Sprintf("handleRulesFile GET: failed to parse %s: %v", filename, parseErr))
+		}
 		if rules == nil {
 			rules = []YAMLRule{}
 		}
@@ -973,7 +1002,10 @@ func handleRulesFile(w http.ResponseWriter, r *http.Request) {
 		var rules []YAMLRule
 		data, err := os.ReadFile(rulesPath)
 		if err == nil {
-			yaml3Unmarshal(data, &rules)
+			if parseErr := yaml3Unmarshal(data, &rules); parseErr != nil {
+				http.Error(w, "Failed to parse existing rules file: "+parseErr.Error(), http.StatusInternalServerError)
+				return
+			}
 		}
 		rules = append(rules, newRule)
 		out, err := yaml3Marshal(rules)
@@ -981,7 +1013,7 @@ func handleRulesFile(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Failed to serialize rules: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		if err := os.WriteFile(rulesPath, out, 0644); err != nil {
+		if err := os.WriteFile(rulesPath, out, 0600); err != nil {
 			http.Error(w, "Failed to write rules file: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -1040,8 +1072,8 @@ func handleRulesTest(w http.ResponseWriter, r *http.Request) {
 }
 
 // yaml3Unmarshal is a thin wrapper around gopkg.in/yaml.v3
-func yaml3Unmarshal(data []byte, v interface{}) {
-	yaml.Unmarshal(data, v)
+func yaml3Unmarshal(data []byte, v interface{}) error {
+	return yaml.Unmarshal(data, v)
 }
 
 func yaml3Marshal(v interface{}) ([]byte, error) {

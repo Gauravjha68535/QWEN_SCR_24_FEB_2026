@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -76,7 +77,7 @@ func JudgeFindings(ctx context.Context, staticFindings []reporter.Finding, aiFin
 			File:        f.FilePath,
 			Line:        f.LineNumber,
 			Severity:    f.Severity,
-			Description: truncateString(f.Description, 4000),
+			Description: utils.TruncateString(f.Description, 4000),
 			CWE:         f.CWE,
 		})
 		idCounter++
@@ -91,7 +92,7 @@ func JudgeFindings(ctx context.Context, staticFindings []reporter.Finding, aiFin
 			File:        f.FilePath,
 			Line:        f.LineNumber,
 			Severity:    f.Severity,
-			Description: truncateString(f.Description, 4000),
+			Description: utils.TruncateString(f.Description, 4000),
 			CWE:         f.CWE,
 		})
 		idCounter++
@@ -269,7 +270,7 @@ IMPORTANT: Every finding ID from the input MUST appear exactly once — either a
 			"num_predict": 8192,
 		})
 		if err != nil {
-			if strings.Contains(err.Error(), "context canceled") || strings.Contains(err.Error(), "scan interrupted") {
+			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) || strings.Contains(err.Error(), "scan interrupted") {
 				return nil, fmt.Errorf("judge evaluation interrupted")
 			}
 			return nil, fmt.Errorf("judge LLM request failed: %v", err)
@@ -281,7 +282,8 @@ IMPORTANT: Every finding ID from the input MUST appear exactly once — either a
 			return nil, fmt.Errorf("failed to serialize judge request body: %w", err)
 		}
 
-		req, err := http.NewRequestWithContext(judgeCtx, "POST", ollamaAPIURL, bytes.NewBuffer(reqJSON))
+		currentAPIURL := GetOllamaBaseURL() + "/api/generate"
+		req, err := http.NewRequestWithContext(judgeCtx, "POST", currentAPIURL, bytes.NewBuffer(reqJSON))
 		if err != nil {
 			return nil, fmt.Errorf("failed to create judge request: %v", err)
 		}
@@ -292,7 +294,7 @@ IMPORTANT: Every finding ID from the input MUST appear exactly once — either a
 		}
 		resp, err := client.Do(req)
 		if err != nil {
-			if strings.Contains(err.Error(), "context canceled") {
+			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 				return nil, fmt.Errorf("judge evaluation interrupted")
 			}
 			return nil, fmt.Errorf("judge LLM request failed: %v", err)
@@ -334,10 +336,3 @@ func batchJudgeFindings(findings []JudgeFinding, maxSize int) [][]JudgeFinding {
 	return batches
 }
 
-// truncateString truncates a string to maxLen characters
-func truncateString(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
-	}
-	return s[:maxLen] + "..."
-}

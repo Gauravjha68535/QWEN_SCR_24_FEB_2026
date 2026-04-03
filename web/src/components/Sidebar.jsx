@@ -1,9 +1,7 @@
-import React from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
-import { LayoutDashboard, ScanSearch, Settings, Shield, PlusCircle, History, Code, Menu, X } from 'lucide-react'
+import { NavLink } from 'react-router-dom'
+import { LayoutDashboard, Settings, Shield, PlusCircle, Code, Menu, X } from 'lucide-react'
 
 export default function Sidebar({ isOpen, onToggle }) {
-    const location = useLocation()
 
     const links = [
         {

@@ -13,7 +13,7 @@ import (
 	"SentryQ/reporter"
 	"SentryQ/utils"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 var (
@@ -44,13 +44,13 @@ func InitDB() error {
 			homeDir = "."
 		}
 		dbDir := filepath.Join(homeDir, ".sentryq")
-		if err := os.MkdirAll(dbDir, 0755); err != nil {
+		if err := os.MkdirAll(dbDir, 0700); err != nil {
 			initErr = fmt.Errorf("failed to create database directory %s: %v", dbDir, err)
 			return
 		}
 		dbPath := filepath.Join(dbDir, "scans.db")
 
-		db, err = sql.Open("sqlite3", dbPath+"?_journal_mode=WAL&_busy_timeout=5000")
+		db, err = sql.Open("sqlite", dbPath+"?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)")
 		if err != nil {
 			initErr = fmt.Errorf("failed to open database: %v", err)
 			return
@@ -150,15 +150,20 @@ func SaveFindingsWithPhase(scanID string, findings []reporter.Finding, phase str
 	}
 
 	// Clear any existing findings for this scan+phase
+	rollback := func(e error) error {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			utils.LogWarn("SaveFindingsWithPhase: rollback failed: " + rbErr.Error())
+		}
+		return e
+	}
+
 	if _, err := tx.Exec("DELETE FROM findings WHERE scan_id = ? AND phase = ?", scanID, phase); err != nil {
-		tx.Rollback()
-		return err
+		return rollback(err)
 	}
 
 	stmt, err := tx.Prepare("INSERT INTO findings (scan_id, data, phase) VALUES (?, ?, ?)")
 	if err != nil {
-		tx.Rollback()
-		return err
+		return rollback(err)
 	}
 	defer stmt.Close()
 
@@ -170,8 +175,7 @@ func SaveFindingsWithPhase(scanID string, findings []reporter.Finding, phase str
 		}
 		if _, err := stmt.Exec(scanID, string(data), phase); err != nil {
 			utils.LogError(fmt.Sprintf("Failed to insert finding for scan %s", scanID), err)
-			tx.Rollback()
-			return err
+			return rollback(err)
 		}
 	}
 
@@ -333,13 +337,18 @@ func DeleteScan(id string) error {
 	if err != nil {
 		return err
 	}
+	rollback := func(e error) error {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			utils.LogWarn("DeleteScan: rollback failed: " + rbErr.Error())
+		}
+		return e
+	}
+
 	if _, err := tx.Exec("DELETE FROM findings WHERE scan_id = ?", id); err != nil {
-		tx.Rollback()
-		return err
+		return rollback(err)
 	}
 	if _, err := tx.Exec("DELETE FROM scans WHERE id = ?", id); err != nil {
-		tx.Rollback()
-		return err
+		return rollback(err)
 	}
 	return tx.Commit()
 }

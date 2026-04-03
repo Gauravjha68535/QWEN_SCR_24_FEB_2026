@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
-import { Download, ChevronDown, ChevronUp, FileText, Code, ArrowLeft, Shield } from 'lucide-react'
+import { Download, ChevronDown, ChevronUp, FileText, Code, Shield } from 'lucide-react'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js'
 import { Doughnut, Bar } from 'react-chartjs-2'
 import SeverityBadge from '../components/SeverityBadge'
@@ -20,11 +20,7 @@ export default function ReportViewer() {
     const [searchQuery, setSearchQuery] = useState('')
     const [selectedIds, setSelectedIds] = useState(new Set())
 
-    useEffect(() => {
-        fetchReport()
-    }, [id])
-
-    const fetchReport = async (phase = 'final') => {
+    const fetchReport = useCallback(async (phase = 'final') => {
         try {
             const phaseParam = phase && phase !== 'final' ? `?phase=${phase}` : ''
             const [scanRes, findingsRes] = await Promise.all([
@@ -46,7 +42,11 @@ export default function ReportViewer() {
         } finally {
             setLoading(false)
         }
-    }
+    }, [id])
+
+    useEffect(() => {
+        fetchReport()
+    }, [fetchReport])
 
     const updateFindingStatus = async (dbId, newStatus) => {
         try {

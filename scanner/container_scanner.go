@@ -18,6 +18,12 @@ import (
 	"time"
 )
 
+// Pre-compiled regexes for Dockerfile scanning (avoid recompiling per line)
+var (
+	dockerSecretRegex = regexp.MustCompile(`(?i)(password|secret|key|token|credentials)`)
+	dockerSensitivePortRegex = regexp.MustCompile(`\b(22|3389|23)\b`)
+)
+
 // getTrivyBin returns the correct executable name based on OS
 func getTrivyBin() string {
 	if runtime.GOOS == "windows" {
@@ -162,8 +168,7 @@ func (cs *ContainerScanner) scanDockerfile(filePath string) ([]reporter.Finding,
 
 		// Check for secrets in ENV
 		if strings.HasPrefix(strings.ToUpper(trimmedLine), "ENV ") || strings.HasPrefix(strings.ToUpper(trimmedLine), "ARG ") {
-			secretRegex := regexp.MustCompile(`(?i)(password|secret|key|token|credentials)`)
-			if secretRegex.MatchString(trimmedLine) {
+			if dockerSecretRegex.MatchString(trimmedLine) {
 				findings = append(findings, cs.createFinding(filePath, lineNum,
 					"CONTAINER-ENV-SECRET",
 					"Potential secret baked into container image",
@@ -176,8 +181,7 @@ func (cs *ContainerScanner) scanDockerfile(filePath string) ([]reporter.Finding,
 
 		// Check for EXPOSE
 		if strings.HasPrefix(strings.ToUpper(trimmedLine), "EXPOSE ") {
-			portRegex := regexp.MustCompile(`\b(22|3389|23)\b`)
-			if portRegex.MatchString(trimmedLine) {
+			if dockerSensitivePortRegex.MatchString(trimmedLine) {
 				findings = append(findings, cs.createFinding(filePath, lineNum,
 					"CONTAINER-EXPOSE-SENSITIVE-PORT",
 					"Suspicious or sensitive port exposed",

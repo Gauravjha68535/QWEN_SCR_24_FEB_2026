@@ -50,7 +50,9 @@ func (c *ConfidenceCalibrator) LoadStats() {
 
 	data, err := os.ReadFile(c.StatsFile)
 	if err == nil {
-		json.Unmarshal(data, &c.Stats)
+		if unmarshalErr := json.Unmarshal(data, &c.Stats); unmarshalErr != nil {
+			utils.LogWarn("Confidence calibrator: failed to parse stats file, resetting: " + unmarshalErr.Error())
+		}
 	}
 }
 

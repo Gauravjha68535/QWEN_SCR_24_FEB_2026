@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"SentryQ/reporter"
 	"SentryQ/utils"
@@ -22,14 +23,15 @@ type ASTAnalyzer struct {
 	languages         map[string]*treeSitter.Language
 	parsers           map[string]*treeSitter.Parser
 	reachabilityCache map[string]bool
+	cacheMu           sync.RWMutex
+	cacheOnce         sync.Once
 }
 
 // NewASTAnalyzer creates a new AST analyzer with supported languages
 func NewASTAnalyzer() *ASTAnalyzer {
 	analyzer := &ASTAnalyzer{
-		languages:         make(map[string]*treeSitter.Language),
-		parsers:           make(map[string]*treeSitter.Parser),
-		reachabilityCache: nil,
+		languages: make(map[string]*treeSitter.Language),
+		parsers:   make(map[string]*treeSitter.Parser),
 	}
 
 	// Register supported languages
@@ -728,57 +730,62 @@ func (aa *ASTAnalyzer) checkKotlinPropertyDeclaration(node *treeSitter.Node, con
 	return findings
 }
 
-// populateCacheFromNode recursively extracts identifiers and strings into the reachability cache
-func (aa *ASTAnalyzer) populateCacheFromNode(node *treeSitter.Node, content []byte) {
+// populateCacheFromNode recursively extracts identifiers and strings into the provided cache map.
+// The caller owns the map and must not share it with other goroutines during population.
+func populateCacheFromNode(node *treeSitter.Node, content []byte, cache map[string]bool) {
 	nodeType := node.Type()
 	if nodeType == "identifier" || nodeType == "string" || nodeType == "property_identifier" {
 		nodeText := strings.ToLower(node.Content(content))
 		if nodeText != "" {
-			aa.reachabilityCache[nodeText] = true
+			cache[nodeText] = true
 		}
 	}
 	for i := 0; i < int(node.ChildCount()); i++ {
-		aa.populateCacheFromNode(node.Child(i), content)
+		populateCacheFromNode(node.Child(i), content, cache)
 	}
 }
 
 // BuildReachabilityCache scans the AST of an entire directory to build a cache of identifiers.
+// Safe for concurrent callers: only the first caller does the work; subsequent callers block until done.
 func (aa *ASTAnalyzer) BuildReachabilityCache(targetDir string) {
-	if aa.reachabilityCache != nil {
-		return // Cache already built
-	}
-	aa.reachabilityCache = make(map[string]bool)
+	aa.cacheOnce.Do(func() {
+		localCache := make(map[string]bool)
 
-	filepath.Walk(targetDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil || info.IsDir() {
+		filepath.Walk(targetDir, func(path string, info os.FileInfo, err error) error {
+			if err != nil || info.IsDir() {
+				return nil
+			}
+
+			// Skip common non-source directories
+			base := filepath.Base(path)
+			if base == "node_modules" || base == "vendor" || base == ".git" {
+				return filepath.SkipDir
+			}
+
+			lang := getLanguageFromPath(path)
+			if lang == "" || aa.parsers[lang] == nil {
+				return nil
+			}
+
+			content, err := os.ReadFile(path)
+			if err != nil {
+				return nil
+			}
+
+			parser := aa.parsers[lang]
+			tree, err := parser.ParseCtx(context.Background(), nil, content)
+			if err != nil || tree == nil {
+				return nil
+			}
+			defer tree.Close()
+
+			populateCacheFromNode(tree.RootNode(), content, localCache)
 			return nil
-		}
+		})
 
-		// Skip common directories
-		base := filepath.Base(path)
-		if base == "node_modules" || base == "vendor" || base == ".git" {
-			return filepath.SkipDir
-		}
-
-		lang := getLanguageFromPath(path)
-		if lang == "" || aa.parsers[lang] == nil {
-			return nil
-		}
-
-		content, err := os.ReadFile(path)
-		if err != nil {
-			return nil
-		}
-
-		parser := aa.parsers[lang]
-		tree, err := parser.ParseCtx(context.Background(), nil, content)
-		if err != nil || tree == nil {
-			return nil
-		}
-		defer tree.Close()
-
-		aa.populateCacheFromNode(tree.RootNode(), content)
-		return nil
+		aa.cacheMu.Lock()
+		aa.reachabilityCache = localCache
+		aa.cacheMu.Unlock()
 	})
 }
 
@@ -789,8 +796,10 @@ func (aa *ASTAnalyzer) IsFunctionReachable(targetDir string, functionOrLibName s
 
 	functionOrLibName = strings.ToLower(functionOrLibName)
 
-	// Since we cached exact exact instances of identifiers, we iterate over the map keys
-	// O(K) where K is unique identifiers typically finishes in microseconds.
+	aa.cacheMu.RLock()
+	defer aa.cacheMu.RUnlock()
+
+	// O(K) where K is unique identifiers — typically finishes in microseconds.
 	for cachedID := range aa.reachabilityCache {
 		if strings.Contains(cachedID, functionOrLibName) {
 			return true

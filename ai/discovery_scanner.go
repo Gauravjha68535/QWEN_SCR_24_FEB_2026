@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -149,6 +150,10 @@ func buildProjectContext(targetDir string, filesToScan []string) string {
 // maxFileSize is the maximum file size (in bytes) to send to AI (avoid overloading context)
 const maxFileSize = 150000
 
+// ollamaMu guards ollamaAPIURL and ollamaBaseURL against concurrent access
+// from multiple simultaneous scans each potentially using a different Ollama host.
+var ollamaMu sync.RWMutex
+
 // ollamaAPIURL is the Ollama REST API endpoint (configurable for remote hosts)
 var ollamaAPIURL = "http://localhost:11434/api/generate"
 
@@ -160,12 +165,16 @@ func SetOllamaHost(hostPort string) {
 	if hostPort == "" {
 		return
 	}
+	ollamaMu.Lock()
+	defer ollamaMu.Unlock()
 	ollamaBaseURL = "http://" + hostPort
 	ollamaAPIURL = ollamaBaseURL + "/api/generate"
 }
 
 // GetOllamaBaseURL returns the current Ollama base URL (e.g. "http://192.168.1.42:11434")
 func GetOllamaBaseURL() string {
+	ollamaMu.RLock()
+	defer ollamaMu.RUnlock()
 	return ollamaBaseURL
 }
 
@@ -382,8 +391,12 @@ func DiscoverVulnerabilities(ctx context.Context, modelName string, filePath str
 					return nil, err
 				}
 
+				ollamaMu.RLock()
+				currentOllamaAPIURL := ollamaAPIURL
+				ollamaMu.RUnlock()
+
 				reqCtx, reqCancel = context.WithTimeout(ctx, 30*time.Minute)
-				req, err := http.NewRequestWithContext(reqCtx, "POST", ollamaAPIURL, bytes.NewBuffer(reqJSON))
+				req, err := http.NewRequestWithContext(reqCtx, "POST", currentOllamaAPIURL, bytes.NewBuffer(reqJSON))
 				if err != nil {
 					reqCancel()
 					return nil, err
@@ -393,7 +406,7 @@ func DiscoverVulnerabilities(ctx context.Context, modelName string, filePath str
 				resp, err := aiHTTPClient.Do(req)
 				if err != nil {
 					reqCancel()
-					if strings.Contains(err.Error(), "context canceled") {
+					if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 						return nil, fmt.Errorf("scan interrupted")
 					}
 					return nil, fmt.Errorf("API request failed: %w", err)

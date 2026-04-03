@@ -27,16 +27,8 @@ type ValidationResult struct {
 
 // ValidateFinding sends a single finding to the AI model for validation
 func ValidateFinding(ctx context.Context, modelName string, finding reporter.Finding, fileContent string, relatedFilesContext string) (*ValidationResult, error) {
-	// Detect if this is a test file
-	isTestFile := false
-	testIndicators := []string{"_test.", ".test.", ".spec.", "/test/", "/tests/", "/__tests__/", "/mock/", "/fixture/"}
-	lowerPath := strings.ToLower(finding.FilePath)
-	for _, indicator := range testIndicators {
-		if strings.Contains(lowerPath, indicator) {
-			isTestFile = true
-			break
-		}
-	}
+	// Detect if this is a test file using the canonical shared utility
+	isTestFile := utils.IsTestFile(finding.FilePath)
 
 	testFileNote := ""
 	if isTestFile {
@@ -146,7 +138,7 @@ Return ONLY a valid JSON object in the final part of your response:
 		valCtx, valCancel := context.WithTimeout(ctx, 10*time.Minute)
 		defer valCancel()
 
-		httpReq, err := http.NewRequestWithContext(valCtx, "POST", ollamaAPIURL, bytes.NewBuffer(reqJSON))
+		httpReq, err := http.NewRequestWithContext(valCtx, "POST", GetOllamaBaseURL()+"/api/generate", bytes.NewBuffer(reqJSON))
 		if err != nil {
 			return nil, fmt.Errorf("failed to create request: %v", err)
 		}

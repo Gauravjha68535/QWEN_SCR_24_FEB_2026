@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
+	"net/url"
 	"sync"
 	"time"
 
@@ -67,15 +67,20 @@ var (
 	wsHub    *WebSocketHub
 	upgrader = websocket.Upgrader{
 		// Only accept WebSocket connections from localhost — same policy as corsMiddleware.
+		// We parse the Origin header with url.Parse so that a hostname like
+		// "localhostevil.com" or "127.0.0.1.attacker.com" cannot slip through a
+		// naive HasPrefix check.
 		CheckOrigin: func(r *http.Request) bool {
 			origin := r.Header.Get("Origin")
 			if origin == "" {
-				return true // same-origin / direct connection
+				return true // same-origin / direct connection (no Origin header)
 			}
-			return strings.HasPrefix(origin, "http://localhost:") ||
-				strings.HasPrefix(origin, "http://127.0.0.1:") ||
-				strings.HasPrefix(origin, "http://localhost") ||
-				strings.HasPrefix(origin, "http://127.0.0.1")
+			u, err := url.Parse(origin)
+			if err != nil {
+				return false
+			}
+			host := u.Hostname() // strips port; returns bare IP or hostname
+			return host == "localhost" || host == "127.0.0.1"
 		},
 	}
 )

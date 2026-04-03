@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PlusCircle, Clock, CheckCircle, XCircle, Trash2, ScanSearch, Sun, Moon } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -71,7 +71,7 @@ export default function Dashboard() {
 
     const trendData = useMemo(() => {
         const completed = [...scans]
-            .filter(s => s.status === 'completed')
+            .filter(s => s.status === 'completed' && s.created_at)
             .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
             .slice(-10)
         return {

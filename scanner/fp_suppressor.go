@@ -180,16 +180,23 @@ func shouldSuppress(f reporter.Finding, fileContent string) bool {
 		}
 
 	case "HARDCODED_SECRET":
-		// Safe: environment variable access (not hardcoded)
+		// Safe: the secret variable is assigned FROM an environment variable.
+		// We only suppress when the env-access pattern appears on the RIGHT side
+		// of an assignment (after '='), so that a hardcoded secret on the same
+		// line as an unrelated env access is NOT incorrectly suppressed.
 		if lineNum > 0 && lineNum <= len(lines) {
 			line := strings.ToLower(lines[lineNum-1])
-			envPatterns := []string{
-				"process.env.", "os.environ", "os.getenv",
-				"environment.getenvironmentvariable", "system.getenv",
-			}
-			for _, p := range envPatterns {
-				if strings.Contains(line, p) {
-					return true
+			eqIdx := strings.Index(line, "=")
+			if eqIdx > 0 {
+				rightSide := line[eqIdx+1:]
+				envPatterns := []string{
+					"process.env.", "os.environ", "os.getenv",
+					"environment.getenvironmentvariable", "system.getenv",
+				}
+				for _, p := range envPatterns {
+					if strings.Contains(rightSide, p) {
+						return true
+					}
 				}
 			}
 		}

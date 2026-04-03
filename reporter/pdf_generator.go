@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"SentryQ/utils"
+
 	"github.com/jung-kurt/gofpdf"
 	"github.com/wcharczuk/go-chart/v2"
 	"github.com/wcharczuk/go-chart/v2/drawing"
@@ -208,7 +210,7 @@ func drawFindingDetail(pdf *gofpdf.Fpdf, f Finding) {
 	pdf.SetX(leftMargin + 2)
 	headerText := fmt.Sprintf("#%d  |  %s  |  %s  |  Line %s",
 		f.SrNo,
-		sanitizePDFText(truncateString(f.IssueName, 50)),
+		sanitizePDFText(utils.TruncateString(f.IssueName, 50)),
 		strings.ToUpper(f.Severity),
 		f.LineNumber)
 	pdf.CellFormat(contentWidth-4, 8, headerText, "", 1, "L", false, 0, "")
@@ -226,7 +228,7 @@ func drawFindingDetail(pdf *gofpdf.Fpdf, f Finding) {
 	if f.OWASP != "" {
 		owaspDisplay := NormalizeOWASP(f.OWASP)
 		if owaspDisplay == "" {
-			owaspDisplay = truncateString(f.OWASP, 20)
+			owaspDisplay = utils.TruncateString(f.OWASP, 20)
 		}
 		fileInfo += fmt.Sprintf("  |  OWASP %s", sanitizePDFText(owaspDisplay))
 	}
@@ -243,7 +245,7 @@ func drawFindingDetail(pdf *gofpdf.Fpdf, f Finding) {
 	pdf.SetFont("Helvetica", "", 8)
 	pdf.SetTextColor(30, 30, 60)
 	pdf.SetX(leftMargin)
-	descText := sanitizePDFText(truncateString(f.Description, 1000))
+	descText := sanitizePDFText(utils.TruncateString(f.Description, 1000))
 	pdf.MultiCell(contentWidth, 4.2, descText, "", "L", false)
 	pdf.Ln(2)
 
@@ -259,7 +261,7 @@ func drawFindingDetail(pdf *gofpdf.Fpdf, f Finding) {
 		pdf.CellFormat(contentWidth, 6, "Vulnerable Code", "", 1, "L", false, 0, "")
 
 		// Code block background
-		codeText := sanitizePDFText(truncateString(f.CodeSnippet, 400))
+		codeText := sanitizePDFText(utils.TruncateString(f.CodeSnippet, 400))
 		codeLines := pdf.SplitText(codeText, contentWidth-8)
 		codeH := float64(len(codeLines))*3.5 + 4
 		if codeH > 50 {
@@ -293,7 +295,7 @@ func drawFindingDetail(pdf *gofpdf.Fpdf, f Finding) {
 		pdf.SetFont("Helvetica", "", 8)
 		pdf.SetTextColor(30, 30, 60)
 		pdf.SetX(leftMargin)
-		remText := sanitizePDFText(truncateString(f.Remediation, 1000))
+		remText := sanitizePDFText(utils.TruncateString(f.Remediation, 1000))
 		pdf.MultiCell(contentWidth, 4.2, remText, "", "L", false)
 		pdf.Ln(2)
 	}
@@ -309,7 +311,7 @@ func drawFindingDetail(pdf *gofpdf.Fpdf, f Finding) {
 		pdf.SetX(leftMargin)
 		pdf.CellFormat(contentWidth, 6, "Secure Code Fix", "", 1, "L", false, 0, "")
 
-		fixText := sanitizePDFText(truncateString(f.FixedCode, 400))
+		fixText := sanitizePDFText(utils.TruncateString(f.FixedCode, 400))
 		fixLines := pdf.SplitText(fixText, contentWidth-8)
 		fixH := float64(len(fixLines))*3.5 + 4
 		if fixH > 50 {
@@ -343,7 +345,7 @@ func drawFindingDetail(pdf *gofpdf.Fpdf, f Finding) {
 		pdf.SetFont("Courier", "", 7)
 		pdf.SetTextColor(80, 80, 80)
 		pdf.SetX(leftMargin)
-		pocText := sanitizePDFText(truncateString(f.ExploitPoC, 800))
+		pocText := sanitizePDFText(utils.TruncateString(f.ExploitPoC, 800))
 		pdf.MultiCell(contentWidth, 3.5, pocText, "", "L", false)
 		pdf.Ln(2)
 	}
@@ -373,7 +375,7 @@ func drawFindingDetail(pdf *gofpdf.Fpdf, f Finding) {
 			pdf.SetX(leftMargin + 2)
 			pdf.CellFormat(18, 4.5, label+":", "", 0, "L", false, 0, "")
 			pdf.SetTextColor(30, 30, 60)
-			pdf.MultiCell(contentWidth-20, 4.5, sanitizePDFText(truncateString(step, 120)), "", "L", false)
+			pdf.MultiCell(contentWidth-20, 4.5, sanitizePDFText(utils.TruncateString(step, 120)), "", "L", false)
 		}
 		pdf.Ln(2)
 	}
@@ -423,13 +425,6 @@ func generateSeverityChart(summary ReportSummary) ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-func truncateString(s string, maxLen int) string {
-	runes := []rune(s)
-	if len(runes) <= maxLen {
-		return s
-	}
-	return string(runes[:maxLen]) + "..."
-}
 
 func truncateSource(s string) string {
 	switch {
@@ -452,7 +447,7 @@ func extractCWEID(cwe string) string {
 	if idx := strings.Index(cwe, ":"); idx > 0 {
 		return strings.TrimSpace(cwe[:idx])
 	}
-	return truncateString(cwe, 18)
+	return utils.TruncateString(cwe, 18)
 }
 
 func addPortraitHeader(pdf *gofpdf.Fpdf, title string) {

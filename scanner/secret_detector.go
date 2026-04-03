@@ -70,7 +70,8 @@ func (sd *SecretDetector) ScanSecrets(targetDir string) ([]reporter.Finding, err
 
 	err := filepath.Walk(targetDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return err
+			utils.LogWarn(fmt.Sprintf("Secret scanner: skipping unreadable path %s: %v", path, err))
+			return nil // log and continue — don't abort the entire scan
 		}
 		if info.IsDir() {
 			// Skip common directories
@@ -91,7 +92,7 @@ func (sd *SecretDetector) ScanSecrets(targetDir string) ([]reporter.Finding, err
 		}
 
 		// Skip test files and examples (configurable)
-		if isTestFile(path) {
+		if utils.IsTestFile(path) {
 			return nil
 		}
 
@@ -244,19 +245,4 @@ func generateSecretDescription(matchedText string) string {
 	return "Potential hardcoded secret detected"
 }
 
-// isTestFile checks if a file is a test file or mock
-func isTestFile(path string) bool {
-	testPatterns := []string{
-		"_test.", ".spec.", ".test.",
-		"test_", "spec_", "/mock/", "/mocks/", "/fixture/", "/fixtures/",
-		"/test/", "/tests/", "/testdata/", "/__tests__/", "/__mocks__/",
-	}
 
-	lowerPath := strings.ToLower(strings.ReplaceAll(path, "\\", "/"))
-	for _, pattern := range testPatterns {
-		if strings.Contains(lowerPath, pattern) {
-			return true
-		}
-	}
-	return false
-}

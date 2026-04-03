@@ -40,6 +40,6 @@ fi
 
 # 3. Build the Go Application
 echo "🐹 Building Go application..."
-go build -o sentryq ./cmd/scanner
+CGO_ENABLED=1 go build -o sentryq ./cmd/scanner
 
 echo "✅ Build Complete! You can now run the scanner with: ./sentryq"

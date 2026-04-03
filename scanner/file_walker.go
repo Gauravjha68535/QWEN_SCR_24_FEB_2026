@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"sync"
 )
@@ -75,8 +74,10 @@ func WalkDirectory(root string) (*ScanResult, error) {
 		}
 
 		if info.IsDir() {
-			// Skip known non-source directories
-			if skipDirs[info.Name()] {
+			// Skip known non-source directories.
+			// Normalise to lowercase so "Node_Modules" or "BUILD" are caught on
+			// case-sensitive Linux filesystems the same as on Windows.
+			if skipDirs[strings.ToLower(info.Name())] {
 				return filepath.SkipDir
 			}
 			result.mu.Lock()
@@ -131,54 +132,3 @@ func processFile(path string, result *ScanResult) {
 	result.mu.Unlock()
 }
 
-// DisplayStats prints the file breakdown to console
-func (r *ScanResult) DisplayStats() {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	// Count only recognized source files (exclude "other")
-	sourceFiles := 0
-	otherFiles := 0
-	for lang, count := range r.ByLanguage {
-		if lang == "other" {
-			otherFiles = count
-		} else {
-			sourceFiles += count
-		}
-	}
-
-	if otherFiles > 0 {
-		utils.LogInfo(fmt.Sprintf("Found %d source files (%d skipped) across %d folders", sourceFiles, otherFiles, r.TotalFolders))
-	} else {
-		utils.LogInfo(fmt.Sprintf("Found %d source files across %d folders", sourceFiles, r.TotalFolders))
-	}
-	utils.LogInfo("Language breakdown:")
-	for lang, count := range r.ByLanguage {
-		if lang == "other" {
-			continue
-		}
-		utils.LogProgress(lang, fmt.Sprintf("%d files", count))
-	}
-
-	// Show skipped extensions summary
-	if len(r.SkippedExts) > 0 {
-		// Sort by count descending
-		type extCount struct {
-			ext   string
-			count int
-		}
-		var sorted []extCount
-		for ext, count := range r.SkippedExts {
-			sorted = append(sorted, extCount{ext, count})
-		}
-		sort.Slice(sorted, func(i, j int) bool {
-			return sorted[i].count > sorted[j].count
-		})
-
-		var parts []string
-		for _, ec := range sorted {
-			parts = append(parts, fmt.Sprintf("%s(%d)", ec.ext, ec.count))
-		}
-		utils.LogInfo(fmt.Sprintf("Skipped extensions: %s", strings.Join(parts, ", ")))
-	}
-}

@@ -9,3 +9,13 @@ func NormalizeNewlines(s string) string {
 	s = strings.ReplaceAll(s, "\r", "\n")
 	return s
 }
+
+// TruncateString truncates s to at most maxLen Unicode code points, appending "..." if cut.
+// Using rune-based slicing prevents splitting multi-byte UTF-8 characters.
+func TruncateString(s string, maxLen int) string {
+	runes := []rune(s)
+	if len(runes) <= maxLen {
+		return s
+	}
+	return string(runes[:maxLen]) + "..."
+}

@@ -42,6 +42,7 @@ if exist "web\dist" (
 
 :: 3. Build the Go Application
 echo 🐹 Building Go application (sentryq.exe)...
+set CGO_ENABLED=1
 go build -o sentryq.exe ./cmd/scanner
 if errorlevel 1 (
     echo ❌ Go build failed. Aborting.

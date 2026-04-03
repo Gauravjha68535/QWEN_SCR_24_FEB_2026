@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -148,7 +149,7 @@ func GenerateSARIF(filename string, findings []Finding) error {
 			lineNum = 1
 		}
 
-		uri := strings.TrimPrefix(f.FilePath, "/")
+		uri := filepath.ToSlash(strings.TrimPrefix(f.FilePath, "/"))
 
 		msg := f.Description
 		if f.Remediation != "" {
@@ -183,7 +184,7 @@ func GenerateSARIF(filename string, findings []Finding) error {
 			Tool: sarifTool{
 				Driver: sarifDriver{
 					Name:           "SentryQ",
-					Version:        "1.0.0",
+					Version:        "2.0.0",
 					InformationURI: "https://github.com/SentryQ/SentryQ",
 					Rules:          rules,
 				},

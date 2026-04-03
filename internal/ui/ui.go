@@ -43,20 +43,3 @@ func StaticFS() (fs.FS, error) {
 	return staticFS, nil
 }
 
-// MustStaticFS returns the embedded static filesystem for the web UI.
-// It panics if the filesystem cannot be initialized.
-// Use this when the embedded files are guaranteed to exist (e.g., during development).
-func MustStaticFS() fs.FS {
-	fs, err := StaticFS()
-	if err != nil {
-		panic("ui: failed to initialize static filesystem: " + err.Error())
-	}
-	return fs
-}
-
-// IsEmbedded returns true if the UI files are properly embedded.
-// This can be used to check if the web dashboard is available.
-func IsEmbedded() bool {
-	_, err := StaticFS()
-	return err == nil
-}

@@ -1,6 +1,7 @@
 package reporter
 
 import (
+	"SentryQ/utils"
 	"testing"
 )
 
@@ -157,9 +158,9 @@ func TestTruncateStringWithRunes(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := truncateString(tt.input, tt.maxLen)
+			result := utils.TruncateString(tt.input, tt.maxLen)
 			if result != tt.expected {
-				t.Errorf("truncateString(%q, %d) = %q, want %q", tt.input, tt.maxLen, result, tt.expected)
+				t.Errorf("TruncateString(%q, %d) = %q, want %q", tt.input, tt.maxLen, result, tt.expected)
 			}
 		})
 	}

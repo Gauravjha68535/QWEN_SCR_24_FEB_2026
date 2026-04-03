@@ -347,7 +347,6 @@ func scanFile(filePath string, rules []config.Rule, counter *int64) []reporter.F
 					OWASP:       rule.OWASP,
 					Confidence:  confidence,
 				})
-				*counter = int64(srNo)
 			}
 		}
 	}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math/rand"
@@ -178,7 +179,7 @@ func GenerateViaOpenAI(ctx context.Context, baseURL, apiKey, model, prompt strin
 
 		resp, err := client.Do(httpReq)
 		if err != nil {
-			if strings.Contains(err.Error(), "context canceled") {
+			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 				return "", fmt.Errorf("scan interrupted")
 			}
 			// Retry on transient network errors (connection reset, timeout, EOF)
@@ -186,7 +187,11 @@ func GenerateViaOpenAI(ctx context.Context, baseURL, apiKey, model, prompt strin
 				// Exponential backoff with ±1 s jitter to avoid thundering herd
 				backoff := time.Duration(1<<uint(attempt+1))*time.Second +
 					time.Duration(rand.Int63n(int64(time.Second)))
-				time.Sleep(backoff)
+				select {
+				case <-time.After(backoff):
+				case <-ctx.Done():
+					return "", fmt.Errorf("scan interrupted")
+				}
 				continue
 			}
 			return "", fmt.Errorf("OpenAI API request failed: %v", err)
@@ -202,7 +207,11 @@ func GenerateViaOpenAI(ctx context.Context, baseURL, apiKey, model, prompt strin
 		if attempt < maxRetries && (resp.StatusCode == 502 || resp.StatusCode == 503 || resp.StatusCode == 429) {
 			backoff := time.Duration(1<<uint(attempt+1))*time.Second +
 				time.Duration(rand.Int63n(int64(time.Second)))
-			time.Sleep(backoff)
+			select {
+			case <-time.After(backoff):
+			case <-ctx.Done():
+				return "", fmt.Errorf("scan interrupted")
+			}
 			continue
 		}
 

@@ -4,9 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -45,6 +48,15 @@ var (
 	activeScans   = make(map[string]context.CancelFunc)
 	activeScansMu sync.Mutex
 )
+
+// getGitBin returns the correct git executable name for the current OS,
+// consistent with the pattern used by getTrivyBin, getSemgrepBin, and getOSVBin.
+func getGitBin() string {
+	if runtime.GOOS == "windows" {
+		return "git.exe"
+	}
+	return "git"
+}
 
 // registerScan registers a cancellation function for a scan
 func registerScan(scanID string, cancel context.CancelFunc) {
@@ -121,21 +133,52 @@ func StartScanFromUpload(targetDir string, configJSON string) (string, error) {
 	return scanID, nil
 }
 
-// isValidGitURL performs basic safety checks on the repository URL to prevent flag injection
-func isValidGitURL(url string) bool {
-	trimmed := strings.TrimSpace(url)
+// credentialPattern matches embedded credentials in URLs: https://user:pass@host
+var credentialPattern = regexp.MustCompile(`https?://[^:@\s]+:[^@\s]+@`)
+
+// isValidGitURL validates a repository URL with strict structural checks to prevent
+// flag injection and embedded-credential leakage.
+func isValidGitURL(rawURL string) bool {
+	trimmed := strings.TrimSpace(rawURL)
 	if trimmed == "" {
 		return false
 	}
-	// Prevent flag injection: URL must not start with a hyphen
+	// Prevent flag injection: URL must not start with a hyphen.
 	if strings.HasPrefix(trimmed, "-") {
 		return false
 	}
-	// Basic format check
-	if !strings.HasPrefix(trimmed, "http://") && !strings.HasPrefix(trimmed, "https://") && !strings.HasPrefix(trimmed, "git@") && !strings.HasPrefix(trimmed, "ssh://") {
+	// Handle SCP-style SSH URLs (git@github.com:user/repo.git).
+	// These are not parseable as standard URLs; do minimal structural validation.
+	if strings.HasPrefix(trimmed, "git@") {
+		// Must contain exactly one colon separating host from path.
+		return strings.Count(trimmed, ":") == 1 && !strings.Contains(trimmed, " ")
+	}
+	// For http/https/ssh URLs use url.Parse for strict structural validation.
+	u, err := url.Parse(trimmed)
+	if err != nil {
 		return false
 	}
+	if u.Scheme != "https" && u.Scheme != "http" && u.Scheme != "ssh" {
+		return false
+	}
+	if u.Host == "" {
+		return false
+	}
+	// Reject embedded passwords (https://user:pass@host or ssh://user:pass@host) —
+	// they risk leaking into logs and git error output.
+	// A bare username without a password is fine for SSH (ssh://git@github.com/...).
+	if u.User != nil {
+		if _, hasPassword := u.User.Password(); hasPassword {
+			return false
+		}
+	}
 	return true
+}
+
+// sanitizeGitOutput strips embedded credentials from git command output before
+// it is sent to the browser, preventing accidental token/password disclosure.
+func sanitizeGitOutput(output string) string {
+	return credentialPattern.ReplaceAllString(output, "https://***:***@")
 }
 
 // StartScanFromGit clones a repo and scans it
@@ -183,10 +226,10 @@ func StartScanFromGit(repoURL string, configJSON string) (string, error) {
 		// Use a 5-minute timeout for git clone so a dead/slow server never hangs the scan.
 		cloneCtx, cloneCancel := context.WithTimeout(context.Background(), 5*time.Minute)
 		defer cloneCancel()
-		cmd := exec.CommandContext(cloneCtx, "git", "clone", "--depth", "1", "--", repoURL, tmpDir)
+		cmd := exec.CommandContext(cloneCtx, getGitBin(), "clone", "--depth", "1", "--", repoURL, tmpDir)
 		output, err := cmd.CombinedOutput()
 		if err != nil {
-			wsHub.BroadcastError(scanID, fmt.Sprintf("Git clone failed: %s", string(output)))
+			wsHub.BroadcastError(scanID, fmt.Sprintf("Git clone failed: %s", sanitizeGitOutput(string(output))))
 			if err := UpdateScanStatus(scanID, "failed"); err != nil {
 				utils.LogError(fmt.Sprintf("Failed to mark scan %s as failed", scanID), err)
 			}
@@ -291,9 +334,11 @@ func runScan(ctx context.Context, scanID string, targetDir string, cfg WebScanCo
 	for _, files := range result.FilePaths {
 		for _, file := range files {
 			findings, err := astAnalyzer.AnalyzeFile(file)
-			if err == nil {
-				allFindings = append(allFindings, findings...)
+			if err != nil {
+				utils.LogWarn(fmt.Sprintf("AST analysis failed for %s: %v", file, err))
+				continue
 			}
+			allFindings = append(allFindings, findings...)
 		}
 	}
 	wsHub.BroadcastLog(scanID, fmt.Sprintf("AST analysis complete (%d total findings so far)", len(allFindings)), "info")
@@ -519,8 +564,7 @@ func runScan(ctx context.Context, scanID string, targetDir string, cfg WebScanCo
 		// Consolidate with Larger LLM
 		if len(aiFindings) > 0 {
 			if cfg.ConsolidationOllamaHost != "" {
-				ai.SetOllamaHost(cfg.ConsolidationOllamaHost)
-				wsHub.BroadcastLog(scanID, fmt.Sprintf("Switched to Consolidation Ollama Host: %s", cfg.ConsolidationOllamaHost), "info")
+				wsHub.BroadcastLog(scanID, fmt.Sprintf("Using Consolidation Ollama Host: %s", cfg.ConsolidationOllamaHost), "info")
 			}
 
 			wsHub.BroadcastProgress(scanID, "AI Consolidation", 85)
@@ -580,9 +624,13 @@ func runScan(ctx context.Context, scanID string, targetDir string, cfg WebScanCo
 			mlCacheDir = filepath.Join(homeDir, ".sentryq", "ml-cache")
 		}
 		reducer := ai.NewMLFPReducer(mlCacheDir)
-		reducer.LoadHistory()
+		if err := reducer.LoadHistory(); err != nil {
+			utils.LogWarn("ML FP reducer: failed to load history: " + err.Error())
+		}
 		allFindings = reducer.FilterFindingsByFPProbability(allFindings, 0.8)
-		reducer.SaveHistory()
+		if err := reducer.SaveHistory(); err != nil {
+			utils.LogWarn("ML FP reducer: failed to save history: " + err.Error())
+		}
 		wsHub.BroadcastLog(scanID, "ML False Positive reduction complete", "info")
 	}
 
@@ -684,7 +732,7 @@ func runScan(ctx context.Context, scanID string, targetDir string, cfg WebScanCo
 // webGenerateReportFiles creates HTML, CSV, and PDF reports
 func webGenerateReportFiles(scanID string, findings []reporter.Finding, targetDir string) {
 	reportsDir := filepath.Join(os.TempDir(), "sentryQ", scanID)
-	if err := os.MkdirAll(reportsDir, 0755); err != nil {
+	if err := os.MkdirAll(reportsDir, 0700); err != nil {
 		utils.LogError(fmt.Sprintf("Failed to create reports directory for scan %s", scanID), err)
 		return
 	}
@@ -756,11 +804,11 @@ func mergeTwoFindings(best *reporter.Finding, f reporter.Finding, severityWeight
 
 // webDeduplicateFindings removes duplicate findings using two-pass deduplication:
 //
-//  Pass 1 — Exact-line dedup: findings at the exact same file+line are always merged
-//            regardless of vulnerability family (catches cross-engine same-line matches).
+//	Pass 1 — Exact-line dedup: findings at the exact same file+line are always merged
+//	          regardless of vulnerability family (catches cross-engine same-line matches).
 //
-//  Pass 2 — Proximity clustering: within each file+vulnFamily group, cluster findings
-//            within ±15 lines (±0 for secrets) and keep the best per cluster.
+//	Pass 2 — Proximity clustering: within each file+vulnFamily group, cluster findings
+//	          within ±15 lines (±0 for secrets) and keep the best per cluster.
 func webDeduplicateFindings(findings []reporter.Finding) []reporter.Finding {
 	severityWeight := map[string]int{
 		"critical": 5, "high": 4, "medium": 3, "low": 2, "info": 1,
@@ -1331,9 +1379,11 @@ func runEnsembleScan(ctx context.Context, scanID string, targetDir string, cfg W
 	for _, files := range result.FilePaths {
 		for _, file := range files {
 			findings, err := astAnalyzer.AnalyzeFile(file)
-			if err == nil {
-				staticFindings = append(staticFindings, findings...)
+			if err != nil {
+				utils.LogWarn(fmt.Sprintf("AST analysis failed for %s: %v", file, err))
+				continue
 			}
+			staticFindings = append(staticFindings, findings...)
 		}
 	}
 
@@ -1539,9 +1589,13 @@ func runEnsembleScan(ctx context.Context, scanID string, targetDir string, cfg W
 			mlCacheDir = filepath.Join(homeDir, ".sentryq", "ml-cache")
 		}
 		reducer := ai.NewMLFPReducer(mlCacheDir)
-		reducer.LoadHistory()
+		if err := reducer.LoadHistory(); err != nil {
+			utils.LogWarn("ML FP reducer: failed to load history: " + err.Error())
+		}
 		allFindings = reducer.FilterFindingsByFPProbability(allFindings, 0.8)
-		reducer.SaveHistory()
+		if err := reducer.SaveHistory(); err != nil {
+			utils.LogWarn("ML FP reducer: failed to save history: " + err.Error())
+		}
 		wsHub.BroadcastLog(scanID, "ML False Positive reduction complete", "info")
 	}
 

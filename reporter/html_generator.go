@@ -355,11 +355,11 @@ const htmlTemplate = `<!DOCTYPE html>
         .copy-btn { position: absolute; top: 8px; right: 8px; padding: 4px 10px; border-radius: 4px; border: 1px solid #30363d; background: #161b22; color: #8b949e; cursor: pointer; font-family: var(--mono); font-size: 0.7rem; transition: all 0.15s; z-index: 2; }
         .copy-btn:hover { background: #21262d; color: #c9d1d9; border-color: #484f58; }
         .copy-btn.copied { background: rgba(34,197,94,0.2); color: #4ade80; border-color: rgba(34,197,94,0.4); }
-310: 
-311:         /* Diff view */
-312:         .diff-container { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
-313:         .diff-header { font-size: 0.75rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px; }
-314:         @media (max-width: 900px) { .diff-container { grid-template-columns: 1fr; } }
+
+        /* Diff view */
+        .diff-container { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
+        .diff-header { font-size: 0.75rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px; }
+        @media (max-width: 900px) { .diff-container { grid-template-columns: 1fr; } }
 
         /* False positives */
         .fp-section { margin-top: 32px; padding: 24px; background: var(--bg-card); border: 1px solid rgba(234,179,8,0.25); border-radius: var(--radius); box-shadow: var(--shadow); }

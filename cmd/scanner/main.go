@@ -14,7 +14,6 @@ import (
 )
 
 func main() {
-	utils.InitLogger()
 	utils.PrintBanner()
 
 	portPtr := flag.Int("port", 5336, "Web server port")

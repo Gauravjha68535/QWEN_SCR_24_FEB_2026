@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"SentryQ/reporter"
@@ -29,8 +30,10 @@ type FindingFeedback struct {
 	Comments        string    `json:"comments"`
 }
 
-// MLFPReducer performs machine learning-based false positive reduction
+// MLFPReducer performs machine learning-based false positive reduction.
+// All exported methods are safe for concurrent use.
 type MLFPReducer struct {
+	mu          sync.Mutex
 	history     *FPHistory
 	historyFile string
 }
@@ -48,6 +51,9 @@ func NewMLFPReducer(cacheDir string) *MLFPReducer {
 
 // LoadHistory loads historical feedback data
 func (ml *MLFPReducer) LoadHistory() error {
+	ml.mu.Lock()
+	defer ml.mu.Unlock()
+
 	data, err := os.ReadFile(ml.historyFile)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -61,6 +67,9 @@ func (ml *MLFPReducer) LoadHistory() error {
 
 // SaveHistory saves historical feedback data
 func (ml *MLFPReducer) SaveHistory() error {
+	ml.mu.Lock()
+	defer ml.mu.Unlock()
+
 	ml.history.LastUpdated = time.Now().Format(time.RFC3339)
 	ml.history.TotalFeedback = len(ml.history.Findings)
 
@@ -69,17 +78,42 @@ func (ml *MLFPReducer) SaveHistory() error {
 		return err
 	}
 
-	return os.WriteFile(ml.historyFile, data, 0644)
+	return os.WriteFile(ml.historyFile, data, 0600)
 }
 
-// CalculateFPProbability calculates the probability that a finding is a false positive
-func (ml *MLFPReducer) CalculateFPProbability(finding reporter.Finding) float64 {
+// FilterFindingsByFPProbability filters findings based on FP probability.
+// Findings whose historical FP probability meets or exceeds threshold are dropped.
+func (ml *MLFPReducer) FilterFindingsByFPProbability(findings []reporter.Finding, threshold float64) []reporter.Finding {
+	ml.mu.Lock()
+	defer ml.mu.Unlock()
+
+	var filtered []reporter.Finding
+
+	for _, finding := range findings {
+		fpProb := ml.calculateFPProbabilityLocked(finding)
+
+		// If FP probability is below threshold, keep the finding
+		if fpProb < threshold {
+			if fpProb > 0.0 {
+				finding.Description = fmt.Sprintf("%s [ML FP Probability: %.1f%%]",
+					finding.Description, fpProb*100)
+			}
+			filtered = append(filtered, finding)
+		}
+	}
+
+	return filtered
+}
+
+// calculateFPProbabilityLocked calculates the probability that a finding is a false positive.
+// Caller must hold ml.mu.
+func (ml *MLFPReducer) calculateFPProbabilityLocked(finding reporter.Finding) float64 {
 	if len(ml.history.Findings) == 0 {
 		return 0.0 // No history, default to 0% FP (assume true positive)
 	}
 
 	// Find similar historical findings
-	similarFindings := ml.findSimilarFindings(finding)
+	similarFindings := ml.findSimilarFindingsLocked(finding)
 
 	if len(similarFindings) < 3 {
 		return 0.0 // Not enough similar findings for a confident prediction
@@ -96,8 +130,9 @@ func (ml *MLFPReducer) CalculateFPProbability(finding reporter.Finding) float64 
 	return float64(fpCount) / float64(len(similarFindings))
 }
 
-// findSimilarFindings finds historically similar findings
-func (ml *MLFPReducer) findSimilarFindings(current reporter.Finding) []FindingFeedback {
+// findSimilarFindingsLocked finds historically similar findings.
+// Caller must hold ml.mu.
+func (ml *MLFPReducer) findSimilarFindingsLocked(current reporter.Finding) []FindingFeedback {
 	var similar []FindingFeedback
 
 	for _, feedback := range ml.history.Findings {
@@ -136,61 +171,6 @@ func (ml *MLFPReducer) calculateSimilarityScore(current reporter.Finding, histor
 	}
 
 	return score / maxScore
-}
-
-// FilterFindingsByFPProbability filters findings based on FP probability
-func (ml *MLFPReducer) FilterFindingsByFPProbability(findings []reporter.Finding, threshold float64) []reporter.Finding {
-	var filtered []reporter.Finding
-
-	for _, finding := range findings {
-		fpProb := ml.CalculateFPProbability(finding)
-
-		// If FP probability is below threshold, keep the finding
-		if fpProb < threshold {
-			if fpProb > 0.0 {
-				finding.Description = fmt.Sprintf("%s [ML FP Probability: %.1f%%]",
-					finding.Description, fpProb*100)
-			}
-			filtered = append(filtered, finding)
-		}
-	}
-
-	return filtered
-}
-
-// GetFPStatistics returns false positive statistics
-func (ml *MLFPReducer) GetFPStatistics() map[string]interface{} {
-	stats := map[string]interface{}{
-		"total_feedback":  len(ml.history.Findings),
-		"false_positives": 0,
-		"true_positives":  0,
-		"fp_rate":         0.0,
-		"fp_by_rule":      make(map[string]int),
-		"fp_by_severity":  make(map[string]int),
-		"fp_by_language":  make(map[string]int),
-	}
-
-	fpCount := 0
-	tpCount := 0
-
-	for _, feedback := range ml.history.Findings {
-		if feedback.IsFalsePositive {
-			fpCount++
-			stats["fp_by_rule"].(map[string]int)[feedback.RuleID]++
-			stats["fp_by_severity"].(map[string]int)[feedback.Severity]++
-			stats["fp_by_language"].(map[string]int)[getFileExtension(feedback.FilePath)]++
-		} else {
-			tpCount++
-		}
-	}
-
-	stats["false_positives"] = fpCount
-	stats["true_positives"] = tpCount
-	if fpCount+tpCount > 0 {
-		stats["fp_rate"] = float64(fpCount) / float64(fpCount+tpCount)
-	}
-
-	return stats
 }
 
 // Helper functions
