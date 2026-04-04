@@ -10,9 +10,6 @@ var InfoColor = color.New(color.FgGreen, color.Bold)
 var ErrorColor = color.New(color.FgRed, color.Bold)
 var WarnColor = color.New(color.FgYellow, color.Bold)
 
-
-
-
 func LogInfo(msg string) {
 	InfoColor.Print("[✓] ")
 	fmt.Println(msg)
@@ -34,9 +31,9 @@ func PrintBanner() {
 	fmt.Print(`
 ╔═══════════════════════════════════════════════════════════╗
 ║                                                           ║
-║   🔒  SENTRYQ: AI-POWERED SECURITY SCANNER  				║
+║   🔒  SENTRYQ: AI-POWERED SECURITY SCANNER               ║
 ║                                                           ║
-║   Version 2.0 | Built with Go + Ollama AI  				║
+║   Version 2.0 | Built with Go + Ollama AI                ║
 ║                                                           ║
 ╚═══════════════════════════════════════════════════════════╝
 `)

@@ -50,10 +50,22 @@ func InitDB() error {
 		}
 		dbPath := filepath.Join(dbDir, "scans.db")
 
-		db, err = sql.Open("sqlite", dbPath+"?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)")
+		db, err = sql.Open("sqlite", dbPath)
 		if err != nil {
 			initErr = fmt.Errorf("failed to open database: %v", err)
 			return
+		}
+
+		// Set pragmas via SQL rather than DSN URL parameters so the behaviour is
+		// consistent across modernc.org/sqlite versions (URL pragma syntax is
+		// undocumented and may change between minor releases).
+		for _, pragma := range []string{
+			"PRAGMA journal_mode=WAL",
+			"PRAGMA busy_timeout=5000",
+		} {
+			if _, err := db.Exec(pragma); err != nil {
+				utils.LogWarn(fmt.Sprintf("db: %s failed: %v", pragma, err))
+			}
 		}
 
 		// Create tables
@@ -205,6 +217,7 @@ func GetAllScans() ([]ScanRecord, error) {
 	for rows.Next() {
 		var s ScanRecord
 		if err := rows.Scan(&s.ID, &s.Target, &s.SourceType, &s.Status, &s.Config, &s.CreatedAt, &s.CompletedAt, &s.TotalFindings, &s.CriticalCount, &s.HighCount); err != nil {
+			utils.LogWarn(fmt.Sprintf("GetAllScans: failed to scan row: %v", err))
 			continue
 		}
 		scans = append(scans, s)

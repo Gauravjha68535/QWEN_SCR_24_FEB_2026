@@ -161,7 +161,6 @@ func GenerateViaOpenAI(ctx context.Context, baseURL, apiKey, model, prompt strin
 	}
 
 	const maxRetries = 3
-	client := &http.Client{Timeout: 35 * time.Minute}
 
 	for attempt := 0; attempt <= maxRetries; attempt++ {
 		if ctx.Err() != nil {
@@ -177,7 +176,7 @@ func GenerateViaOpenAI(ctx context.Context, baseURL, apiKey, model, prompt strin
 			httpReq.Header.Set("Authorization", "Bearer "+apiKey)
 		}
 
-		resp, err := client.Do(httpReq)
+		resp, err := aiHTTPClient.Do(httpReq)
 		if err != nil {
 			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 				return "", fmt.Errorf("scan interrupted")
@@ -196,9 +195,12 @@ func GenerateViaOpenAI(ctx context.Context, baseURL, apiKey, model, prompt strin
 			}
 			return "", fmt.Errorf("OpenAI API request failed: %v", err)
 		}
+		// Defer as a panic-safety net; explicit close below ensures the
+		// connection is returned to the pool before the next retry attempt.
+		defer resp.Body.Close()
 
 		body, err := io.ReadAll(resp.Body)
-		resp.Body.Close()
+		resp.Body.Close() //nolint:errcheck // already deferred; double-close is safe
 		if err != nil {
 			return "", fmt.Errorf("failed to read OpenAI response body: %v", err)
 		}
@@ -258,7 +260,6 @@ func isRetryableError(err error) bool {
 	}
 	return false
 }
-
 
 // TestOpenAIEndpoint makes a lightweight test call to verify connectivity.
 func TestOpenAIEndpoint(baseURL, apiKey, model string) (bool, string) {

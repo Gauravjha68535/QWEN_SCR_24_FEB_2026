@@ -28,13 +28,13 @@ type Finding struct {
 	Status      string   `json:"status"`       // Triage status: "open", "resolved", "ignored", "false_positive"
 }
 
-// IsFalsePositive returns true if the AI validator marked this finding as a false positive
+// IsFalsePositive returns true only when the AI validator EXPLICITLY marked this
+// finding as a false positive. Plain "No" means "not yet validated" (the default
+// for all static scanner findings) and must NOT be treated as a false positive —
+// doing so would hide all static findings from reports when AI is disabled.
 func (f Finding) IsFalsePositive() bool {
 	lower := strings.ToLower(f.AiValidated)
-	return strings.Contains(lower, "false positive") ||
-		lower == "no" ||
-		strings.HasPrefix(lower, "no (") ||
-		strings.HasPrefix(lower, "no,")
+	return strings.Contains(lower, "false positive")
 }
 
 // IsUnreachable returns true if the finding is in a test file or has very low confidence

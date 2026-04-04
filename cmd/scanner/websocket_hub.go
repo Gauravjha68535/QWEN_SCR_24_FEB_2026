@@ -80,7 +80,7 @@ var (
 				return false
 			}
 			host := u.Hostname() // strips port; returns bare IP or hostname
-			return host == "localhost" || host == "127.0.0.1"
+			return host == "localhost" || host == "127.0.0.1" || host == "::1"
 		},
 	}
 )

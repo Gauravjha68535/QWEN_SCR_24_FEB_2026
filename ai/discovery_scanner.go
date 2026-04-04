@@ -254,11 +254,9 @@ func DiscoverVulnerabilities(ctx context.Context, modelName string, filePath str
 
 		chunkLines := lines[startLine:endLine]
 
-
 		var b strings.Builder
 		b.WriteString("```\n")
 		b.WriteString(fmt.Sprintf("// File: %s (Lines %d to %d)\n", filePath, startLine+1, endLine))
-		
 		var charCount int
 		for i, l := range chunkLines {
 			lineText := fmt.Sprintf("%d: %s\n", startLine+i+1, l)
@@ -413,9 +411,12 @@ func DiscoverVulnerabilities(ctx context.Context, modelName string, filePath str
 				}
 
 				if resp.StatusCode != http.StatusOK {
-					body, _ := io.ReadAll(resp.Body)
+					body, readBodyErr := io.ReadAll(resp.Body)
 					resp.Body.Close()
 					reqCancel()
+					if readBodyErr != nil {
+						return nil, fmt.Errorf("ollama API error (status %d): <failed to read response body: %v>", resp.StatusCode, readBodyErr)
+					}
 					return nil, fmt.Errorf("ollama API error (status %d): %s", resp.StatusCode, string(body))
 				}
 
@@ -561,7 +562,7 @@ func RunAIDiscovery(ctx context.Context, modelName string, targetDir string, log
 	var allFindings []reporter.Finding
 	var filesToScan []string
 
-	filepath.Walk(targetDir, func(path string, info os.FileInfo, err error) error {
+	if err := filepath.Walk(targetDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() {
 			return nil
 		}
@@ -593,7 +594,9 @@ func RunAIDiscovery(ctx context.Context, modelName string, targetDir string, log
 			}
 		}
 		return nil
-	})
+	}); err != nil {
+		utils.LogWarn(fmt.Sprintf("AI discovery: directory walk failed for %s: %v", targetDir, err))
+	}
 
 	totalFiles := len(filesToScan)
 	if totalFiles == 0 {

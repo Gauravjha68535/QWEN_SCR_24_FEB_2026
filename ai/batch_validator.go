@@ -14,7 +14,7 @@ import (
 )
 
 // ValidateFindingsBatch validates multiple findings concurrently using a worker pool.
-func ValidateFindingsBatch(ctx context.Context, modelName string, findings []reporter.Finding, fileContents map[string]string, batchSize int, logCallback ...func(msg string, level string)) []reporter.Finding {
+func ValidateFindingsBatch(ctx context.Context, modelName string, findings []reporter.Finding, fileContents map[string]string, logCallback ...func(msg string, level string)) []reporter.Finding {
 	totalToValidate := countCriticalHighMedium(findings)
 
 	// Helper to send logs to UI if a callback was provided
@@ -31,20 +31,15 @@ func ValidateFindingsBatch(ctx context.Context, modelName string, findings []rep
 	headerColor.Println("└────────────────────────────────────────")
 	fmt.Println()
 
-	numWorkers := 1 // Default concurrency (Sequential preferred to avoid GPU VRAM thrashing on consumer hardware)
-	if len(findings) < numWorkers {
-		numWorkers = len(findings)
-	}
-	if numWorkers == 0 {
+	if len(findings) == 0 {
 		return findings
 	}
+	numWorkers := 1 // Sequential preferred to avoid GPU VRAM thrashing on consumer hardware
 
 	uiLog(fmt.Sprintf("Starting BATCH AI validation with model: %s", modelName), "info")
 	uiLog(fmt.Sprintf("Concurrency: %d parallel workers", numWorkers), "info")
 	uiLog(fmt.Sprintf("Validating %d findings (Critical/High/Medium only)", totalToValidate), "info")
 	fmt.Println()
-
-
 
 	startTime := time.Now()
 

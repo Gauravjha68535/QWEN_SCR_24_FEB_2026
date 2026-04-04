@@ -98,6 +98,28 @@ func loadSettings() {
 	}
 }
 
+// secureWriteFile writes data to path with owner-only permissions.
+// On Unix, the file is created with mode 0600 (owner read/write only).
+// On Windows, os.WriteFile permission bits are not enforced by the OS, so we
+// make a best-effort attempt to restrict the ACL via icacls after writing,
+// removing inherited ACEs and granting full control only to the current user.
+func secureWriteFile(path string, data []byte) error {
+	if err := os.WriteFile(path, data, 0600); err != nil {
+		return err
+	}
+	if runtime.GOOS == "windows" {
+		username := os.Getenv("USERNAME")
+		if username != "" {
+			_ = exec.Command(
+				"icacls", path,
+				"/inheritance:r",
+				"/grant:r", username+":F",
+			).Run()
+		}
+	}
+	return nil
+}
+
 func saveSettings() {
 	// Hold the read lock for the full duration of marshal + file write so that
 	// a concurrent PUT /api/settings cannot update appSettings between the
@@ -131,8 +153,10 @@ func saveSettings() {
 		utils.LogError("Failed to create settings directory", err)
 		return
 	}
-	// 0600: owner read/write only — the file contains API keys.
-	if err := os.WriteFile(settingsPath, data, 0600); err != nil {
+	// secureWriteFile uses 0600 on Unix; on Windows it additionally calls
+	// icacls to restrict the ACL to the current user (os.WriteFile alone
+	// does not enforce permission bits on Windows NTFS).
+	if err := secureWriteFile(settingsPath, data); err != nil {
 		utils.LogError("Failed to save settings", err)
 	}
 }
@@ -232,9 +256,16 @@ func StartWebServer(port int) {
 	// Auto-open browser
 	go openBrowser("http://" + localAddr)
 
-	// Setup graceful shutdown
+	// Setup graceful shutdown.
+	// SIGTERM is defined on Windows but never delivered by the OS — only SIGINT (Ctrl+C)
+	// is reliably sent on Windows. Using a runtime check avoids silently broken shutdown
+	// on Windows when a process manager sends SIGTERM.
 	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+	sigs := []os.Signal{os.Interrupt}
+	if runtime.GOOS != "windows" {
+		sigs = append(sigs, syscall.SIGTERM)
+	}
+	signal.Notify(stop, sigs...)
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -349,8 +380,9 @@ func handleUploadScan(w http.ResponseWriter, r *http.Request) {
 
 			absTmpDir, errAbs1 := filepath.Abs(tmpDir)
 			absDestPath, errAbs2 := filepath.Abs(destPath)
-			if errAbs1 != nil || errAbs2 != nil ||
-				!strings.HasPrefix(strings.ToLower(absDestPath), strings.ToLower(absTmpDir)+string(filepath.Separator)) {
+			rel, relErr := filepath.Rel(absTmpDir, absDestPath)
+			if errAbs1 != nil || errAbs2 != nil || relErr != nil ||
+				strings.HasPrefix(rel, "..") || rel == ".." {
 				utils.LogWarn(fmt.Sprintf("Path traversal attempt blocked: filename=%q from %s", filename, r.RemoteAddr))
 				part.Close()
 				continue
@@ -430,13 +462,11 @@ func handleGitScan(w http.ResponseWriter, r *http.Request) {
 func handleScanRoutes(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/api/scan/")
 	parts := strings.Split(path, "/")
-
-	if len(parts) == 0 {
+	scanID := parts[0]
+	if scanID == "" {
 		http.NotFound(w, r)
 		return
 	}
-
-	scanID := parts[0]
 
 	// DELETE /api/scan/:id
 	if r.Method == http.MethodDelete {
@@ -724,7 +754,7 @@ func handleSystemStatus(w http.ResponseWriter, r *http.Request) {
 
 	// Check git
 	gitStatus := "not found"
-	if _, err := exec.LookPath("git"); err == nil {
+	if _, err := exec.LookPath(getGitBin()); err == nil {
 		gitStatus = "available"
 	}
 
@@ -776,7 +806,7 @@ func allowedOrigin(origin string) bool {
 		return false
 	}
 	host := u.Hostname() // strips port; returns bare hostname or IP
-	return host == "localhost" || host == "127.0.0.1"
+	return host == "localhost" || host == "127.0.0.1" || host == "::1"
 }
 
 func corsMiddleware(next http.Handler) http.Handler {
@@ -798,7 +828,9 @@ func corsMiddleware(next http.Handler) http.Handler {
 func httpJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(data)
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		utils.LogWarn(fmt.Sprintf("httpJSON: failed to encode response (status %d): %v", status, err))
+	}
 }
 
 func openBrowser(url string) {
@@ -883,7 +915,13 @@ func handleCustomEndpointTest(w http.ResponseWriter, r *http.Request) {
 
 func handleCustomEndpointModels(w http.ResponseWriter, r *http.Request) {
 	url := r.URL.Query().Get("url")
-	apiKey := r.URL.Query().Get("api_key")
+	// Prefer the Authorization header to avoid exposing the key in URLs (which appear in
+	// server logs, browser history, and proxy logs). Fall back to the query param for
+	// backward compatibility with older frontend versions.
+	apiKey := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+	if apiKey == "" {
+		apiKey = r.URL.Query().Get("api_key")
+	}
 
 	if url == "" {
 		httpJSON(w, http.StatusOK, map[string]interface{}{
@@ -928,7 +966,7 @@ type YAMLRule struct {
 }
 
 func handleRulesList(w http.ResponseWriter, r *http.Request) {
-	rulesDir := "rules"
+	rulesDir := getDefaultRulesDir()
 	entries, err := os.ReadDir(rulesDir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -1138,7 +1176,7 @@ func checkStartupDependencies() {
 		bin     string
 		purpose string
 	}{
-		{"Git", "git", "Repository cloning"},
+		{"Git", getGitBin(), "Repository cloning"},
 		{"Semgrep", "semgrep", "Advanced static analysis"},
 		{"OSV-Scanner", "osv-scanner", "SCA vulnerability scanning"},
 		{"Trivy", "trivy", "Container image scanning"},

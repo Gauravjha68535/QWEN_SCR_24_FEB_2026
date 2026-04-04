@@ -59,8 +59,9 @@ func ExtractJSON(input string) string {
 		var stack []rune
 		var endIdx int = -1
 		// Limit stack depth to prevent O(N) memory growth on pathologically
-		// nested or malformed LLM output (e.g. millions of unclosed braces).
-		const maxBracketDepth = 10000
+		// nested or malformed LLM output. Real vulnerability JSON never exceeds
+		// a few levels of nesting; 500 is generous while preventing abuse.
+		const maxBracketDepth = 500
 
 		for i, r := range input[startIdx:] {
 			if r == '{' {

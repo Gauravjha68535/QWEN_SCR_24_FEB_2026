@@ -4,6 +4,7 @@ import (
 	"SentryQ/config"
 	"SentryQ/reporter"
 	"SentryQ/utils"
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -165,8 +166,9 @@ var localFrameworkDetectors = map[string]*regexp.Regexp{
 	"django":  regexp.MustCompile(`(?i)import.*django|from\s+django`),
 }
 
-// RunPatternScan performs multi-threaded pattern scanning across all files
-func RunPatternScan(result *ScanResult, baseRules []config.Rule, rulesDir string) []reporter.Finding {
+// RunPatternScan performs multi-threaded pattern scanning across all files.
+// It respects ctx cancellation: workers stop picking up new jobs once ctx is done.
+func RunPatternScan(ctx context.Context, result *ScanResult, baseRules []config.Rule, rulesDir string) []reporter.Finding {
 	// Detect frameworks and load specific rules
 	detectedFrameworks := detectFrameworks(result)
 	rules := append([]config.Rule(nil), baseRules...) // Copy base rules
@@ -240,10 +242,13 @@ func RunPatternScan(result *ScanResult, baseRules []config.Rule, rulesDir string
 			defer wg.Done()
 			defer func() {
 				if r := recover(); r != nil {
-					utils.LogWarn(fmt.Sprintf("Pattern engine worker recovered from panic: %v", r))
+					utils.LogError("Pattern engine worker recovered from panic", fmt.Errorf("%v", r))
 				}
 			}()
 			for job := range jobChan {
+				if ctx.Err() != nil {
+					continue // drain channel without doing work after cancellation
+				}
 				findings := scanFile(job.filePath, job.rules, &srCounter)
 				resultChan <- scanResult{findings: findings}
 			}
@@ -276,10 +281,21 @@ func RunPatternScan(result *ScanResult, baseRules []config.Rule, rulesDir string
 	return allFindings
 }
 
+// maxPatternFileSizeBytes is the maximum file size the pattern engine will scan.
+// Files larger than this are skipped to prevent OOM on minified bundles or
+// binary blobs. The secret detector has an analogous cap at 2 MB.
+const maxPatternFileSizeBytes = 5 * 1024 * 1024 // 5 MB
+
 // scanFile scans a single file against all applicable rules
 func scanFile(filePath string, rules []config.Rule, counter *int64) []reporter.Finding {
 	// Contextual Filtering 1: Skip test/mock files to reduce false positives
 	if IsTestFile(filePath) {
+		return nil
+	}
+
+	// Contextual Filtering 2: Skip files that exceed the size cap to prevent OOM
+	if info, err := os.Stat(filePath); err == nil && info.Size() > maxPatternFileSizeBytes {
+		utils.LogWarn(fmt.Sprintf("Pattern engine: skipping oversized file (%d bytes): %s", info.Size(), filePath))
 		return nil
 	}
 

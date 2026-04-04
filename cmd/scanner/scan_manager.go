@@ -49,6 +49,10 @@ var (
 	activeScansMu sync.Mutex
 )
 
+// maxFileContentSize is the maximum file size sent to AI for context (10 MB).
+// Declared at package level to avoid duplication across runScan and runEnsembleScan.
+const maxFileContentSize = 10 * 1024 * 1024
+
 // getGitBin returns the correct git executable name for the current OS,
 // consistent with the pattern used by getTrivyBin, getSemgrepBin, and getOSVBin.
 func getGitBin() string {
@@ -56,6 +60,25 @@ func getGitBin() string {
 		return "git.exe"
 	}
 	return "git"
+}
+
+// getDefaultRulesDir returns the absolute path to the built-in rules directory.
+// It resolves the path relative to the running executable so the binary works
+// correctly regardless of the working directory (e.g. installed to /usr/local/bin
+// or run from a different directory on Windows). Falls back to the relative "rules"
+// path if os.Executable() is unavailable.
+func getDefaultRulesDir() string {
+	if exePath, err := os.Executable(); err == nil {
+		// filepath.EvalSymlinks resolves any symlinks created by package managers.
+		if resolved, err := filepath.EvalSymlinks(exePath); err == nil {
+			exePath = resolved
+		}
+		candidate := filepath.Join(filepath.Dir(exePath), "rules")
+		if _, err := os.Stat(candidate); err == nil {
+			return candidate
+		}
+	}
+	return "rules"
 }
 
 // registerScan registers a cancellation function for a scan
@@ -271,7 +294,7 @@ func runScan(ctx context.Context, scanID string, targetDir string, cfg WebScanCo
 		wsHub.BroadcastLog(scanID, fmt.Sprintf("Set Ollama Host to %s", cfg.OllamaHost), "info")
 	}
 
-	rulesDir := "rules"
+	rulesDir := getDefaultRulesDir()
 	if cfg.CustomRulesDir != "" {
 		rulesDir = cfg.CustomRulesDir
 	}
@@ -320,7 +343,7 @@ func runScan(ctx context.Context, scanID string, targetDir string, cfg WebScanCo
 	}
 	wsHub.BroadcastProgress(scanID, "Pattern Matching", 20)
 	wsHub.BroadcastLog(scanID, "Running pattern engine...", "phase")
-	patternFindings := scanner.RunPatternScan(result, rules, rulesDir)
+	patternFindings := scanner.RunPatternScan(ctx, result, rules, rulesDir)
 	allFindings = append(allFindings, patternFindings...)
 	wsHub.BroadcastLog(scanID, fmt.Sprintf("Pattern engine found %d issues", len(patternFindings)), "info")
 
@@ -503,6 +526,10 @@ func runScan(ctx context.Context, scanID string, targetDir string, cfg WebScanCo
 		fileContents := make(map[string]string)
 		for _, files := range result.FilePaths {
 			for _, file := range files {
+				info, statErr := os.Stat(file)
+				if statErr != nil || info.Size() > maxFileContentSize {
+					continue
+				}
 				if data, err := os.ReadFile(file); err == nil {
 					fileContents[file] = string(data)
 				}
@@ -536,7 +563,7 @@ func runScan(ctx context.Context, scanID string, targetDir string, cfg WebScanCo
 		uniqueForValidation := webDeduplicateFindings(toValidate)
 
 		wsHub.BroadcastLog(scanID, fmt.Sprintf("Validating %d unique findings with AI...", len(uniqueForValidation)), "phase")
-		validatedFindings := ai.ValidateFindingsBatch(ctx, modelName, uniqueForValidation, fileContents, 4, func(msg string, level string) {
+		validatedFindings := ai.ValidateFindingsBatch(ctx, modelName, uniqueForValidation, fileContents, func(msg string, level string) {
 			wsHub.BroadcastLog(scanID, msg, level)
 		})
 
@@ -741,20 +768,28 @@ func webGenerateReportFiles(scanID string, findings []reporter.Finding, targetDi
 
 	// CSV
 	csvPath := filepath.Join(reportsDir, "report.csv")
-	reporter.WriteCSV(csvPath, findings)
+	if err := reporter.WriteCSV(csvPath, findings); err != nil {
+		utils.LogWarn(fmt.Sprintf("Failed to write CSV report for scan %s: %v", scanID, err))
+	}
 
 	// HTML
 	htmlPath := filepath.Join(reportsDir, "report.html")
-	reporter.GenerateHTMLReport(htmlPath, findings, summary)
+	if err := reporter.GenerateHTMLReport(htmlPath, findings, summary); err != nil {
+		utils.LogWarn(fmt.Sprintf("Failed to write HTML report for scan %s: %v", scanID, err))
+	}
 
 	// PDF
 	pdfPath := filepath.Join(reportsDir, "report.pdf")
 	riskScore := reporter.CalculateRiskScore(findings)
-	reporter.GeneratePDF(pdfPath, findings, summary, riskScore)
+	if err := reporter.GeneratePDF(pdfPath, findings, summary, riskScore); err != nil {
+		utils.LogWarn(fmt.Sprintf("Failed to write PDF report for scan %s: %v", scanID, err))
+	}
 
 	// SARIF
 	sarifPath := filepath.Join(reportsDir, "report.sarif")
-	reporter.GenerateSARIF(sarifPath, findings)
+	if err := reporter.GenerateSARIF(sarifPath, findings); err != nil {
+		utils.LogWarn(fmt.Sprintf("Failed to write SARIF report for scan %s: %v", scanID, err))
+	}
 
 	utils.LogInfo(fmt.Sprintf("Reports saved for scan %s at %s", scanID, reportsDir))
 }
@@ -1231,6 +1266,7 @@ func webPopulateCodeSnippets(findings []reporter.Finding, targetDir string) {
 	for filePath, indices := range indicesByFile {
 		content, err := os.ReadFile(filePath)
 		if err != nil {
+			utils.LogWarn(fmt.Sprintf("populateCodeSnippets: could not read %s: %v", filePath, err))
 			continue
 		}
 		lines := strings.Split(utils.NormalizeNewlines(string(content)), "\n")
@@ -1317,7 +1353,7 @@ func runEnsembleScan(ctx context.Context, scanID string, targetDir string, cfg W
 		wsHub.BroadcastLog(scanID, fmt.Sprintf("Set Ollama Host to %s", cfg.OllamaHost), "info")
 	}
 
-	rulesDir := "rules"
+	rulesDir := getDefaultRulesDir()
 	if cfg.CustomRulesDir != "" {
 		rulesDir = cfg.CustomRulesDir
 	}
@@ -1368,7 +1404,7 @@ func runEnsembleScan(ctx context.Context, scanID string, targetDir string, cfg W
 	// Pattern Scan
 	wsHub.BroadcastProgress(scanID, "Phase 1: Pattern Matching", 5)
 	wsHub.BroadcastLog(scanID, "Running pattern engine...", "info")
-	patternFindings := scanner.RunPatternScan(result, rules, rulesDir)
+	patternFindings := scanner.RunPatternScan(ctx, result, rules, rulesDir)
 	staticFindings = append(staticFindings, patternFindings...)
 	wsHub.BroadcastLog(scanID, fmt.Sprintf("Pattern engine found %d issues", len(patternFindings)), "info")
 
@@ -1507,15 +1543,20 @@ func runEnsembleScan(ctx context.Context, scanID string, targetDir string, cfg W
 		wsHub.BroadcastProgress(scanID, "Phase 2: AI Self-Validation", 65)
 		wsHub.BroadcastLog(scanID, fmt.Sprintf("AI validating its own %d discoveries...", len(aiFindings)), "info")
 
+		const maxFileContentSize = 10 * 1024 * 1024 // 10 MB per file
 		fileContents := make(map[string]string)
 		for _, files := range result.FilePaths {
 			for _, file := range files {
+				info, statErr := os.Stat(file)
+				if statErr != nil || info.Size() > maxFileContentSize {
+					continue
+				}
 				if data, err := os.ReadFile(file); err == nil {
 					fileContents[file] = string(data)
 				}
 			}
 		}
-		aiFindings = ai.ValidateFindingsBatch(ctx, modelName, aiFindings, fileContents, 4)
+		aiFindings = ai.ValidateFindingsBatch(ctx, modelName, aiFindings, fileContents)
 	}
 
 	// Deduplicate Phase 2
@@ -1547,12 +1588,16 @@ func runEnsembleScan(ctx context.Context, scanID string, targetDir string, cfg W
 	fileContents := make(map[string]string)
 	for _, files := range result.FilePaths {
 		for _, file := range files {
+			info, statErr := os.Stat(file)
+			if statErr != nil || info.Size() > maxFileContentSize {
+				continue
+			}
 			if data, err := os.ReadFile(file); err == nil {
 				fileContents[file] = string(data)
 			}
 		}
 	}
-	staticFindings = ai.ValidateFindingsBatch(ctx, modelName, staticFindings, fileContents, 4)
+	staticFindings = ai.ValidateFindingsBatch(ctx, modelName, staticFindings, fileContents)
 
 	judgeModel := cfg.JudgeModel
 	if judgeModel == "" {

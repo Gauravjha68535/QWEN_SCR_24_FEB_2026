@@ -535,7 +535,7 @@ const htmlTemplate = `<!DOCTYPE html>
                     <td style="text-align: center;">
                         {{if eq .AiValidated "Yes"}}<span class="ai-badge" title="AI Validated">✅</span>
                         {{else if contains .AiValidated "Discovered"}}<span class="ai-badge" title="AI Discovered">🧠</span>
-                        {{else if eq .AiValidated "No"}}<span class="ai-badge" title="False Positive">❌</span>
+                        {{else if eq .AiValidated "No"}}<span class="ai-badge" title="Not Validated" style="color:var(--text-dim)">—</span>
                         {{else}}<span class="ai-badge" title="Not Checked" style="color:var(--text-dim)">—</span>{{end}}
                     </td>
                     <td class="cell-desc">{{truncate .Description 1000}}</td>

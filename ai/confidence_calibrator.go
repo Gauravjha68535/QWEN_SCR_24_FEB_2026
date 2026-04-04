@@ -32,7 +32,9 @@ func NewConfidenceCalibrator() *ConfidenceCalibrator {
 		homeDir = "."
 	}
 	dbDir := filepath.Join(homeDir, ".sentryq")
-	os.MkdirAll(dbDir, 0755)
+	if err := os.MkdirAll(dbDir, 0755); err != nil {
+		utils.LogWarn(fmt.Sprintf("ConfidenceCalibrator: failed to create stats directory %s: %v", dbDir, err))
+	}
 	statsFile := filepath.Join(dbDir, ".scanner-ai-stats.json")
 
 	c := &ConfidenceCalibrator{
@@ -89,7 +91,11 @@ func (c *ConfidenceCalibrator) RecordValidation(severity string, isTruePositive 
 		stats.FalsePositives++
 	}
 
-	stats.AccuracyRate = float64(stats.TruePositives) / float64(stats.AssessedFindings)
+	// Guard against zero division; AssessedFindings is always >= 1 here because
+	// we just incremented it, but defend explicitly for future-proofing.
+	if stats.AssessedFindings > 0 {
+		stats.AccuracyRate = float64(stats.TruePositives) / float64(stats.AssessedFindings)
+	}
 }
 
 // CalibrateConfidence adjusts the raw confidence score based on historical accuracy for that severity

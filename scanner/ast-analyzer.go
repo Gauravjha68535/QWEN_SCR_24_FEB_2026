@@ -74,6 +74,9 @@ func (aa *ASTAnalyzer) AnalyzeFile(filePath string) ([]reporter.Finding, error) 
 	defer tree.Close()
 
 	rootNode := tree.RootNode()
+	if rootNode == nil {
+		return nil, fmt.Errorf("failed to parse AST: root node is nil for %s", filePath)
+	}
 	lines := strings.Split(utils.NormalizeNewlines(string(content)), "\n")
 
 	var findings []reporter.Finding
